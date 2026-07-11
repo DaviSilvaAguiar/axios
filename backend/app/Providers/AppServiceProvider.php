@@ -1,0 +1,21 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Providers;
+
+use App\Models\Tenant;
+use Illuminate\Support\ServiceProvider;
+use Stancl\Tenancy\DatabaseConfig;
+
+class AppServiceProvider extends ServiceProvider
+{
+    public function register(): void {}
+
+    public function boot(): void
+    {
+        DatabaseConfig::generateDatabaseNamesUsing(function (Tenant $tenant): string {
+            return config('tenancy.database.prefix') . $tenant->slug . config('tenancy.database.suffix');
+        });
+    }
+}

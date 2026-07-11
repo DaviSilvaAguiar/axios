@@ -1,0 +1,49 @@
+# Controle de versão
+.git
+.gitignore
+.gitattributes
+
+# Dependências (reconstruídas no stage deps)
+vendor/
+node_modules/
+
+# Testes e ferramentas de dev
+tests/
+phpunit.xml
+.phpunit.cache/
+.phpunit.result.cache
+
+# Arquivos de ambiente — NUNCA na imagem
+.env
+.env.*
+!.env.example
+
+# Cache e logs locais
+storage/logs/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+bootstrap/cache/
+
+# Frontend (irrelevante para a imagem PHP)
+resources/js/
+resources/css/
+package.json
+package-lock.json
+vite.config.js
+public/build/
+public/hot/
+
+# IDE e OS
+.idea/
+.vscode/
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Documentação
+README.md
+*.md
+
+# Banco SQLite de dev
+database/database.sqlite

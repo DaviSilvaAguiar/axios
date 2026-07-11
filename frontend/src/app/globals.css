@@ -1,0 +1,295 @@
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─── Semantic tokens — mudam com o tema ─────────────────────────────────── */
+:root {
+  --background: #ffffff;
+  --foreground: #0a0b0d;
+
+  --app-bg: #f7f7f7;
+  --app-surface: #ffffff;
+  --app-surface-raised: #eef0f3;
+  --app-surface-raised-hover: #e2e5eb;
+  --app-hover: #eef0f3;
+  --app-nav-active: rgba(0, 82, 255, 0.07);
+  --app-text: #0a0b0d;
+  --app-text-muted: #5b616e;
+  --app-text-subtle: #9499a3;
+  --app-border: rgba(91, 97, 110, 0.15);
+  --app-border-subtle: rgba(91, 97, 110, 0.08);
+}
+
+.dark {
+  --background: #0a0b0d;
+  --foreground: #ffffff;
+
+  --app-bg: #0f1117;
+  --app-surface: #1a1d23;
+  --app-surface-raised: #282b31;
+  --app-surface-raised-hover: #32363f;
+  --app-hover: rgba(255, 255, 255, 0.05);
+  --app-nav-active: rgba(0, 82, 255, 0.12);
+  --app-text: #ffffff;
+  --app-text-muted: #9499a3;
+  --app-text-subtle: #9499a3;
+  --app-border: rgba(255, 255, 255, 0.08);
+  --app-border-subtle: rgba(255, 255, 255, 0.08);
+}
+
+/* ─── Tailwind utilities geradas a partir dos tokens ─────────────────────── */
+@theme inline {
+  --font-display: "CoinbaseDisplay", var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-ui: "CoinbaseSans", var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-body: "CoinbaseText", var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --color-app-bg: var(--app-bg);
+  --color-app-surface: var(--app-surface);
+  --color-app-surface-raised: var(--app-surface-raised);
+  --color-app-surface-raised-hover: var(--app-surface-raised-hover);
+  --color-app-hover: var(--app-hover);
+  --color-app-nav-active: var(--app-nav-active);
+  --color-app-text: var(--app-text);
+  --color-app-text-muted: var(--app-text-muted);
+  --color-app-text-subtle: var(--app-text-subtle);
+  --color-app-border: var(--app-border);
+  --color-app-border-subtle: var(--app-border-subtle);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography scale */
+.text-display-hero {
+  font-family: var(--font-display);
+  font-size: 52px;
+  font-weight: 400;
+  line-height: 1.00;
+}
+
+@media (min-width: 1280px) {
+  .text-display-hero {
+    font-size: 64px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .text-display-hero {
+    font-size: 80px;
+  }
+}
+
+.text-display-secondary {
+  font-family: var(--font-display);
+  font-size: 64px;
+  font-weight: 400;
+  line-height: 1.00;
+}
+
+.text-display-third {
+  font-family: var(--font-display);
+  font-size: 52px;
+  font-weight: 400;
+  line-height: 1.00;
+}
+
+.text-section-heading {
+  font-family: var(--font-ui);
+  font-size: 36px;
+  font-weight: 400;
+  line-height: 1.11;
+}
+
+.text-card-title {
+  font-family: var(--font-ui);
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 1.13;
+}
+
+.text-feature-title {
+  font-family: var(--font-ui);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.33;
+}
+
+.text-body {
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.56;
+}
+
+.text-body-sm {
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.50;
+}
+
+.text-btn {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.20;
+  letter-spacing: 0.16px;
+}
+
+.text-caption {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.50;
+}
+
+.text-small {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.23;
+}
+
+/* Backgrounds */
+.mesh-bg {
+  background-color: #0a0b0d;
+  background-image:
+    radial-gradient(ellipse 80% 70% at 75% 45%, rgba(0, 82, 255, 0.28) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 40% at 12% 80%, rgba(0, 82, 255, 0.12) 0%, transparent 55%);
+}
+
+.panel-dark {
+  background:
+    radial-gradient(ellipse 55% 52% at 52% 42%, rgba(0, 38, 180, 0.40) 0%, rgba(0, 20, 90, 0.10) 50%, transparent 68%),
+    #0a0b0d;
+}
+
+/* Button primitives */
+.btn-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 12px;
+  border-width: 1px;
+  border-style: solid;
+  padding: 14px 24px;
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.20;
+  letter-spacing: 0.16px;
+  cursor: pointer;
+  transition: background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.btn-pill:focus-visible {
+  outline: 2px solid #0a0b0d;
+  outline-offset: 2px;
+}
+
+.btn-pill:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-pill-light {
+  @apply bg-surface-muted border-surface-muted text-ink;
+}
+
+.btn-pill-light:not(:disabled):hover {
+  @apply bg-brand-hover border-brand-hover text-surface;
+}
+
+.btn-pill-dark {
+  @apply bg-surface-card border-surface-card text-surface;
+}
+
+.btn-pill-dark:not(:disabled):hover {
+  @apply bg-brand-hover border-brand-hover;
+}
+
+.btn-pill-outlined {
+  @apply bg-transparent border-brand text-brand;
+}
+
+.btn-pill-outlined:not(:disabled):hover {
+  @apply bg-brand-hover border-brand-hover text-surface;
+}
+
+.btn-pill-brand {
+  @apply bg-brand border-brand text-surface;
+}
+
+.btn-pill-brand:not(:disabled):hover {
+  @apply bg-brand-hover border-brand-hover;
+}
+
+@keyframes caret-blink {
+
+  0%,
+  49% {
+    opacity: 1;
+  }
+
+  50%,
+  99% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-caret {
+  animation: caret-blink 1.05s steps(1, end) infinite;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out both;
+}
+
+/* ── Scrollbar global ──────────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--app-border) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--app-border);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--app-text-subtle);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
