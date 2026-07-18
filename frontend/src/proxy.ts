@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 // Rotas acessíveis apenas sem autenticação
 const AUTH_ONLY_PATHS = ['/', '/login'];
 
-export function middleware(request: NextRequest): NextResponse {
+export function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('axios_token');
 
