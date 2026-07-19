@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -26,7 +27,7 @@ class ExportBatch extends Model
     ];
 
     protected $casts = [
-        'total_amount'      => 'decimal:2',
+        'total_amount'      => MoneyCast::class,
         'item_count' => 'integer',
     ];
 

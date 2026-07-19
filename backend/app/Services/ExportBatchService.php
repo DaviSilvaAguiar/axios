@@ -104,8 +104,9 @@ class ExportBatchService
                 'description'     => $expenseReport->description,
                 'provider'     => $expenseReport->user?->name ?? '—',
                 'cost_center'  => $expenseReport->costCenter?->description,
-                'amount'         => (float) $expenseReport->items->sum(
-                    fn ($d) => (float) ($d->unit_amount ?? 0) * (float) ($d->quantity ?? 1)
+                'amount'         => $expenseReport->items->reduce(
+                    fn (Money $carry, $d) => $carry->add(($d->unit_amount ?? Money::zero())->multiply((string) ($d->quantity ?? '1'))),
+                    Money::zero()
                 ),
                 'date'          => optional($expenseReport->created_at)->toIso8601String(),
                 'status'        => self::STATUS_EXPENSE_REPORT_LABEL[$expenseReport->status] ?? 'Unknown',
@@ -132,7 +133,7 @@ class ExportBatchService
                 'description'     => $reimbursement->title,
                 'provider'     => $reimbursement->user?->name ?? '—',
                 'cost_center'  => null,
-                'amount'         => (float) $reimbursement->items->sum(fn ($d) => (float) ($d->amount ?? 0)),
+                'amount'         => $reimbursement->items->reduce(fn (Money $carry, $d) => $carry->add($d->amount ?? Money::zero()), Money::zero()),
                 'date'          => optional($reimbursement->created_at)->toIso8601String(),
                 'status'        => self::STATUS_REIMBURSEMENT_LABEL[$reimbursement->status] ?? 'Unknown',
                 'type'          => ExportBatch::TYPE_REIMBURSEMENT,
@@ -149,17 +150,17 @@ class ExportBatchService
             ->whereNull('export_batch_id');
 
         $expenseReportCount  = (int) (clone $expenseReportQuery)->count();
-        $expenseReportAmount = (float) (clone $expenseReportQuery)
-            ->join('expense_report_item', 'caixa.id', '=', 'expense_report_item.expense_report_id')
-            ->sum(DB::raw('COALESCE(expense_report_item.unit_amount, 0) * COALESCE(expense_report_item.quantity, 1)'));
+        $expenseReportAmount = Money::fromDecimalString((string) (clone $expenseReportQuery)
+            ->join('expense_report_item', 'expense_report.id', '=', 'expense_report_item.expense_report_id')
+            ->sum(DB::raw('COALESCE(expense_report_item.unit_amount, 0) * COALESCE(expense_report_item.quantity, 1)')));
 
         $reimbursementQuery = Reimbursement::whereIn('status', [Reimbursement::STATUS_APPROVED, Reimbursement::STATUS_PAYMENT_SCHEDULED])
             ->whereNull('export_batch_id');
 
         $reimbursementCount  = (int) (clone $reimbursementQuery)->count();
-        $reimbursementAmount = (float) (clone $reimbursementQuery)
-            ->join('reimbursement_item', 'rcm.id', '=', 'reimbursement_item.reimbursement_id')
-            ->sum(DB::raw('COALESCE(reimbursement_item.amount, 0)'));
+        $reimbursementAmount = Money::fromDecimalString((string) (clone $reimbursementQuery)
+            ->join('reimbursement_item', 'reimbursement.id', '=', 'reimbursement_item.reimbursement_id')
+            ->sum(DB::raw('COALESCE(reimbursement_item.amount, 0)')));
 
         return [
             'expense_report' => ['quantity' => $expenseReportCount, 'amount' => $expenseReportAmount],
@@ -219,16 +220,18 @@ class ExportBatchService
         return $query->get();
     }
 
-    private function calculateTotalAmount(string $batchType, Collection $documents): float
+    private function calculateTotalAmount(string $batchType, Collection $documents): Money
     {
         if ($batchType === ExportBatch::TYPE_EXPENSE_REPORT) {
-            return (float) $documents->flatMap->items->sum(
-                fn ($expense): float => (float) ($expense->unit_amount ?? 0) * (float) ($expense->quantity ?? 1)
+            return $documents->flatMap->items->reduce(
+                fn (Money $carry, $expense) => $carry->add(($expense->unit_amount ?? Money::zero())->multiply((string) ($expense->quantity ?? '1'))),
+                Money::zero()
             );
         }
 
-        return (float) $documents->flatMap->items->sum(
-            fn ($expense): float => (float) ($expense->amount ?? 0)
+        return $documents->flatMap->items->reduce(
+            fn (Money $carry, $expense) => $carry->add($expense->amount ?? Money::zero()),
+            Money::zero()
         );
     }
 

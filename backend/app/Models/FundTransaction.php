@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -35,7 +36,7 @@ class FundTransaction extends Model
     protected $casts = [
         'transaction_type'  => 'integer',
         'subtype'         => 'integer',
-        'amount'           => 'decimal:2',
+        'amount'           => MoneyCast::class,
         'transaction_date'  => 'datetime',
     ];
 

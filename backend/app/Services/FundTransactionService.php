@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\Fund;
 use App\Models\FundTransaction;
+use App\Support\Money;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -13,8 +14,6 @@ use Illuminate\Validation\ValidationException;
 
 class FundTransactionService
 {
-    private const SCALE = 2;
-
     public function postCredit(int $fundId, array $data): FundTransaction
     {
         return DB::transaction(function () use ($fundId, $data): FundTransaction {
@@ -22,7 +21,7 @@ class FundTransactionService
                 ->lockForUpdate()
                 ->findOrFail($fundId);
 
-            $amount = $this->normalizeAmount($data['amount']);
+            $amount = Money::fromDecimalString($data['amount']);
 
             $transaction = FundTransaction::create([
                 'user_id'     => Auth::id(),
@@ -35,7 +34,7 @@ class FundTransactionService
                 'transaction_date' => $data['transaction_date'],
             ]);
 
-            $fund->balance = bcadd((string) $fund->balance, $amount, self::SCALE);
+            $fund->balance = $fund->balance->add($amount);
             $fund->save();
 
             return $transaction;
@@ -50,7 +49,7 @@ class FundTransactionService
                 ->findOrFail($fundId);
 
             $subtype = (int) $data['subtype'];
-            $amount   = $this->normalizeAmount($data['amount']);
+            $amount   = Money::fromDecimalString($data['amount']);
 
             $isDebit = in_array($subtype, [
                 FundTransaction::SUBTYPE_DEVOLUCAO,
@@ -60,10 +59,10 @@ class FundTransactionService
             $type = $isDebit ? FundTransaction::TYPE_DEBITO : FundTransaction::TYPE_CREDITO;
 
             $newBalance = $isDebit
-                ? bcsub((string) $fund->balance, $amount, self::SCALE)
-                : bcadd((string) $fund->balance, $amount, self::SCALE);
+                ? $fund->balance->subtract($amount)
+                : $fund->balance->add($amount);
 
-            if (bccomp($newBalance, '0', self::SCALE) === -1) {
+            if ($newBalance->isNegative()) {
                 throw ValidationException::withMessages([
                     'amount' => ['The fund balance would become negative with this adjustment.'],
                 ]);
@@ -87,17 +86,16 @@ class FundTransactionService
         });
     }
 
-    public function postDebitFromExpenseReport(int $fundId, int $expenseReportId, string $amount): FundTransaction
+    public function postDebitFromExpenseReport(int $fundId, int $expenseReportId, Money $amount): FundTransaction
     {
         return DB::transaction(function () use ($fundId, $expenseReportId, $amount): FundTransaction {
             $fund = Fund::where('status', Fund::STATUS_ACTIVE)
                 ->lockForUpdate()
                 ->findOrFail($fundId);
 
-            $amount = $this->normalizeAmount($amount);
-            $newBalance = bcsub((string) $fund->balance, $amount, self::SCALE);
+            $newBalance = $fund->balance->subtract($amount);
 
-            if (bccomp($newBalance, '0', self::SCALE) === -1) {
+            if ($newBalance->isNegative()) {
                 throw ValidationException::withMessages([
                     'balance' => ['Insufficient fund balance to charge the expense report.'],
                 ]);
@@ -128,48 +126,25 @@ class FundTransactionService
             ->orderBy('id', 'asc')
             ->get();
 
-        $accumulatedBalance = '0';
+        $accumulatedBalance = Money::zero();
 
         return $transactions->map(function (FundTransaction $t) use (&$accumulatedBalance) {
-            $amount = (string) $t->amount;
             $accumulatedBalance = $t->transaction_type === FundTransaction::TYPE_CREDITO
-                ? bcadd($accumulatedBalance, $amount, self::SCALE)
-                : bcsub($accumulatedBalance, $amount, self::SCALE);
+                ? $accumulatedBalance->add($t->amount)
+                : $accumulatedBalance->subtract($t->amount);
 
             return [
                 'id'              => $t->id,
                 'transaction_date'  => $t->transaction_date,
                 'transaction_type'  => $t->transaction_type,
                 'subtype'         => $t->subtype,
-                'amount'           => $amount,
+                'amount'           => $t->amount,
                 'notes'      => $t->notes,
                 'reason'          => $t->reason,
                 'expense_report_id'        => $t->expense_report_id,
-                'expense_report'           => $t->caixa,
+                'expense_report'           => $t->expenseReport,
                 'accumulated_balance' => $accumulatedBalance,
             ];
         });
-    }
-
-    private function normalizeAmount(mixed $amount): string
-    {
-        if (is_numeric($amount)) {
-            return number_format((float) $amount, self::SCALE, '.', '');
-        }
-
-        $cleaned = str_replace([' ', "\u{00A0}"], '', (string) $amount);
-
-        if (str_contains($cleaned, ',')) {
-            $cleaned = str_replace('.', '', $cleaned);
-            $cleaned = str_replace(',', '.', $cleaned);
-        }
-
-        if (!is_numeric($cleaned)) {
-            throw ValidationException::withMessages([
-                'amount' => ['Invalid monetary amount.'],
-            ]);
-        }
-
-        return number_format((float) $cleaned, self::SCALE, '.', '');
     }
 }

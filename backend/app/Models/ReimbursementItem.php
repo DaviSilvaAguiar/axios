@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -28,7 +29,7 @@ class ReimbursementItem extends Model
     ];
 
     protected $casts = [
-        'amount'                => 'decimal:2',
+        'amount'                => MoneyCast::class,
         'reimbursement_id'               => 'integer',
         'cost_center_id'      => 'integer',
         'expense_category_id' => 'integer',

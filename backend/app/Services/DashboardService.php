@@ -71,9 +71,9 @@ class DashboardService
             $result[] = [
                 'year'        => $cursor->year,
                 'month'       => $cursor->month,
-                'credits'     => bcadd($data['credits'], '0', 2),
-                'debits'      => bcadd($data['debits'], '0', 2),
-                'net_balance' => bcsub($data['credits'], $data['debits'], 2),
+                'credits'     => Money::fromDecimalString($data['credits']),
+                'debits'      => Money::fromDecimalString($data['debits']),
+                'net_balance' => Money::fromDecimalString($data['credits'])->subtract(Money::fromDecimalString($data['debits'])),
             ];
             $cursor->addMonth();
         }
@@ -92,8 +92,8 @@ class DashboardService
 
         return $reimbursements->map(function (Reimbursement $r) {
             $totalAmount = $r->items->reduce(
-                fn ($acc, $d) => bcadd((string) $acc, (string) ($d->amount ?? '0'), 2),
-                '0'
+                fn (Money $acc, $d) => $acc->add($d->amount ?? Money::zero()),
+                Money::zero()
             );
 
             return [
@@ -115,8 +115,8 @@ class DashboardService
             ->get(['id', 'description', 'requester_description', 'requester_user_id', 'status', 'created_at'])
             ->map(function (ExpenseReport $c) {
                 $totalAmount = $c->items->reduce(
-                    fn ($acc, $d) => bcadd((string) $acc, (string) ($d->amount ?? '0'), 2),
-                    '0'
+                    fn (Money $acc, $d) => $acc->add($d->amount ?? Money::zero()),
+                    Money::zero()
                 );
 
                 return [
@@ -136,8 +136,8 @@ class DashboardService
             ->get(['id', 'title', 'requester_name', 'user_id', 'status', 'created_at'])
             ->map(function (Reimbursement $r) {
                 $totalAmount = $r->items->reduce(
-                    fn ($acc, $d) => bcadd((string) $acc, (string) ($d->amount ?? '0'), 2),
-                    '0'
+                    fn (Money $acc, $d) => $acc->add($d->amount ?? Money::zero()),
+                    Money::zero()
                 );
 
                 return [

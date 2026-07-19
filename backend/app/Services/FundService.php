@@ -47,7 +47,7 @@ class FundService
     {
         $fund = Fund::findOrFail($id);
 
-        if ((float) $fund->balance !== 0.0) {
+        if (!$fund->balance->isZero()) {
             throw ValidationException::withMessages([
                 'balance' => ['The fund can only be closed with a balance of R$ 0.00.'],
             ]);

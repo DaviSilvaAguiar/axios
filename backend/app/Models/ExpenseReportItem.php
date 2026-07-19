@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -41,9 +42,9 @@ class ExpenseReportItem extends Model
         'expense_category_id' => 'integer',
         'supplier_id'        => 'integer',
         'expense_date'         => 'datetime',
-        'amount'                => 'decimal:2',
+        'amount'                => MoneyCast::class,
         'quantity'           => 'decimal:2',
-        'unit_amount'       => 'decimal:2',
+        'unit_amount'       => MoneyCast::class,
         'document_number'     => 'integer',
         'document_series'      => 'integer',
         'latitude'             => 'decimal:7',

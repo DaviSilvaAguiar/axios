@@ -151,12 +151,12 @@ class ExpenseReportService
                 ]);
             }
 
-            $amountTotal = '0';
+            $amountTotal = Money::zero();
             foreach ($expenseReport->items as $item) {
-                $amountTotal = bcadd($amountTotal, (string) $item->amount, 2);
+                $amountTotal = $amountTotal->add($item->amount ?? Money::zero());
             }
 
-            if (bccomp($amountTotal, '0', 2) === 0) {
+            if ($amountTotal->isZero()) {
                 throw ValidationException::withMessages([
                     'items' => ['Cannot approve an expense report without items.'],
                 ]);

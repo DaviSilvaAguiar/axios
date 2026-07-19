@@ -144,7 +144,7 @@ class IntegrationDispatchService
             ];
         })->all();
 
-        $total      = $expenseReport->items->sum(fn (ExpenseReportItem $d): float => $this->amountExpenseReportItem($d));
+        $total      = $expenseReport->items->reduce(fn (Money $carry, ExpenseReportItem $d) => $carry->add($this->amountExpenseReportItem($d)), Money::zero());
         $competence = $expenseReport->needed_at ?? $expenseReport->created_at;
         $dueDate    = $expenseReport->paid_at;
 
@@ -173,11 +173,11 @@ class IntegrationDispatchService
             return [
                 'id_plan_accounts_entities' => $this->categoryCode($d),
                 'id_cost_centers'           => $this->costCenterCode($d),
-                'value_in_cent'             => $this->toCents((float) ($d->amount ?? 0)),
+                'value_in_cent'             => $this->toCents($d->amount ?? Money::zero()),
             ];
         })->all();
 
-        $total      = (float) $reimbursement->items->sum(fn (ReimbursementItem $d): float => (float) ($d->amount ?? 0));
+        $total      = $reimbursement->items->reduce(fn (Money $carry, ReimbursementItem $d) => $carry->add($d->amount ?? Money::zero()), Money::zero());
         $competence = $reimbursement->period_start_date ?? $reimbursement->created_at;
         $dueDate    = $reimbursement->scheduled_payment_date ?? Carbon::now(self::TIMEZONE_LOCAL)->addDays(7);
 
@@ -226,17 +226,17 @@ class IntegrationDispatchService
         return (int) $code;
     }
 
-    private function amountExpenseReportItem(ExpenseReportItem $d): float
+    private function amountExpenseReportItem(ExpenseReportItem $d): Money
     {
         if ($d->amount !== null) {
-            return (float) $d->amount;
+            return $d->amount;
         }
-        return (float) ($d->unit_amount ?? 0) * (float) ($d->quantity ?? 1);
+        return ($d->unit_amount ?? Money::zero())->multiply((string) ($d->quantity ?? '1'));
     }
 
-    private function toCents(float $amount): int
+    private function toCents(Money $amount): int
     {
-        return (int) round($amount * 100);
+        return $amount->cents();
     }
 
     private function cleanText(?string $text): ?string
@@ -260,15 +260,15 @@ class IntegrationDispatchService
         return $query->get();
     }
 
-    private function calculateTotalAmount(string $batchType, array $documents): float
+    private function calculateTotalAmount(string $batchType, array $documents): Money
     {
-        $total = 0.0;
+        $total = Money::zero();
 
         foreach ($documents as $doc) {
             if ($batchType === ExportBatch::TYPE_EXPENSE_REPORT) {
-                $total += (float) $doc->items->sum(fn (ExpenseReportItem $d): float => $this->amountExpenseReportItem($d));
+                $total = $doc->items->reduce(fn (Money $carry, ExpenseReportItem $d) => $carry->add($this->amountExpenseReportItem($d)), $total);
             } else {
-                $total += (float) $doc->items->sum(fn (ReimbursementItem $d): float => (float) ($d->amount ?? 0));
+                $total = $doc->items->reduce(fn (Money $carry, ReimbursementItem $d) => $carry->add($d->amount ?? Money::zero()), $total);
             }
         }
 
