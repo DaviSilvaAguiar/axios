@@ -10,18 +10,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('leads', function (Blueprint $table): void {
+        Schema::create('reimbursement_attachment', function (Blueprint $table): void {
             $table->id();
-            $table->string('name');
-            $table->string('email');
-            $table->string('company');
-            $table->string('monthly_project_volume');
+            $table->foreignId('reimbursement_item_id')->constrained('reimbursement_item')->cascadeOnDelete();
+            $table->string('path');
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('leads');
+        Schema::dropIfExists('reimbursement_attachment');
     }
 };

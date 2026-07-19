@@ -10,18 +10,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('leads', function (Blueprint $table): void {
+        Schema::create('user_module', function (Blueprint $table): void {
             $table->id();
-            $table->string('name');
-            $table->string('email');
-            $table->string('company');
-            $table->string('monthly_project_volume');
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('module_id');
+            $table->unique(['user_id', 'module_id']);
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('leads');
+        Schema::dropIfExists('user_module');
     }
 };

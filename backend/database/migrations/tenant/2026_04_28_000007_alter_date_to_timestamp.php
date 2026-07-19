@@ -10,27 +10,27 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('rcm', function (Blueprint $table): void {
-            $table->timestamp('data_inicio_periodo')->change();
-            $table->timestamp('data_fim_periodo')->change();
-            $table->timestamp('data_pagamento_programado')->nullable()->change();
+        Schema::table('reimbursement', function (Blueprint $table): void {
+            $table->timestamp('period_start_date')->change();
+            $table->timestamp('period_end_date')->change();
+            $table->timestamp('scheduled_payment_date')->nullable()->change();
         });
 
-        Schema::table('despesa_rcm', function (Blueprint $table): void {
-            $table->timestamp('data_despesa')->change();
+        Schema::table('reimbursement_item', function (Blueprint $table): void {
+            $table->timestamp('expense_date')->change();
         });
     }
 
     public function down(): void
     {
-        Schema::table('rcm', function (Blueprint $table): void {
-            $table->date('data_inicio_periodo')->change();
-            $table->date('data_fim_periodo')->change();
-            $table->date('data_pagamento_programado')->nullable()->change();
+        Schema::table('reimbursement', function (Blueprint $table): void {
+            $table->date('period_start_date')->change();
+            $table->date('period_end_date')->change();
+            $table->date('scheduled_payment_date')->nullable()->change();
         });
 
-        Schema::table('despesa_rcm', function (Blueprint $table): void {
-            $table->date('data_despesa')->change();
+        Schema::table('reimbursement_item', function (Blueprint $table): void {
+            $table->date('expense_date')->change();
         });
     }
 };

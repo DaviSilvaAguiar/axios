@@ -10,18 +10,20 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('leads', function (Blueprint $table): void {
+        Schema::create('user', function (Blueprint $table): void {
             $table->id();
+            $table->tinyInteger('role')->unsigned();
             $table->string('name');
-            $table->string('email');
-            $table->string('company');
-            $table->string('monthly_project_volume');
+            $table->string('email')->unique();
+            $table->string('password');
+            $table->boolean('active')->default(true);
+            $table->string('erp_code')->nullable();
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('leads');
+        Schema::dropIfExists('user');
     }
 };

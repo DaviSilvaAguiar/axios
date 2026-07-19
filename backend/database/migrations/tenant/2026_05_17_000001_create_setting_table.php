@@ -10,18 +10,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('leads', function (Blueprint $table): void {
+        Schema::create('setting', function (Blueprint $table): void {
             $table->id();
-            $table->string('name');
-            $table->string('email');
-            $table->string('company');
-            $table->string('monthly_project_volume');
+            $table->string('parameter')->unique();
+            $table->tinyInteger('amount')->default(0);
+            $table->string('description');
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('leads');
+        Schema::dropIfExists('setting');
     }
 };

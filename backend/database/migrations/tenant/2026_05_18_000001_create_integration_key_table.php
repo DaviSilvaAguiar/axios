@@ -10,18 +10,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('leads', function (Blueprint $table): void {
+        Schema::create('integration_key', function (Blueprint $table): void {
             $table->id();
-            $table->string('name');
-            $table->string('email');
-            $table->string('company');
-            $table->string('monthly_project_volume');
+            $table->unsignedBigInteger('integration_id')->index();
+            $table->text('key');
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('leads');
+        Schema::dropIfExists('integration_key');
     }
 };

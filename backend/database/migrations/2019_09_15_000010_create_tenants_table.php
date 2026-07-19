@@ -13,14 +13,14 @@ return new class extends Migration
         Schema::create('tenants', function (Blueprint $table): void {
             $table->id();
             $table->string('slug')->unique();
-            $table->string('razao_social');
-            $table->string('fantasia')->nullable();
+            $table->string('legal_name');
+            $table->string('trade_name')->nullable();
             $table->string('cnpj', 14)->unique();
             $table->string('ie', 20)->nullable();
-            $table->string('endereco')->nullable();
-            $table->string('cep', 8)->nullable();
-            $table->string('numero', 20)->nullable();
-            $table->string('codigo_ibge', 7)->nullable();
+            $table->string('address')->nullable();
+            $table->string('postal_code', 8)->nullable();
+            $table->string('number', 20)->nullable();
+            $table->string('ibge_code', 7)->nullable();
             $table->char('uf', 2)->nullable();
             $table->json('data')->nullable();
             $table->decimal('mrr', 10, 2)->default(0);
