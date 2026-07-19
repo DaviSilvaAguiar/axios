@@ -10,20 +10,16 @@ use InvalidArgumentException;
 
 class ExportHandlerFactory
 {
-    /**
-     * @param string $template
-     * @return ExportHandlerInterface
-     */
     public static function make(string $template): ExportHandlerInterface
     {
-        $templates = Config::get('exportacao.templates', []);
+        $templates = Config::get('export.templates', []);
 
         foreach ($templates as $entry) {
-            if (($entry['codigo'] ?? null) === $template) {
+            if (($entry['code'] ?? null) === $template) {
                 return app($entry['handler']);
             }
         }
 
-        throw new InvalidArgumentException("Template de exportação [{$template}] não suportado.");
+        throw new InvalidArgumentException("Export template [{$template}] not supported.");
     }
 }

@@ -20,13 +20,13 @@ class TenancyServiceProvider extends ServiceProvider
     public function events(): array
     {
         return [
-            // Tenant events
+
             Events\CreatingTenant::class => [],
             Events\TenantCreated::class  => [
                 JobPipeline::make([
                     Jobs\CreateDatabase::class,
                     Jobs\MigrateDatabase::class,
-                    // Jobs\SeedDatabase::class,
+
                 ])->send(fn(Events\TenantCreated $event) => $event->tenant)
                   ->shouldBeQueued(false),
             ],
@@ -42,14 +42,12 @@ class TenancyServiceProvider extends ServiceProvider
                   ->shouldBeQueued(false),
             ],
 
-            // Database events
             Events\DatabaseCreated::class   => [],
             Events\DatabaseMigrated::class  => [],
             Events\DatabaseSeeded::class    => [],
             Events\DatabaseRolledBack::class => [],
             Events\DatabaseDeleted::class   => [],
 
-            // Tenancy lifecycle events
             Events\InitializingTenancy::class => [],
             Events\TenancyInitialized::class  => [
                 Listeners\BootstrapTenancy::class,
@@ -63,7 +61,6 @@ class TenancyServiceProvider extends ServiceProvider
             Events\RevertingToCentralContext::class => [],
             Events\RevertedToCentralContext::class  => [],
 
-            // Resource syncing
             Events\SyncedResourceSaved::class => [
                 Listeners\UpdateSyncedResource::class,
             ],

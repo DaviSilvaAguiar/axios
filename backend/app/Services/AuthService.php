@@ -4,61 +4,50 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Modulo;
-use App\Models\Usuario;
-use App\Models\UsuarioModulo;
+use App\Models\Module;
+use App\Models\User;
+use App\Models\UserModule;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Facades\Hash;
 
 class AuthService
 {
-    /**
-     * Autentica o usuário e retorna o token de acesso junto com os dados do tenant.
-     *
-     * @throws AuthenticationException
-     */
-    public function login(array $dados): array
+    public function login(array $data): array
     {
-        $usuario = Usuario::where('email', $dados['email'])->first();
+        $user = User::where('email', $data['email'])->first();
 
-        if (! $usuario || ! Hash::check($dados['senha'], $usuario->senha)) {
-            throw new AuthenticationException('Credenciais inválidas.');
+        if (! $user || ! Hash::check($data['password'], $user->password)) {
+            throw new AuthenticationException('Invalid credentials.');
         }
 
-        if (! $usuario->ativo) {
-            throw new AuthenticationException('Usuário inativo.');
+        if (! $user->active) {
+            throw new AuthenticationException('Inactive user.');
         }
 
-        $usuario->tokens()->delete();
-        $dias      = ($dados['remember_me'] ?? false) ? 365 : 30;
-        $expiresAt = now()->addDays($dias);
-        $token     = $usuario->createToken('api', ['*'], $expiresAt)->plainTextToken;
+        $user->tokens()->delete();
+        $days      = ($data['remember_me'] ?? false) ? 365 : 30;
+        $expiresAt = now()->addDays($days);
+        $token     = $user->createToken('api', ['*'], $expiresAt)->plainTextToken;
 
         return [
             'token'      => $token,
             'expires_at' => $expiresAt->toISOString(),
-            'usuario'    => $usuario,
+            'user'       => $user,
             'tenant'     => tenancy()->tenant,
         ];
     }
 
-    /**
-     * Revoga o token atual do usuário autenticado.
-     */
-    public function logout(Usuario $usuario): void
+    public function logout(User $user): void
     {
-        $usuario->currentAccessToken()->delete();
+        $user->currentAccessToken()->delete();
     }
 
-    /**
-     * Retorna o usuário autenticado, dados do tenant e slugs de módulos habilitados.
-     */
-    public function me(Usuario $usuario): array
+    public function me(User $user): array
     {
         return [
-            'usuario' => $usuario,
+            'user'    => $user,
             'tenant'  => tenancy()->tenant,
-            'modulos' => $usuario->slugsModulosHabilitados(),
+            'modules' => $user->enabledModuleSlugs(),
         ];
     }
 }

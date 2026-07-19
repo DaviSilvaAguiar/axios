@@ -17,11 +17,7 @@ class ReceitaWsService
         $this->urlBase = env('RECEITAWS_URL');
     }
 
-    /**
-     * @param string $cnpj Apenas dígitos.
-     * @return array{descricao:string|null,email:string|null,telefone:string|null,cep:string|null,logradouro:string|null,numero:string|null,complemento:string|null,bairro:string|null,cidade:string|null,uf:string|null}|null
-     */
-    public function consultarCnpj(string $cnpj): ?array
+    public function lookupCnpj(string $cnpj): ?array
     {
         $cnpj = preg_replace('/\D/', '', $cnpj) ?? '';
 
@@ -32,7 +28,7 @@ class ReceitaWsService
         try {
             $response = Http::acceptJson()->timeout(10)->get($this->urlBase . $cnpj);
         } catch (Throwable $e) {
-            Log::warning('[ReceitaWS] erro de transporte', ['cnpj' => $cnpj, 'erro' => $e->getMessage()]);
+            Log::warning('[ReceitaWS] transport error', ['cnpj' => $cnpj, 'error' => $e->getMessage()]);
             return null;
         }
 
@@ -41,50 +37,50 @@ class ReceitaWsService
             return null;
         }
 
-        $dados = $response->json();
+        $data = $response->json();
 
-        if (!is_array($dados) || ($dados['status'] ?? null) === 'ERROR') {
+        if (!is_array($data) || ($data['status'] ?? null) === 'ERROR') {
             return null;
         }
 
         return [
-            'descricao'   => $this->primeiroPreenchido($dados['nome'] ?? null, $dados['fantasia'] ?? null),
-            'email'       => $this->normalizarString($dados['email'] ?? null),
-            'telefone'    => $this->normalizarString($dados['telefone'] ?? null),
-            'cep'         => $this->somenteDigitos($dados['cep'] ?? null),
-            'logradouro'  => $this->normalizarString($dados['logradouro'] ?? null),
-            'numero'      => $this->normalizarString($dados['numero'] ?? null),
-            'complemento' => $this->normalizarString($dados['complemento'] ?? null),
-            'bairro'      => $this->normalizarString($dados['bairro'] ?? null),
-            'cidade'      => $this->normalizarString($dados['municipio'] ?? null),
-            'uf'          => $this->normalizarString($dados['uf'] ?? null),
+            'description'   => $this->firstFilled($data['name'] ?? null, $data['trade_name'] ?? null),
+            'email'       => $this->normalizeString($data['email'] ?? null),
+            'phone'    => $this->normalizeString($data['phone'] ?? null),
+            'postal_code'         => $this->onlyDigits($data['postal_code'] ?? null),
+            'street'  => $this->normalizeString($data['street'] ?? null),
+            'number'      => $this->normalizeString($data['number'] ?? null),
+            'complement' => $this->normalizeString($data['complement'] ?? null),
+            'district'      => $this->normalizeString($data['district'] ?? null),
+            'city'      => $this->normalizeString($data['city'] ?? null),
+            'uf'          => $this->normalizeString($data['uf'] ?? null),
         ];
     }
 
-    private function primeiroPreenchido(?string $a, ?string $b): ?string
+    private function firstFilled(?string $a, ?string $b): ?string
     {
-        $a = $this->normalizarString($a);
+        $a = $this->normalizeString($a);
         if ($a !== null) {
             return $a;
         }
-        return $this->normalizarString($b);
+        return $this->normalizeString($b);
     }
 
-    private function normalizarString(?string $valor): ?string
+    private function normalizeString(?string $amount): ?string
     {
-        if ($valor === null) {
+        if ($amount === null) {
             return null;
         }
-        $trim = trim($valor);
+        $trim = trim($amount);
         return $trim === '' ? null : $trim;
     }
 
-    private function somenteDigitos(?string $valor): ?string
+    private function onlyDigits(?string $amount): ?string
     {
-        if ($valor === null) {
+        if ($amount === null) {
             return null;
         }
-        $digitos = preg_replace('/\D/', '', $valor) ?? '';
-        return $digitos === '' ? null : $digitos;
+        $digits = preg_replace('/\D/', '', $amount) ?? '';
+        return $digits === '' ? null : $digits;
     }
 }

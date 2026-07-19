@@ -8,11 +8,6 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 trait Paginates
 {
-    /**
-     * @param int $default
-     * @param int $max
-     * @return int
-     */
     protected function perPage(int $default = 50, int $max = 200): int
     {
         $value = (int) request()->query('per_page', (string) $default);
@@ -20,9 +15,6 @@ trait Paginates
         return max(1, min($max, $value));
     }
 
-    /**
-     * @return int
-     */
     protected function currentPage(): int
     {
         $value = (int) request()->query('page', '1');
@@ -30,11 +22,6 @@ trait Paginates
         return max(1, $value);
     }
 
-    /**
-     * @param LengthAwarePaginator $paginator
-     * @param array|null $items
-     * @return array
-     */
     protected function paginated(LengthAwarePaginator $paginator, ?array $items = null): array
     {
         return [

@@ -17,7 +17,7 @@ class InitializeTenancyByHeader
 
         if (!$tenantId) {
             return response()->json([
-                'message' => 'Empresa não encontrada',
+                'message' => 'Company not found',
             ], 400);
         }
 
@@ -25,7 +25,7 @@ class InitializeTenancyByHeader
 
         if (!$tenant) {
             return response()->json([
-                'message' => 'Empresa não encontrada.',
+                'message' => 'Company not found.',
             ], 404);
         }
 

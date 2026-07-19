@@ -11,37 +11,31 @@ use RuntimeException;
 
 class ControlleApiService
 {
-    private string $urlLancamento;
+    private string $transactionUrl;
 
     public function __construct()
     {
-        $this->urlLancamento = env('CONTROLLE_API_URL');
+        $this->transactionUrl = env('CONTROLLE_API_URL');
     }
 
-    /**
-     * @param string $chave Token Bearer (já decifrado).
-     * @param array $payload Body conforme contrato OpenAPI do Controlle.
-     * @return array Resposta decodificada da API.
-     * @throws RuntimeException
-     */
-    public function criarLancamento(string $chave, array $payload): array
+    public function createTransaction(string $key, array $payload): array
     {
         Log::info('[Controlle] REQUEST', [
-            'url'           => $this->urlLancamento,
-            'chave_prefix'  => substr($chave, 0, 8) . '...',
-            'chave_length'  => strlen($chave),
+            'url'           => $this->transactionUrl,
+            'key_prefix'  => substr($key, 0, 8) . '...',
+            'key_length'  => strlen($key),
             'payload'       => $payload,
         ]);
 
         $response = Http::withHeaders([
-                'Authorization' => "Bearer {$chave}",
+                'Authorization' => "Bearer {$key}",
                 'Accept'        => 'application/json',
             ])
             ->acceptJson()
             ->asJson()
             ->timeout(20)
             ->withOptions(['allow_redirects' => false])
-            ->post($this->urlLancamento, $payload);
+            ->post($this->transactionUrl, $payload);
 
         Log::info('[Controlle] RESPONSE', [
             'status'   => $response->status(),
@@ -50,30 +44,26 @@ class ControlleApiService
         ]);
 
         if ($response->status() >= 300 && $response->status() < 400) {
-            $destino = $response->header('Location') ?: '(sem header Location)';
+            $target = $response->header('Location') ?: '(no Location header)';
             throw new RuntimeException(
-                "Controlle redirecionou ({$response->status()}) para [{$destino}]. POSTs estavam virando GET — esse era o motivo de '200 OK' sem criar nada."
+                "Controlle redirected ({$response->status()}) to [{$target}]. POSTs were being turned into GET — that was the reason for '200 OK' creating nothing."
             );
         }
 
         if ($response->failed()) {
-            throw new RuntimeException($this->mensagemErro($response));
+            throw new RuntimeException($this->errorMessage($response));
         }
 
         return $response->json() ?? [];
     }
 
-    /**
-     * @param Response $response
-     * @return string
-     */
-    private function mensagemErro(Response $response): string
+    private function errorMessage(Response $response): string
     {
         $body = $response->json();
-        $detalhe = is_array($body)
+        $detail = is_array($body)
             ? (json_encode($body, JSON_UNESCAPED_UNICODE) ?: $response->body())
             : $response->body();
 
-        return "Controlle respondeu HTTP {$response->status()}: {$detalhe}";
+        return "Controlle responded HTTP {$response->status()}: {$detail}";
     }
 }

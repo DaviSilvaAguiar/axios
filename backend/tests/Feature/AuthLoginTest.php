@@ -6,12 +6,6 @@ namespace Tests\Feature;
 
 use Tests\TestCase;
 
-/**
- * Testes de TTL do token de autenticação.
- *
- * Pré-requisito: requer um tenant ativo com usuário admin@teste.com / senha123.
- * Sem essa configuração, os testes retornam 404 e falham.
- */
 class AuthLoginTest extends TestCase
 {
     public function test_login_sem_remember_me_gera_token_com_30_dias(): void

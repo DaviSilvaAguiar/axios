@@ -16,12 +16,12 @@ class LeadController extends Controller
 
     public function store(StoreLeadRequest $request): JsonResponse
     {
-        $dados = $request->validated();
+        $data = $request->validated();
 
-        $lead = $this->service->registrar($dados);
+        $lead = $this->service->register($data);
 
         return response()->json([
-            'mensagem' => 'Demonstração solicitada com sucesso.',
+            'message' => 'Demo requested successfully.',
             'lead'     => $lead,
         ], 201);
     }

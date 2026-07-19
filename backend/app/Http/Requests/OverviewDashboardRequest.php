@@ -16,8 +16,8 @@ class OverviewDashboardRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'ano' => ['nullable', 'integer', 'min:1900', 'max:2200'],
-            'mes' => ['nullable', 'integer', 'min:1', 'max:12'],
+            'year' => ['nullable', 'integer', 'min:1900', 'max:2200'],
+            'month' => ['nullable', 'integer', 'min:1', 'max:12'],
         ];
     }
 }

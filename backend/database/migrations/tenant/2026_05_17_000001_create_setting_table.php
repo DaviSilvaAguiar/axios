@@ -13,7 +13,7 @@ return new class extends Migration
         Schema::create('setting', function (Blueprint $table): void {
             $table->id();
             $table->string('parameter')->unique();
-            $table->tinyInteger('amount')->default(0);
+            $table->tinyInteger('value')->default(0);
             $table->string('description');
             $table->timestamps();
         });

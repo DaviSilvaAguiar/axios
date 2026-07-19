@@ -8,8 +8,8 @@ use App\Models\Lead;
 
 class LeadService
 {
-    public function registrar(array $dados): Lead
+    public function register(array $data): Lead
     {
-        return Lead::create($dados);
+        return Lead::create($data);
     }
 }

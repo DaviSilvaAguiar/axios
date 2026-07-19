@@ -18,18 +18,18 @@ class DashboardController extends Controller
     public function overview(OverviewDashboardRequest $request): JsonResponse
     {
         $now = Carbon::now();
-        $ano = (int) ($request->validated('ano') ?? $now->year);
-        $mes = (int) ($request->validated('mes') ?? $now->month);
+        $year = (int) ($request->validated('year') ?? $now->year);
+        $month = (int) ($request->validated('month') ?? $now->month);
 
         return response()->json([
-            'data' => $this->service->overview($ano, $mes),
+            'data' => $this->service->overview($year, $month),
         ]);
     }
 
-    public function pendentesAprovacao(): JsonResponse
+    public function pendingApproval(): JsonResponse
     {
         return response()->json([
-            'data' => $this->service->pendentesAprovacao(10),
+            'data' => $this->service->pendingApproval(10),
         ]);
     }
 }

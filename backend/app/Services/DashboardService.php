@@ -4,84 +4,76 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Caixa;
-use App\Models\CaixaConta;
-use App\Models\CaixaTransacoes;
-use App\Models\LoteExportacao;
-use App\Models\Rcm;
+use App\Models\ExpenseReport;
+use App\Models\Fund;
+use App\Models\FundTransaction;
+use App\Models\ExportBatch;
+use App\Models\Reimbursement;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class DashboardService
 {
-    /**
-     * Visão geral do dashboard administrativo/auditor.
-     *
-     * @return array{kpis: array, movimentacao_mensal: array, proximos_pagamentos: array, top_centros_custo_mes: array}
-     */
-    public function overview(int $ano, int $mes): array
+    public function overview(int $year, int $month): array
     {
         return [
-            'kpis'                  => $this->kpis($ano, $mes),
-            'movimentacao_mensal'   => $this->movimentacaoMensal($ano, $mes),
-            'proximos_pagamentos'   => $this->proximosPagamentos(),
-            'top_centros_custo_mes' => $this->topCentrosCustoMes($ano, $mes),
+            'kpis'                    => $this->kpis($year, $month),
+            'monthly_movement'        => $this->monthlyMovement($year, $month),
+            'upcoming_payments'       => $this->upcomingPayments(),
+            'top_cost_centers_month'  => $this->topCostCentersMonth($year, $month),
         ];
     }
 
-    private function kpis(int $ano, int $mes): array
+    private function kpis(int $year, int $month): array
     {
         return [
-            'caixas_ativos'        => (int) CaixaConta::where('status', CaixaConta::STATUS_ATIVO)->count(),
-            'saldo_total'          => (string) CaixaConta::where('status', CaixaConta::STATUS_ATIVO)->sum('saldo'),
-            'rdcs_pendentes'       => (int) Caixa::where('status', Caixa::STATUS_PENDENTE)->count(),
-            'lotes_exportados_mes' => (int) LoteExportacao::whereYear('created_at', $ano)
-                ->whereMonth('created_at', $mes)
+            'active_funds'             => (int) Fund::where('status', Fund::STATUS_ACTIVE)->count(),
+            'total_balance'            => (string) Fund::where('status', Fund::STATUS_ACTIVE)->sum('balance'),
+            'pending_expense_reports'  => (int) ExpenseReport::where('status', ExpenseReport::STATUS_PENDING)->count(),
+            'exported_batches_month'   => (int) ExportBatch::whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
                 ->count(),
         ];
     }
 
-    /**
-     * 12 meses terminando no mês selecionado (inclusive), com meses vazios preenchidos com zero.
-     */
-    private function movimentacaoMensal(int $ano, int $mes): array
+    private function monthlyMovement(int $year, int $month): array
     {
-        $inicioMes = Carbon::create($ano, $mes, 1);
-        $fim       = $inicioMes->copy()->endOfMonth();
-        // Subtrai 11 meses a partir do dia 1 (evita overflow de end-of-month do Carbon).
-        $inicio    = $inicioMes->copy()->subMonths(11);
+        $startOfMonth = Carbon::create($year, $month, 1);
+        $end          = $startOfMonth->copy()->endOfMonth();
 
-        $rows = CaixaTransacoes::selectRaw(
-            'YEAR(data_transacao) as ano, MONTH(data_transacao) as mes, tipo_transacao, SUM(valor) as total'
+        $start        = $startOfMonth->copy()->subMonths(11);
+
+        $rows = FundTransaction::selectRaw(
+            'YEAR(transaction_date) as year, MONTH(transaction_date) as month, transaction_type, SUM(amount) as total'
         )
-            ->whereBetween('data_transacao', [$inicio, $fim])
-            ->groupByRaw('YEAR(data_transacao), MONTH(data_transacao), tipo_transacao')
+            ->whereBetween('transaction_date', [$start, $end])
+            ->groupByRaw('YEAR(transaction_date), MONTH(transaction_date), transaction_type')
             ->get();
 
         $byMonth = [];
         foreach ($rows as $row) {
-            $key = sprintf('%04d-%02d', (int) $row->ano, (int) $row->mes);
+            $key = sprintf('%04d-%02d', (int) $row->year, (int) $row->month);
             if (!isset($byMonth[$key])) {
-                $byMonth[$key] = ['creditos' => '0', 'debitos' => '0'];
+                $byMonth[$key] = ['credits' => '0', 'debits' => '0'];
             }
-            if ((int) $row->tipo_transacao === CaixaTransacoes::TIPO_CREDITO) {
-                $byMonth[$key]['creditos'] = (string) $row->total;
+            if ((int) $row->transaction_type === FundTransaction::TYPE_CREDITO) {
+                $byMonth[$key]['credits'] = (string) $row->total;
             } else {
-                $byMonth[$key]['debitos'] = (string) $row->total;
+                $byMonth[$key]['debits'] = (string) $row->total;
             }
         }
 
         $result = [];
-        $cursor = $inicio->copy();
+        $cursor = $start->copy();
         for ($i = 0; $i < 12; $i++) {
             $key      = sprintf('%04d-%02d', $cursor->year, $cursor->month);
-            $data     = $byMonth[$key] ?? ['creditos' => '0', 'debitos' => '0'];
+            $data     = $byMonth[$key] ?? ['credits' => '0', 'debits' => '0'];
             $result[] = [
-                'ano'           => $cursor->year,
-                'mes'           => $cursor->month,
-                'creditos'      => bcadd($data['creditos'], '0', 2),
-                'debitos'       => bcadd($data['debitos'], '0', 2),
-                'saldo_liquido' => bcsub($data['creditos'], $data['debitos'], 2),
+                'year'        => $cursor->year,
+                'month'       => $cursor->month,
+                'credits'     => bcadd($data['credits'], '0', 2),
+                'debits'      => bcadd($data['debits'], '0', 2),
+                'net_balance' => bcsub($data['credits'], $data['debits'], 2),
             ];
             $cursor->addMonth();
         }
@@ -89,113 +81,101 @@ class DashboardService
         return $result;
     }
 
-    /**
-     * Top 3 RCMs em "Pagamento Agendado", pela data programada mais próxima.
-     */
-    private function proximosPagamentos(): array
+    private function upcomingPayments(): array
     {
-        $rcms = Rcm::where('status', Rcm::STATUS_PAGAMENTO_AGENDADO)
-            ->with(['despesas:id,id_rcm,valor', 'usuario:id,nome'])
-            ->whereNotNull('data_pagamento_programado')
-            ->orderBy('data_pagamento_programado')
+        $reimbursements = Reimbursement::where('status', Reimbursement::STATUS_PAYMENT_SCHEDULED)
+            ->with(['items:id,reimbursement_id,amount', 'user:id,name'])
+            ->whereNotNull('scheduled_payment_date')
+            ->orderBy('scheduled_payment_date')
             ->limit(10)
-            ->get(['id', 'titulo', 'nome_solicitante', 'id_usuario', 'status', 'data_pagamento_programado']);
+            ->get(['id', 'title', 'requester_name', 'user_id', 'status', 'scheduled_payment_date']);
 
-        return $rcms->map(function (Rcm $r) {
-            $valorTotal = $r->despesas->reduce(
-                fn ($acc, $d) => bcadd((string) $acc, (string) ($d->valor ?? '0'), 2),
+        return $reimbursements->map(function (Reimbursement $r) {
+            $totalAmount = $r->items->reduce(
+                fn ($acc, $d) => bcadd((string) $acc, (string) ($d->amount ?? '0'), 2),
                 '0'
             );
 
             return [
-                'id'                        => $r->id,
-                'descricao'                 => $r->titulo,
-                'requisitante'              => $r->nome_solicitante ?: ($r->usuario->nome ?? null),
-                'valor'                     => $valorTotal,
-                'data_pagamento_programado' => $r->data_pagamento_programado?->toIso8601String(),
+                'id'                     => $r->id,
+                'description'            => $r->title,
+                'requester'              => $r->requester_name ?: ($r->user->name ?? null),
+                'amount'                 => $totalAmount,
+                'scheduled_payment_date' => $r->scheduled_payment_date?->toIso8601String(),
             ];
         })->all();
     }
 
-    /**
-     * Lista combinada de RDC + RCM em status Pendente (aguardando auditoria),
-     * ordenada por created_at asc (mais antigo primeiro).
-     *
-     * @param int $limite Número máximo de itens (default 10).
-     */
-    public function pendentesAprovacao(int $limite = 10): array
+    public function pendingApproval(int $limit = 10): array
     {
-        $caixas = Caixa::where('status', Caixa::STATUS_PENDENTE)
-            ->with(['despesas:id,id_caixa,valor', 'usuarioRequisitante:id,nome'])
+        $expenseReports = ExpenseReport::where('status', ExpenseReport::STATUS_PENDING)
+            ->with(['items:id,expense_report_id,amount', 'requesterUser:id,name'])
             ->orderBy('created_at')
-            ->limit($limite)
-            ->get(['id', 'descricao', 'descricao_requisitante', 'id_usuario_requisitante', 'status', 'created_at'])
-            ->map(function (Caixa $c) {
-                $valorTotal = $c->despesas->reduce(
-                    fn ($acc, $d) => bcadd((string) $acc, (string) ($d->valor ?? '0'), 2),
+            ->limit($limit)
+            ->get(['id', 'description', 'requester_description', 'requester_user_id', 'status', 'created_at'])
+            ->map(function (ExpenseReport $c) {
+                $totalAmount = $c->items->reduce(
+                    fn ($acc, $d) => bcadd((string) $acc, (string) ($d->amount ?? '0'), 2),
                     '0'
                 );
 
                 return [
-                    'tipo'       => 'rdc',
-                    'id'         => $c->id,
-                    'descricao'  => $c->descricao,
-                    'requisitante' => $c->descricao_requisitante ?: ($c->usuarioRequisitante->nome ?? null),
-                    'valor'      => $valorTotal,
-                    'created_at' => $c->created_at?->toIso8601String(),
+                    'type'        => 'expense_report',
+                    'id'          => $c->id,
+                    'description' => $c->description,
+                    'requester'   => $c->requester_description ?: ($c->requesterUser->name ?? null),
+                    'amount'      => $totalAmount,
+                    'created_at'  => $c->created_at?->toIso8601String(),
                 ];
             });
 
-        $rcms = Rcm::where('status', Rcm::STATUS_PENDENTE)
-            ->with(['despesas:id,id_rcm,valor', 'usuario:id,nome'])
+        $reimbursements = Reimbursement::where('status', Reimbursement::STATUS_PENDING)
+            ->with(['items:id,reimbursement_id,amount', 'user:id,name'])
             ->orderBy('created_at')
-            ->limit($limite)
-            ->get(['id', 'titulo', 'nome_solicitante', 'id_usuario', 'status', 'created_at'])
-            ->map(function (Rcm $r) {
-                $valorTotal = $r->despesas->reduce(
-                    fn ($acc, $d) => bcadd((string) $acc, (string) ($d->valor ?? '0'), 2),
+            ->limit($limit)
+            ->get(['id', 'title', 'requester_name', 'user_id', 'status', 'created_at'])
+            ->map(function (Reimbursement $r) {
+                $totalAmount = $r->items->reduce(
+                    fn ($acc, $d) => bcadd((string) $acc, (string) ($d->amount ?? '0'), 2),
                     '0'
                 );
 
                 return [
-                    'tipo'       => 'rcm',
-                    'id'         => $r->id,
-                    'descricao'  => $r->titulo,
-                    'requisitante' => $r->nome_solicitante ?: ($r->usuario->nome ?? null),
-                    'valor'      => $valorTotal,
-                    'created_at' => $r->created_at?->toIso8601String(),
+                    'type'        => 'reimbursement',
+                    'id'          => $r->id,
+                    'description' => $r->title,
+                    'requester'   => $r->requester_name ?: ($r->user->name ?? null),
+                    'amount'      => $totalAmount,
+                    'created_at'  => $r->created_at?->toIso8601String(),
                 ];
             });
 
-        return $caixas->concat($rcms)
+        return $expenseReports->concat($reimbursements)
             ->sortBy('created_at')
-            ->take($limite)
+            ->take($limit)
             ->values()
             ->all();
     }
 
-    /**
-     * Top 3 centros de custo por valor gasto no mês (via despesas de RDC).
-     */
-    private function topCentrosCustoMes(int $ano, int $mes): array
+    private function topCostCentersMonth(int $year, int $month): array
     {
-        $rows = DB::table('caixa_despesa')
-            ->join('centro_custo', 'caixa_despesa.id_centro_custo', '=', 'centro_custo.id')
-            ->whereYear('caixa_despesa.data_despesa', $ano)
-            ->whereMonth('caixa_despesa.data_despesa', $mes)
-            ->groupBy('centro_custo.id', 'centro_custo.descricao')
-            ->orderByRaw('SUM(caixa_despesa.valor) DESC')
+        $rows = DB::table('expense_report_item')
+            ->join('cost_center', 'expense_report_item.cost_center_id', '=', 'cost_center.id')
+            ->whereYear('expense_report_item.expense_date', $year)
+            ->whereMonth('expense_report_item.expense_date', $month)
+            ->groupBy('cost_center.id', 'cost_center.description')
+            ->orderByRaw('SUM(expense_report_item.amount) DESC')
             ->limit(10)
             ->get([
-                'centro_custo.id',
-                'centro_custo.descricao',
-                DB::raw('SUM(caixa_despesa.valor) as valor_gasto'),
+                'cost_center.id',
+                'cost_center.description',
+                DB::raw('SUM(expense_report_item.amount) as amount_spent'),
             ]);
 
         return $rows->map(fn ($r) => [
-            'id'          => (int) $r->id,
-            'descricao'   => $r->descricao,
-            'valor_gasto' => (string) $r->valor_gasto,
+            'id'           => (int) $r->id,
+            'description'  => $r->description,
+            'amount_spent' => (string) $r->amount_spent,
         ])->all();
     }
 }

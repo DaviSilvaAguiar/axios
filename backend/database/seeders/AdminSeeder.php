@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Models\CentroDeCusto;
+use App\Models\CostCenter;
 use App\Models\Tenant;
-use App\Models\Usuario;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Artisan;
 
@@ -15,61 +15,60 @@ class AdminSeeder extends Seeder
     public function run(): void
     {
         $tenant = Tenant::firstOrCreate(['slug' => 'admin'], [
-            'razao_social' => 'Axios Admin',
-            'cnpj'         => '00000000000000',
+            'legal_name' => 'Axios Admin',
+            'cnpj'       => '00000000000000',
         ]);
 
         Artisan::call('tenants:migrate', ['--tenants' => [$tenant->id]]);
 
         $tenant->run(function (): void {
-            Usuario::firstOrCreate(['email' => 'carlosdaniel.mc@hotmail.com'], [
-                'perfil' => 1,
-                'nome'   => 'Carlos Machado',
+            User::firstOrCreate(['email' => 'carlosdaniel.mc@hotmail.com'], [
+                'role' => 1,
+                'name'   => 'Carlos Machado',
                 'email'  => 'carlosdaniel.mc@hotmail.com',
-                'senha'  => 'Axios@2026',
-                'ativo'  => true,
+                'password'  => 'Axios@2026',
+                'active'  => true,
             ]);
 
-            Usuario::firstOrCreate(['email' => 'daviaguiardev@gmail.com'], [
-                'perfil' => 1,
-                'nome'   => 'Davi Aguiar',
+            User::firstOrCreate(['email' => 'daviaguiardev@gmail.com'], [
+                'role' => 1,
+                'name'   => 'Davi Aguiar',
                 'email'  => 'daviaguiardev@gmail.com',
-                'senha'  => 'Axios@2026',
-                'ativo'  => true,
+                'password'  => 'Axios@2026',
+                'active'  => true,
             ]);
 
-            Usuario::firstOrCreate(['email' => 'andrew.contatotb@gmail.com'], [
-                'perfil' => 1,
-                'nome'   => 'Andre Santos',
+            User::firstOrCreate(['email' => 'andrew.contatotb@gmail.com'], [
+                'role' => 1,
+                'name'   => 'Andre Santos',
                 'email'  => 'andrew.contatotb@gmail.com',
-                'senha'  => 'Axios@2026',
-                'ativo'  => true,
+                'password'  => 'Axios@2026',
+                'active'  => true,
             ]);
 
-
-            Usuario::firstOrCreate(['email' => 'alvaro_s.g@hotmail.com'], [
-                'perfil' => 1,
-                'nome'   => 'Alvaro Garcia',
+            User::firstOrCreate(['email' => 'alvaro_s.g@hotmail.com'], [
+                'role' => 1,
+                'name'   => 'Alvaro Garcia',
                 'email'  => 'alvaro_s.g@hotmail.com',
-                'senha'  => 'Axios@2026',
-                'ativo'  => true,
-            ]);
-            
-            Usuario::firstOrCreate(['email' => 'prestador@teste.com'], [
-                'perfil' => 3,
-                'nome'   => 'Tonhão Prestador',
-                'email'  => 'prestador@teste.com',
-                'senha'  => '123',
-                'ativo'  => true,
+                'password'  => 'Axios@2026',
+                'active'  => true,
             ]);
 
-            CentroDeCusto::firstOrCreate(['descricao' => 'Geral'], [
-                'descricao'     => 'Geral',
-                'codigo_cc_erp' => 'GERAL',
-                'ativo'         => true,
+            User::firstOrCreate(['email' => 'provider@test.com'], [
+                'role' => 3,
+                'name'   => 'Tonhão Provider',
+                'email'  => 'provider@test.com',
+                'password'  => '123',
+                'active'  => true,
             ]);
 
-            $this->call(ConfigSeeder::class);
+            CostCenter::firstOrCreate(['description' => 'General'], [
+                'description' => 'General',
+                'erp_code'    => 'GENERAL',
+                'active'      => true,
+            ]);
+
+            $this->call(SettingSeeder::class);
         });
     }
 }

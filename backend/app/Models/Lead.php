@@ -9,9 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 class Lead extends Model
 {
     protected $fillable = [
-        'nome',
+        'name',
         'email',
-        'empresa',
-        'volume_obras_mensais',
+        'company',
+        'monthly_project_volume',
     ];
 }

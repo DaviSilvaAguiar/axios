@@ -10,8 +10,8 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->call(IntegracaoSeeder::class);
+        $this->call(IntegrationSeeder::class);
         $this->call(AdminSeeder::class);
-        $this->call(ModuloSeeder::class);
+        $this->call(ModuleSeeder::class);
     }
 }

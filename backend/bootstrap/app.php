@@ -15,9 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'tenant.header' => \App\Http\Middleware\InitializeTenancyByHeader::class,
-            'modulo'        => \App\Http\Middleware\EnsureModulo::class,
+            'module'        => \App\Http\Middleware\EnsureModule::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
     })->create();
