@@ -4,23 +4,23 @@ import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Input from "@/ui/Input";
-import BadgeAtivo from "@/ui/BadgeAtivo";
+import ActiveBadge from "@/ui/ActiveBadge";
 import ModalForm from "@/ui/ModalForm";
-import { useConfigs } from "@/contexts/ConfigContext";
-import { buildCentroDeCustoFormSchema, type CentroDeCusto, type CentroDeCustoFormData } from "../centro-de-custo.types";
+import { useSettings } from "@/contexts/SettingContext";
+import { buildCostCenterFormSchema, type CostCenter, type CostCenterFormData } from "../cost-center.types";
 
 interface Props {
-  centroDeCusto?: CentroDeCusto;
-  onSalvar: (dados: CentroDeCustoFormData) => Promise<void>;
-  onCancelar: () => void;
+  costCenter?: CostCenter;
+  onSave: (data: CostCenterFormData) => Promise<void>;
+  onCancel: () => void;
 }
 
-export default function FormCentroDeCusto({ centroDeCusto, onSalvar, onCancelar }: Props) {
-  const { isHabilitada } = useConfigs();
-  const codigoErpObrigatorio = isHabilitada("obrigatorio_codigo_erp");
+export default function CostCenterForm({ costCenter, onSave, onCancel }: Props) {
+  const { isEnabled } = useSettings();
+  const erpCodeRequired = isEnabled("require_erp_code");
   const schema = useMemo(
-    () => buildCentroDeCustoFormSchema(codigoErpObrigatorio),
-    [codigoErpObrigatorio],
+    () => buildCostCenterFormSchema(erpCodeRequired),
+    [erpCodeRequired],
   );
 
   const {
@@ -30,54 +30,54 @@ export default function FormCentroDeCusto({ centroDeCusto, onSalvar, onCancelar 
     watch,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<CentroDeCustoFormData>({
+  } = useForm<CostCenterFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      descricao:     centroDeCusto?.descricao ?? "",
-      codigo_cc_erp: centroDeCusto?.codigo_cc_erp ?? "",
-      ativo:         centroDeCusto?.ativo ?? true,
+      description: costCenter?.description ?? "",
+      erp_code:    costCenter?.erp_code ?? "",
+      active:      costCenter?.active ?? true,
     },
   });
 
   useEffect(() => {
     reset({
-      descricao:     centroDeCusto?.descricao ?? "",
-      codigo_cc_erp: centroDeCusto?.codigo_cc_erp ?? "",
-      ativo:         centroDeCusto?.ativo ?? true,
+      description: costCenter?.description ?? "",
+      erp_code:    costCenter?.erp_code ?? "",
+      active:      costCenter?.active ?? true,
     });
-  }, [centroDeCusto, reset]);
+  }, [costCenter, reset]);
 
-  const ativo = watch("ativo");
+  const active = watch("active");
 
   return (
     <ModalForm
-      titulo={centroDeCusto ? "Editar Centro de Custo" : "Novo Centro de Custo"}
-      onCancelar={onCancelar}
-      onSubmit={handleSubmit(onSalvar)}
+      titulo={costCenter ? "Edit Cost Center" : "New Cost Center"}
+      onCancelar={onCancel}
+      onSubmit={handleSubmit(onSave)}
       submitting={isSubmitting}
     >
       <Input
-        label="Descrição"
-        placeholder="Ex: Obras Sul"
-        error={errors.descricao?.message}
-        {...register("descricao")}
+        label="Description"
+        placeholder="e.g. South Projects"
+        error={errors.description?.message}
+        {...register("description")}
       />
 
       <Input
-        label="Código no ERP"
-        placeholder="Código usado na exportação"
-        error={errors.codigo_cc_erp?.message}
-        {...register("codigo_cc_erp")}
+        label="ERP Code"
+        placeholder="Code used in the export"
+        error={errors.erp_code?.message}
+        {...register("erp_code")}
       />
 
       <div className="flex flex-col gap-1.5">
         <span className="text-caption font-semibold text-app-text-muted">Status</span>
         <button
           type="button"
-          onClick={() => setValue("ativo", !ativo)}
+          onClick={() => setValue("active", !active)}
           className="w-fit cursor-pointer transition-opacity hover:opacity-80"
         >
-          <BadgeAtivo ativo={ativo} />
+          <ActiveBadge ativo={active} />
         </button>
       </div>
     </ModalForm>

@@ -9,7 +9,7 @@ import { AnimatePresence, motion } from "framer-motion";
 
 interface Props {
   label?: string;
-  value: string;      // ISO "YYYY-MM-DD"
+  value: string;
   onChange: (value: string) => void;
   onBlur?: () => void;
   error?: string;
@@ -45,7 +45,7 @@ export default function DatePicker({
   onChange,
   onBlur,
   error,
-  placeholder = "DD/MM/AAAA",
+  placeholder = "DD/MM/YYYY",
   disabled,
   size = "md",
   align = "left",
@@ -57,7 +57,6 @@ export default function DatePicker({
   const buttonRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  // Calcula posição fixed relativa ao botão
   function updatePosition() {
     if (!buttonRef.current) return;
     const rect = buttonRef.current.getBoundingClientRect();
@@ -71,7 +70,6 @@ export default function DatePicker({
     });
   }
 
-  // Click fora fecha (verifica container E popover)
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       const inContainer = containerRef.current?.contains(e.target as Node);
@@ -85,7 +83,6 @@ export default function DatePicker({
     return () => document.removeEventListener("mousedown", handleClick);
   }, [onBlur]);
 
-  // Scroll ou resize fecha o popover
   useEffect(() => {
     if (!open) return;
     function handleScrollOrResize() {
@@ -211,7 +208,7 @@ export default function DatePicker({
             }}
             className="text-app-text-subtle hover:text-app-text transition-colors"
             tabIndex={-1}
-            aria-label="Limpar data"
+            aria-label="Clear date"
           >
             <X size={isCompact ? 12 : 14} weight="bold" />
           </button>

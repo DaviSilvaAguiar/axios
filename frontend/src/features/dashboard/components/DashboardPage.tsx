@@ -18,58 +18,56 @@ import { type ElementType, useEffect, useState } from "react";
 import Card from "@/ui/Card";
 import Loading from "@/ui/Loading";
 import MobileScreen from "@/ui/MobileScreen";
-import LancamentoCard from "@/ui/LancamentoCard";
+import TransactionCard from "@/ui/TransactionCard";
 import { useAuth } from "@/contexts/AuthContext";
-import { listarLancamentosApi } from "@/features/prestador/prestador.api";
-import type { Lancamento } from "@/features/prestador/prestador.types";
-import PendentesAprovacaoList from "./PendentesAprovacaoList";
+import { listSubmissionsApi } from "@/features/provider/provider.api";
+import type { Submission } from "@/features/provider/provider.types";
+import PendingApprovalList from "./PendingApprovalList";
 
-// ── Dados ─────────────────────────────────────────────────────
-
-const modulosOperacao = [
+const operationModules = [
   {
     icon: Receipt,
-    label: "Caixa de Obra",
-    desc: "Registre e audite prestações de contas de campo",
-    href: "/rdc",
-    modulo: "rdc",
+    label: "Expense Reports",
+    desc: "Record and audit field expense reports",
+    href: "/expense-reports",
+    module: "rdc",
   },
   {
     icon: Wallet,
-    label: "Gestão de Caixas",
-    desc: "Controle saldos e adiantamentos pré-pagos",
-    href: "/caixas",
-    modulo: "caixas",
+    label: "Fund Management",
+    desc: "Control prepaid balances and advances",
+    href: "/funds",
+    module: "expense-reports",
   },
   {
     icon: ArrowUUpLeft,
-    label: "Reembolso",
-    desc: "Solicite e aprove reembolsos de despesas",
-    href: "/rcm",
-    modulo: "rcm",
+    label: "Reimbursement",
+    desc: "Request and approve expense reimbursements",
+    href: "/reimbursements",
+    module: "reimbursement",
   },
   {
     icon: DownloadSimple,
-    label: "Exportação ERP",
-    desc: "Gere arquivos de integração para Sienge e Protheus",
-    href: "/exportacao",
-    modulo: "exportacao",
+    label: "ERP Export",
+    desc: "Generate integration files for Sienge and Protheus",
+    href: "/export",
+    module: "export",
   },
 ];
 
-const modulosConfig = [
+const configModules = [
   {
     icon: Users,
-    label: "Usuários",
-    desc: "Gerencie perfis e acessos da equipe",
-    href: "/usuarios",
-    modulo: "usuarios",
+    label: "Users",
+    desc: "Manage team roles and access",
+    href: "/users",
+    module: "users",
   },
   {
     icon: Gear,
-    label: "Configurações",
-    desc: "Ajuste as preferências do sistema",
-    href: "/configuracoes",
+    label: "Settings",
+    desc: "Adjust system preferences",
+    href: "/settings",
   },
 ];
 
@@ -93,7 +91,7 @@ function ModuleCard({
   label: string;
   desc: string;
   href: string;
-  modulo?: string;
+  module?: string;
 }) {
   return (
     <motion.div variants={item}>
@@ -123,31 +121,29 @@ function ModuleCard({
   );
 }
 
-// ── Dashboard do Prestador ────────────────────────────────────
-
-function fmtValor(valor: number) {
-  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+function fmtCurrency(value: number) {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function PrestadorDashboard() {
-  const [recentes, setRecentes] = useState<Lancamento[]>([]);
-  const [pendenteRcm, setPendenteRcm] = useState(0);
-  const [rdcRascunho, setRdcRascunho] = useState(0);
+function ProviderDashboard() {
+  const [recent, setRecent] = useState<Submission[]>([]);
+  const [pendingReimbursement, setPendingReimbursement] = useState(0);
+  const [draftExpenseReports, setDraftExpenseReports] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
-      listarLancamentosApi("todos", 1, 3),
-      listarLancamentosApi("rcm", 1, 50),
-      listarLancamentosApi("rdc", 1, 50),
+      listSubmissionsApi("all", 1, 3),
+      listSubmissionsApi("reimbursement", 1, 50),
+      listSubmissionsApi("expense_report", 1, 50),
     ])
-      .then(([recentesRes, rcmRes, rdcRes]) => {
-        setRecentes(recentesRes.data);
-        const pendente = rcmRes.data
+      .then(([recentRes, reimbursementRes, expenseReportRes]) => {
+        setRecent(recentRes.data);
+        const pending = reimbursementRes.data
           .filter((r) => r.status === 1 || r.status === 2 || r.status === 3)
-          .reduce((s, r) => s + Number(r.valor_total), 0);
-        setPendenteRcm(pendente);
-        setRdcRascunho(rdcRes.data.filter((r) => r.status === 1).length);
+          .reduce((s, r) => s + Number(r.total_amount), 0);
+        setPendingReimbursement(pending);
+        setDraftExpenseReports(expenseReportRes.data.filter((r) => r.status === 1).length);
       })
       .catch(() => { })
       .finally(() => setLoading(false));
@@ -168,21 +164,21 @@ function PrestadorDashboard() {
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-950/60">
               <Files size={18} weight="light" className="text-blue-700 dark:text-blue-300" />
             </div>
-            <p className="text-small text-app-text-muted mt-1">RDCs em rascunho</p>
-            <p className="text-feature-title text-app-text">{rdcRascunho}</p>
+            <p className="text-small text-app-text-muted mt-1">Draft expense reports</p>
+            <p className="text-feature-title text-app-text">{draftExpenseReports}</p>
           </Card>
 
           <Card className="p-4 flex flex-col gap-1.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10">
               <CurrencyCircleDollar size={18} weight="light" className="text-amber-600" />
             </div>
-            <p className="text-small text-app-text-muted mt-1">Reembolso pendente</p>
-            <p className="text-feature-title text-app-text">{fmtValor(pendenteRcm)}</p>
+            <p className="text-small text-app-text-muted mt-1">Pending reimbursement</p>
+            <p className="text-feature-title text-app-text">{fmtCurrency(pendingReimbursement)}</p>
           </Card>
         </motion.div>
       )}
 
-      {!loading && recentes.length > 0 && (
+      {!loading && recent.length > 0 && (
         <motion.section
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -191,22 +187,22 @@ function PrestadorDashboard() {
         >
           <div className="flex items-center justify-between">
             <p className="text-caption font-semibold text-app-text-muted uppercase tracking-widest">
-              Recentes
+              Recent
             </p>
-            <Link href="/meus-lancamentos" className="text-small text-brand hover:underline">
-              Ver todos
+            <Link href="/my-submissions" className="text-small text-brand hover:underline">
+              View all
             </Link>
           </div>
 
           <div className="space-y-3">
-            {recentes.map((l) => (
-              <LancamentoCard key={`${l.tipo}-${l.id}`} lancamento={l} />
+            {recent.map((l) => (
+              <TransactionCard key={`${l.type}-${l.id}`} submission={l} />
             ))}
           </div>
         </motion.section>
       )}
 
-      {!loading && recentes.length === 0 && (
+      {!loading && recent.length === 0 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -216,9 +212,9 @@ function PrestadorDashboard() {
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand/[0.07]">
             <ClockCountdown size={28} weight="light" className="text-brand" />
           </div>
-          <p className="text-feature-title text-app-text">Nenhum lançamento ainda</p>
+          <p className="text-feature-title text-app-text">No entries yet</p>
           <p className="text-body-sm text-app-text-muted">
-            Toque no + abaixo pra começar
+            Tap the + below to get started
           </p>
         </motion.div>
       )}
@@ -226,34 +222,31 @@ function PrestadorDashboard() {
   );
 }
 
-// ── Página ────────────────────────────────────────────────────
-
 export default function DashboardPage() {
-  const { usuario, temModulo } = useAuth();
+  const { user, hasModule } = useAuth();
 
-  if (usuario?.perfil === 3) {
-    return <PrestadorDashboard />;
+  if (user?.role === 3) {
+    return <ProviderDashboard />;
   }
 
-  const operacaoVisiveis = modulosOperacao.filter((m) => temModulo(m.modulo));
-  const configVisiveis = modulosConfig.filter((m) => !m.modulo || temModulo(m.modulo));
+  const visibleOperationModules = operationModules.filter((m) => hasModule(m.module));
+  const visibleConfigModules = configModules.filter((m) => !m.module || hasModule(m.module));
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
-      {/* Acesso rápido — Operações */}
-      {operacaoVisiveis.length === 0 && configVisiveis.length === 0 ? (
+      {visibleOperationModules.length === 0 && visibleConfigModules.length === 0 ? (
         <div className="rounded-2xl border border-app-border bg-app-surface p-8 text-center">
-          <p className="text-feature-title text-app-text">Nenhum módulo habilitado</p>
+          <p className="text-feature-title text-app-text">No modules enabled</p>
           <p className="text-body-sm text-app-text-muted mt-2">
-            Fale com o administrador para liberar os módulos do sistema.
+            Contact the administrator to enable the system modules.
           </p>
         </div>
       ) : (
         <section className="space-y-4">
-          {operacaoVisiveis.length > 0 && (
+          {visibleOperationModules.length > 0 && (
             <>
               <p className="text-caption text-app-text-muted uppercase tracking-widest">
-                Acesso rápido
+                Quick access
               </p>
               <motion.div
                 variants={container}
@@ -261,20 +254,20 @@ export default function DashboardPage() {
                 animate="show"
                 className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"
               >
-                {operacaoVisiveis.map((mod) => (
+                {visibleOperationModules.map((mod) => (
                   <ModuleCard key={mod.href} {...mod} />
                 ))}
               </motion.div>
             </>
           )}
 
-          {configVisiveis.length > 0 && (
+          {visibleConfigModules.length > 0 && (
             <>
-              {operacaoVisiveis.length > 0 && (
+              {visibleOperationModules.length > 0 && (
                 <div className="flex items-center gap-3 pt-2">
                   <div className="h-px flex-1 bg-app-border" />
                   <span className="text-small text-app-text-muted shrink-0">
-                    Configurações
+                    Settings
                   </span>
                   <div className="h-px flex-1 bg-app-border" />
                 </div>
@@ -286,7 +279,7 @@ export default function DashboardPage() {
                 animate="show"
                 className="grid grid-cols-2 gap-3"
               >
-                {configVisiveis.map((mod) => (
+                {visibleConfigModules.map((mod) => (
                   <ModuleCard key={mod.href} {...mod} />
                 ))}
               </motion.div>
@@ -295,9 +288,8 @@ export default function DashboardPage() {
         </section>
       )}
 
-      {/* Pendentes de aprovação */}
       <section>
-        <PendentesAprovacaoList />
+        <PendingApprovalList />
       </section>
     </div>
   );

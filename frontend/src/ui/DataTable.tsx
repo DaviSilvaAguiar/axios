@@ -69,7 +69,7 @@ export default function DataTable<T, K extends string | number>({
   const [sort, setSort] = useState<{ columnKey: string; direction: "asc" | "desc" } | null>(
     defaultSort ?? null
   );
-  const [visiveis, setVisiveis] = useState(pageSize);
+  const [visibleCount, setVisibleCount] = useState(pageSize);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const sortedRows = useMemo(() => {
@@ -89,31 +89,31 @@ export default function DataTable<T, K extends string | number>({
       if (typeof va === "number" && typeof vb === "number") {
         return (va - vb) * dir;
       }
-      return String(va).localeCompare(String(vb), "pt-BR", { numeric: true }) * dir;
+      return String(va).localeCompare(String(vb), undefined, { numeric: true }) * dir;
     });
   }, [rows, sort, columns]);
 
   useEffect(() => {
-    setVisiveis(pageSize);
+    setVisibleCount(pageSize);
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [pageSize, rows, sort]);
 
   const renderedRows = useMemo(
-    () => (serverPaginated ? sortedRows : sortedRows.slice(0, visiveis)),
-    [sortedRows, visiveis, serverPaginated]
+    () => (serverPaginated ? sortedRows : sortedRows.slice(0, visibleCount)),
+    [sortedRows, visibleCount, serverPaginated]
   );
 
   function handleScroll(e: UIEvent<HTMLDivElement>) {
     const t = e.currentTarget;
-    const proximo = t.scrollHeight - t.scrollTop - t.clientHeight < 120;
-    if (!proximo) return;
+    const nearBottom = t.scrollHeight - t.scrollTop - t.clientHeight < 120;
+    if (!nearBottom) return;
 
     if (serverPaginated) {
       if (hasMore && !loadingMore) onLoadMore!();
       return;
     }
 
-    setVisiveis((v) => (v >= sortedRows.length ? v : Math.min(v + pageSize, sortedRows.length)));
+    setVisibleCount((v) => (v >= sortedRows.length ? v : Math.min(v + pageSize, sortedRows.length)));
   }
 
   function clickHeader(col: DataTableColumn<T>) {
@@ -130,14 +130,14 @@ export default function DataTable<T, K extends string | number>({
   }
 
   const totalCols = columns.length + (selection ? 1 : 0);
-  const limitarAltura =
+  const limitHeight =
     loading || sortedRows.length > tamanho || (serverPaginated && !!hasMore);
-  const maxHeight = limitarAltura ? tamanho * rowHeight + HEADER_HEIGHT : undefined;
+  const maxHeight = limitHeight ? tamanho * rowHeight + HEADER_HEIGHT : undefined;
 
-  const todosSelecionados =
+  const allSelected =
     !!selection && sortedRows.length > 0 && selection.selecao.size === sortedRows.length;
-  const algunsSelecionados =
-    !!selection && selection.selecao.size > 0 && !todosSelecionados;
+  const someSelected =
+    !!selection && selection.selecao.size > 0 && !allSelected;
 
   if (!loading && sortedRows.length === 0 && empty) {
     return (
@@ -153,7 +153,7 @@ export default function DataTable<T, K extends string | number>({
       onScroll={handleScroll}
       className={[
         "rounded-2xl border border-app-border bg-app-surface",
-        limitarAltura ? "overflow-auto" : "overflow-x-auto",
+        limitHeight ? "overflow-auto" : "overflow-x-auto",
       ].join(" ")}
       style={maxHeight ? { maxHeight } : undefined}
     >
@@ -165,27 +165,27 @@ export default function DataTable<T, K extends string | number>({
                 <button
                   type="button"
                   onClick={selection.onToggleTodos}
-                  aria-label="Selecionar todos"
+                  aria-label="Select all"
                   className={[
                     "flex h-4 w-4 items-center justify-center rounded-md border transition-colors cursor-pointer",
-                    todosSelecionados
+                    allSelected
                       ? "bg-brand border-brand"
-                      : algunsSelecionados
+                      : someSelected
                         ? "bg-brand/30 border-brand"
                         : "bg-app-surface border-app-border hover:border-brand/50",
                   ].join(" ")}
                 >
-                  {todosSelecionados && (
+                  {allSelected && (
                     <CheckCircle size={12} weight="fill" className="text-white" />
                   )}
-                  {algunsSelecionados && (
+                  {someSelected && (
                     <span className="h-0.5 w-2 rounded-full bg-white" />
                   )}
                 </button>
               </th>
             )}
             {columns.map((col) => {
-              const ativo = sort?.columnKey === col.key;
+              const isActive = sort?.columnKey === col.key;
               return (
                 <th
                   key={col.key}
@@ -215,7 +215,7 @@ export default function DataTable<T, K extends string | number>({
                           size={8}
                           weight="fill"
                           className={
-                            ativo && sort?.direction === "asc"
+                            isActive && sort?.direction === "asc"
                               ? "text-app-text"
                               : "text-app-text-subtle/40"
                           }
@@ -224,7 +224,7 @@ export default function DataTable<T, K extends string | number>({
                           size={8}
                           weight="fill"
                           className={
-                            ativo && sort?.direction === "desc"
+                            isActive && sort?.direction === "desc"
                               ? "text-app-text"
                               : "text-app-text-subtle/40"
                           }
@@ -266,7 +266,7 @@ export default function DataTable<T, K extends string | number>({
             ))
             : renderedRows.map((row, idx) => {
               const k = keyExtractor(row);
-              const selecionado = selection?.selecao.has(k) ?? false;
+              const selected = selection?.selecao.has(k) ?? false;
               return (
                 <tr
                   key={k}
@@ -274,7 +274,7 @@ export default function DataTable<T, K extends string | number>({
                   className={[
                     "border-b border-app-border-subtle last:border-0 transition-colors",
                     onRowClick ? "cursor-pointer" : "",
-                    selecionado
+                    selected
                       ? "bg-brand/[0.04] hover:bg-brand/[0.06]"
                       : "hover:bg-app-hover",
                     getRowClassName?.(row, idx) ?? "",
@@ -285,12 +285,12 @@ export default function DataTable<T, K extends string | number>({
                       <span
                         className={[
                           "flex h-4 w-4 items-center justify-center rounded-md border transition-colors",
-                          selecionado
+                          selected
                             ? "bg-brand border-brand"
                             : "bg-app-surface border-app-border",
                         ].join(" ")}
                       >
-                        {selecionado && (
+                        {selected && (
                           <CheckCircle size={12} weight="fill" className="text-white" />
                         )}
                       </span>
@@ -317,11 +317,11 @@ export default function DataTable<T, K extends string | number>({
             })}
           {!loading && (
             (serverPaginated && (loadingMore || hasMore)) ||
-            (!serverPaginated && visiveis < sortedRows.length)
+            (!serverPaginated && visibleCount < sortedRows.length)
           ) && (
               <tr>
                 <td colSpan={totalCols} className="px-3 py-2 text-center text-small text-app-text-subtle">
-                  {loadingMore || !serverPaginated ? "Carregando mais…" : ""}
+                  {loadingMore || !serverPaginated ? "Loading more…" : ""}
                 </td>
               </tr>
             )}

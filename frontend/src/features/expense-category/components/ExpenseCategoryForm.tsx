@@ -4,27 +4,27 @@ import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Input from "@/ui/Input";
-import BadgeAtivo from "@/ui/BadgeAtivo";
+import ActiveBadge from "@/ui/ActiveBadge";
 import ModalForm from "@/ui/ModalForm";
-import { useConfigs } from "@/contexts/ConfigContext";
+import { useSettings } from "@/contexts/SettingContext";
 import {
-  buildCategoriaDespesaFormSchema,
-  type CategoriaDespesa,
-  type CategoriaDespesaFormData,
-} from "../categoria-despesa.types";
+  buildExpenseCategoryFormSchema,
+  type ExpenseCategory,
+  type ExpenseCategoryFormData,
+} from "../expense-category.types";
 
 interface Props {
-  categoriaDespesa?: CategoriaDespesa;
-  onSalvar: (dados: CategoriaDespesaFormData) => Promise<void>;
-  onCancelar: () => void;
+  expenseCategory?: ExpenseCategory;
+  onSave: (data: ExpenseCategoryFormData) => Promise<void>;
+  onCancel: () => void;
 }
 
-export default function FormCategoriaDespesa({ categoriaDespesa, onSalvar, onCancelar }: Props) {
-  const { isHabilitada } = useConfigs();
-  const codigoErpObrigatorio = isHabilitada("obrigatorio_codigo_erp");
+export default function ExpenseCategoryForm({ expenseCategory, onSave, onCancel }: Props) {
+  const { isEnabled } = useSettings();
+  const erpCodeRequired = isEnabled("require_erp_code");
   const schema = useMemo(
-    () => buildCategoriaDespesaFormSchema(codigoErpObrigatorio),
-    [codigoErpObrigatorio],
+    () => buildExpenseCategoryFormSchema(erpCodeRequired),
+    [erpCodeRequired],
   );
 
   const {
@@ -34,54 +34,54 @@ export default function FormCategoriaDespesa({ categoriaDespesa, onSalvar, onCan
     watch,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<CategoriaDespesaFormData>({
+  } = useForm<ExpenseCategoryFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      descricao:   categoriaDespesa?.descricao ?? "",
-      codigo_erp:  categoriaDespesa?.codigo_erp ?? "",
-      ativo:       categoriaDespesa?.ativo ?? true,
+      description: expenseCategory?.description ?? "",
+      erp_code:    expenseCategory?.erp_code ?? "",
+      active:      expenseCategory?.active ?? true,
     },
   });
 
   useEffect(() => {
     reset({
-      descricao:   categoriaDespesa?.descricao ?? "",
-      codigo_erp:  categoriaDespesa?.codigo_erp ?? "",
-      ativo:       categoriaDespesa?.ativo ?? true,
+      description: expenseCategory?.description ?? "",
+      erp_code:    expenseCategory?.erp_code ?? "",
+      active:      expenseCategory?.active ?? true,
     });
-  }, [categoriaDespesa, reset]);
+  }, [expenseCategory, reset]);
 
-  const ativo = watch("ativo");
+  const active = watch("active");
 
   return (
     <ModalForm
-      titulo={categoriaDespesa ? "Editar Categoria" : "Nova Categoria"}
-      onCancelar={onCancelar}
-      onSubmit={handleSubmit(onSalvar)}
+      titulo={expenseCategory ? "Edit Category" : "New Category"}
+      onCancelar={onCancel}
+      onSubmit={handleSubmit(onSave)}
       submitting={isSubmitting}
     >
       <Input
-        label="Descrição"
-        placeholder="Ex: Alimentação"
-        error={errors.descricao?.message}
-        {...register("descricao")}
+        label="Description"
+        placeholder="e.g. Meals"
+        error={errors.description?.message}
+        {...register("description")}
       />
 
       <Input
-        label="Código no ERP"
-        placeholder="Código usado na exportação"
-        error={errors.codigo_erp?.message}
-        {...register("codigo_erp")}
+        label="ERP Code"
+        placeholder="Code used in the export"
+        error={errors.erp_code?.message}
+        {...register("erp_code")}
       />
 
       <div className="flex flex-col gap-1.5">
         <span className="text-caption font-semibold text-app-text-muted">Status</span>
         <button
           type="button"
-          onClick={() => setValue("ativo", !ativo)}
+          onClick={() => setValue("active", !active)}
           className="w-fit cursor-pointer transition-opacity hover:opacity-80"
         >
-          <BadgeAtivo ativo={ativo} />
+          <ActiveBadge ativo={active} />
         </button>
       </div>
     </ModalForm>

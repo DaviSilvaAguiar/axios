@@ -12,10 +12,10 @@ interface Props {
 }
 
 export default function AppChrome({ children }: Props) {
-  const { usuario } = useAuth();
-  const isPrestador = usuario?.perfil === 3;
+  const { user } = useAuth();
+  const isProvider = user?.role === 3;
 
-  if (!isPrestador) {
+  if (!isProvider) {
     return (
       <div className="flex h-screen overflow-hidden bg-app-bg">
         <Sidebar />
@@ -27,7 +27,6 @@ export default function AppChrome({ children }: Props) {
     );
   }
 
-  // Prestador: em mobile usa MobileHeader + MobileTabBar; em desktop mantém Sidebar + Header.
   return (
     <div className="flex h-screen overflow-hidden bg-app-bg">
       <div className="hidden md:flex">

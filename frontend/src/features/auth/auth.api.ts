@@ -6,10 +6,10 @@ import type { LoginResponse, MeResponse } from "./auth.types";
 export async function loginApi(
   tenantSlug: string,
   email: string,
-  senha: string,
+  password: string,
   rememberMe: boolean
 ): Promise<LoginResponse> {
-  const raw = await api.post("/v1/auth/login", { email, senha, remember_me: rememberMe });
+  const raw = await api.post("/v1/auth/login", { email, password, remember_me: rememberMe });
   return mapLoginResponse(raw);
 }
 

@@ -7,8 +7,8 @@ function getCookie(name: string): string | null {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-function setCookie(name: string, value: string, maxAgeDias?: number): void {
-  const maxAge = maxAgeDias != null ? `; Max-Age=${maxAgeDias * 86400}` : '';
+function setCookie(name: string, value: string, maxAgeDays?: number): void {
+  const maxAge = maxAgeDays != null ? `; Max-Age=${maxAgeDays * 86400}` : '';
   document.cookie = `${name}=${encodeURIComponent(value)}; path=/; SameSite=Lax${maxAge}`;
 }
 
@@ -18,7 +18,7 @@ function removeCookie(name: string): void {
 
 export const cookieClient = {
   getToken:    ():                      string | null => getCookie(TOKEN_COOKIE),
-  setToken:    (value: string, maxAgeDias?: number): void => setCookie(TOKEN_COOKIE, value, maxAgeDias),
+  setToken:    (value: string, maxAgeDays?: number): void => setCookie(TOKEN_COOKIE, value, maxAgeDays),
   removeToken: ():                      void         => removeCookie(TOKEN_COOKIE),
 
   getTenant:    (): string | null => getCookie(TENANT_COOKIE),

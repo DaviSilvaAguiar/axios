@@ -17,30 +17,30 @@ import Modal from "@/ui/Modal";
 import EmptyState from "@/ui/EmptyState";
 import { toast } from "@/lib/toast";
 import {
-  obterCaixasPendentesApi,
-  obterRcmsPendentesApi,
-  obterStatsPendentesApi,
+  getPendingExpenseReportsApi,
+  getPendingReimbursementsApi,
+  obterPendingStatsApi,
   obterHistoricoApi,
-} from "@/features/exportacao/exportacao.api";
-import type { TipoLote, StatsPendentes } from "@/features/exportacao/exportacao.types";
+} from "@/features/export/export.api";
+import type { BatchType, PendingStats } from "@/features/export/export.types";
 import { usePaginatedList } from "@/lib/usePaginatedList";
-import TabelaPendentes from "@/features/exportacao/components/TabelaPendentes";
-import TabelaHistorico from "@/features/exportacao/components/TabelaHistorico";
-import SelectorIntegracao from "@/features/integracao/components/SelectorIntegracao";
-import ModalChaveIntegracao from "@/features/integracao/components/ModalChaveIntegracao";
-import ActionBarEnviarIntegracao from "@/features/integracao/components/ActionBarEnviarIntegracao";
-import { listarIntegracoesApi, enviarLoteIntegracaoApi } from "@/features/integracao/integracao.api";
-import type { Integracao } from "@/features/integracao/integracao.types";
-import { baixarPdfRcmApi } from "@/features/rcm/rcm.api";
-import { baixarPdfRdcApi } from "@/features/rdc/rdc.api";
-import type { DocumentoPendente } from "@/features/exportacao/exportacao.types";
-import { listarContasBancariasApi } from "@/features/conta-bancaria/conta-bancaria.api";
-import type { ContaBancaria } from "@/features/conta-bancaria/conta-bancaria.types";
+import PendingTable from "@/features/export/components/PendingTable";
+import HistoryTable from "@/features/export/components/HistoryTable";
+import IntegrationSelector from "@/features/integration/components/IntegrationSelector";
+import IntegrationKeyModal from "@/features/integration/components/IntegrationKeyModal";
+import IntegrationSendActionBar from "@/features/integration/components/IntegrationSendActionBar";
+import { listIntegracoesApi, sendLoteIntegrationApi } from "@/features/integration/integration.api";
+import type { Integration } from "@/features/integration/integration.types";
+import { downloadPdfReimbursementApi } from "@/features/reimbursement/reimbursement.api";
+import { downloadPdfExpenseReportApi } from "@/features/expense-report/expense-report.api";
+import type { PendingDocument } from "@/features/export/export.types";
+import { listContasBancariasApi } from "@/features/bank-account/bank-account.api";
+import type { BankAccount } from "@/features/bank-account/bank-account.types";
 
-const fmtMoeda = (v: number) =>
+const fmtCurrency = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-const fmtData = (iso: string) =>
+const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "2-digit",
@@ -112,7 +112,7 @@ function Tab({
       </span>
       {active && (
         <motion.div
-          layoutId="exportacao-tab-indicator"
+          layoutId="export-tab-indicator"
           className="absolute left-0 right-0 -bottom-px h-0.5 bg-brand"
           transition={{ type: "spring", stiffness: 400, damping: 32 }}
         />
@@ -121,192 +121,192 @@ function Tab({
   );
 }
 
-export default function ExportacaoPage() {
-  const [tab, setTab] = useState<TipoLote>("CAIXA");
-  const [busca, setBusca] = useState("");
-  const [selCaixa, setSelCaixa] = useState<Set<number>>(new Set());
-  const [selRcm, setSelRcm] = useState<Set<number>>(new Set());
+export default function ExportPage() {
+  const [tab, setTab] = useState<BatchType>("EXPENSE_REPORT");
+  const [search, setSearch] = useState("");
+  const [selExpenseReport, setSelExpenseReport] = useState<Set<number>>(new Set());
+  const [selReimbursement, setSelReimbursement] = useState<Set<number>>(new Set());
 
-  const { items: pendentesCaixa, loading: loadingCaixa, erro: erroCaixa, hasMore: hasMoreCaixa, loadingMore: loadingMoreCaixa, carregarMais: carregarMaisCaixa, recarregar: recarregarCaixa } = usePaginatedList(obterCaixasPendentesApi);
-  const { items: pendentesRcm, loading: loadingRcm, erro: erroRcm, hasMore: hasMoreRcm, loadingMore: loadingMoreRcm, carregarMais: carregarMaisRcm, recarregar: recarregarRcm } = usePaginatedList(obterRcmsPendentesApi);
-  const { items: historico, loading: loadingHist, erro: erroHist, hasMore: hasMoreHist, loadingMore: loadingMoreHist, carregarMais: carregarMaisHist, recarregar: recarregarHist } = usePaginatedList(obterHistoricoApi);
+  const { items: pendingExpenseReports, loading: loadingExpenseReports, error: errorExpenseReports, hasMore: hasMoreExpenseReports, loadingMore: loadingMoreExpenseReports, loadMore: loadMoreExpenseReports, reload: reloadExpenseReports } = usePaginatedList(getPendingExpenseReportsApi);
+  const { items: pendingReimbursements, loading: loadingReimbursements, error: errorReimbursements, hasMore: hasMoreReimbursements, loadingMore: loadingMoreReimbursements, loadMore: loadMoreReimbursements, reload: reloadReimbursements } = usePaginatedList(getPendingReimbursementsApi);
+  const { items: history, loading: loadingHistory, error: errorHistory, hasMore: hasMoreHistory, loadingMore: loadingMoreHistory, loadMore: loadMoreHistory, reload: reloadHistory } = usePaginatedList(obterHistoricoApi);
 
-  const [stats, setStats] = useState<StatsPendentes | null>(null);
+  const [stats, setStats] = useState<PendingStats | null>(null);
   const [loadingBase, setLoadingBase] = useState(true);
-  const [erroBase, setErroBase] = useState<string | null>(null);
+  const [errorBase, setErrorBase] = useState<string | null>(null);
 
-  const [integracoes, setIntegracoes] = useState<Integracao[]>([]);
-  const [loadingIntegracoes, setLoadingIntegracoes] = useState(true);
-  const [integracaoModal, setIntegracaoModal] = useState<Integracao | null>(null);
-  const [confirmando, setConfirmando] = useState(false);
-  const [enviando, setEnviando] = useState(false);
+  const [integrations, setIntegrations] = useState<Integration[]>([]);
+  const [loadingIntegrations, setLoadingIntegrations] = useState(true);
+  const [integrationModal, setIntegrationModal] = useState<Integration | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [sending, setSending] = useState(false);
 
-  const [contasBancarias, setContasBancarias] = useState<ContaBancaria[]>([]);
-  const [loadingContas, setLoadingContas] = useState(false);
-  const [contaSelecionadaId, setContaSelecionadaId] = useState<number | null>(null);
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
 
-  const carregarIntegracoes = useCallback(async () => {
-    setLoadingIntegracoes(true);
+  const loadIntegrations = useCallback(async () => {
+    setLoadingIntegrations(true);
     try {
-      const { data } = await listarIntegracoesApi();
-      setIntegracoes(data);
+      const { data } = await listIntegracoesApi();
+      setIntegrations(data);
     } catch {
     } finally {
-      setLoadingIntegracoes(false);
+      setLoadingIntegrations(false);
     }
   }, []);
 
-  const carregarBase = useCallback(async () => {
+  const loadBase = useCallback(async () => {
     setLoadingBase(true);
-    setErroBase(null);
+    setErrorBase(null);
     try {
-      const s = await obterStatsPendentesApi();
+      const s = await obterPendingStatsApi();
       setStats(s);
     } catch {
-      setErroBase("Não foi possível carregar os dados base de exportação.");
+      setErrorBase("Unable to load the base export data.");
     } finally {
       setLoadingBase(false);
     }
   }, []);
 
   useEffect(() => {
-    carregarBase();
-    carregarIntegracoes();
-  }, [carregarBase, carregarIntegracoes]);
+    loadBase();
+    loadIntegrations();
+  }, [loadBase, loadIntegrations]);
 
-  const erroGeral = erroBase || erroCaixa || erroRcm || erroHist;
+  const generalError = errorBase || errorExpenseReports || errorReimbursements || errorHistory;
 
-  const documentos = tab === "CAIXA" ? pendentesCaixa : pendentesRcm;
-  const selecao = tab === "CAIXA" ? selCaixa : selRcm;
-  const setSelecao = tab === "CAIXA" ? setSelCaixa : setSelRcm;
-  const isLoadingAba = tab === "CAIXA" ? loadingCaixa : loadingRcm;
-  const hasMoreAba = tab === "CAIXA" ? hasMoreCaixa : hasMoreRcm;
-  const loadingMoreAba = tab === "CAIXA" ? loadingMoreCaixa : loadingMoreRcm;
-  const carregarMaisAba = tab === "CAIXA" ? carregarMaisCaixa : carregarMaisRcm;
+  const documents = tab === "EXPENSE_REPORT" ? pendingExpenseReports : pendingReimbursements;
+  const selection = tab === "EXPENSE_REPORT" ? selExpenseReport : selReimbursement;
+  const setSelection = tab === "EXPENSE_REPORT" ? setSelExpenseReport : setSelReimbursement;
+  const isLoadingTab = tab === "EXPENSE_REPORT" ? loadingExpenseReports : loadingReimbursements;
+  const hasMoreTab = tab === "EXPENSE_REPORT" ? hasMoreExpenseReports : hasMoreReimbursements;
+  const loadingMoreTab = tab === "EXPENSE_REPORT" ? loadingMoreExpenseReports : loadingMoreReimbursements;
+  const loadMoreTab = tab === "EXPENSE_REPORT" ? loadMoreExpenseReports : loadMoreReimbursements;
 
-  const documentosFiltrados = useMemo(() => {
-    const q = busca.trim().toLowerCase();
-    if (!q) return documentos;
-    return documentos.filter(
+  const filteredDocuments = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return documents;
+    return documents.filter(
       (d) =>
-        d.identificador.toLowerCase().includes(q) ||
-        (d.descricao ?? "").toLowerCase().includes(q) ||
-        d.prestador.toLowerCase().includes(q) ||
-        (d.centro_custo ?? "").toLowerCase().includes(q)
+        d.identifier.toLowerCase().includes(q) ||
+        (d.description ?? "").toLowerCase().includes(q) ||
+        d.provider.toLowerCase().includes(q) ||
+        (d.cost_center ?? "").toLowerCase().includes(q)
     );
-  }, [documentos, busca]);
+  }, [documents, search]);
 
-  const valorSelecionado = useMemo(
-    () => documentos.filter((d) => selecao.has(d.id)).reduce((s, d) => s + d.valor, 0),
-    [documentos, selecao]
+  const selectedAmount = useMemo(
+    () => documents.filter((d) => selection.has(d.id)).reduce((s, d) => s + d.amount, 0),
+    [documents, selection]
   );
 
   function toggleDoc(id: number) {
-    const novo = new Set(selecao);
-    if (novo.has(id)) novo.delete(id);
-    else novo.add(id);
-    setSelecao(novo);
+    const next = new Set(selection);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelection(next);
   }
 
-  function toggleTodos() {
-    if (selecao.size === documentosFiltrados.length) {
-      setSelecao(new Set());
+  function toggleAll() {
+    if (selection.size === filteredDocuments.length) {
+      setSelection(new Set());
     } else {
-      setSelecao(new Set(documentosFiltrados.map((d) => d.id)));
+      setSelection(new Set(filteredDocuments.map((d) => d.id)));
     }
   }
 
-  function trocarTab(novo: TipoLote) {
-    setTab(novo);
-    setBusca("");
+  function changeTab(next: BatchType) {
+    setTab(next);
+    setSearch("");
   }
 
-  const integracaoAtiva = integracoes.find((i) => i.configurada) ?? integracoes[0] ?? null;
+  const activeIntegration = integrations.find((i) => i.configurada) ?? integrations[0] ?? null;
 
-  const contasDisponiveis = useMemo(
-    () => contasBancarias.filter((c) => c.ativo && c.codigo_erp && c.codigo_erp.trim() !== ""),
-    [contasBancarias]
+  const availableAccounts = useMemo(
+    () => bankAccounts.filter((c) => c.active && c.erp_code && c.erp_code.trim() !== ""),
+    [bankAccounts]
   );
 
-  async function abrirConfirmacao() {
-    if (!integracaoAtiva?.configurada || selecao.size === 0) return;
-    setConfirmando(true);
-    setLoadingContas(true);
+  async function openConfirmation() {
+    if (!activeIntegration?.configurada || selection.size === 0) return;
+    setConfirming(true);
+    setLoadingAccounts(true);
     try {
-      const res = await listarContasBancariasApi(1, 100);
-      setContasBancarias(res.data);
-      const elegiveis = res.data.filter((c) => c.ativo && c.codigo_erp && c.codigo_erp.trim() !== "");
-      setContaSelecionadaId(elegiveis[0]?.id ?? null);
+      const res = await listContasBancariasApi(1, 100);
+      setBankAccounts(res.data);
+      const eligible = res.data.filter((c) => c.active && c.erp_code && c.erp_code.trim() !== "");
+      setSelectedAccountId(eligible[0]?.id ?? null);
     } catch {
-      toast.error("Não foi possível carregar as contas bancárias.");
+      toast.error("Unable to load bank accounts.");
     } finally {
-      setLoadingContas(false);
+      setLoadingAccounts(false);
     }
   }
 
-  async function handleEnviar() {
-    if (!integracaoAtiva?.configurada || contaSelecionadaId === null) return;
-    setEnviando(true);
+  async function handleSend() {
+    if (!activeIntegration?.configurada || selectedAccountId === null) return;
+    setSending(true);
     try {
-      const ids = Array.from(selecao);
-      const { data } = await enviarLoteIntegracaoApi(tab, integracaoAtiva.id, contaSelecionadaId, ids);
-      if (data.sucessos > 0) {
-        toast.success(`${data.sucessos} lançamento(s) enviado(s) para ${integracaoAtiva.nome}.`);
+      const ids = Array.from(selection);
+      const { data } = await sendLoteIntegrationApi(tab, activeIntegration.id, selectedAccountId, ids);
+      if (data.successes > 0) {
+        toast.success(`${data.successes} entr${data.successes === 1 ? "y" : "ies"} sent to ${activeIntegration.name}.`);
       }
-      if (data.falhas.length > 0) {
-        toast.error(`${data.falhas.length} falha(s): ${data.falhas[0].erro}`);
+      if (data.failures.length > 0) {
+        toast.error(`${data.failures.length} failure(s): ${data.failures[0].error}`);
       }
-      setSelecao(new Set());
-      setConfirmando(false);
-      carregarBase();
-      recarregarCaixa();
-      recarregarRcm();
-      recarregarHist();
+      setSelection(new Set());
+      setConfirming(false);
+      loadBase();
+      reloadExpenseReports();
+      reloadReimbursements();
+      reloadHistory();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível enviar o lote.");
+      toast.error(err instanceof Error ? err.message : "Unable to send the batch.");
     } finally {
-      setEnviando(false);
+      setSending(false);
     }
   }
 
-  async function handleBaixarPdfPendente(doc: DocumentoPendente) {
+  async function handleDownloadPdf(doc: PendingDocument) {
     try {
-      const blob = doc.tipo === "CAIXA"
-        ? await baixarPdfRdcApi(doc.id)
-        : await baixarPdfRcmApi(doc.id);
+      const blob = doc.type === "EXPENSE_REPORT"
+        ? await downloadPdfExpenseReportApi(doc.id)
+        : await downloadPdfReimbursementApi(doc.id);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${doc.identificador}.pdf`;
+      a.download = `${doc.identifier}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível baixar o PDF.");
+      toast.error(err instanceof Error ? err.message : "Unable to download the PDF.");
     }
   }
 
-  const ultimoLote = historico[0];
+  const lastBatch = history[0];
 
   return (
     <div className="flex flex-col gap-5 p-6 max-w-[1400px] mx-auto">
       <div className="flex flex-col gap-1.5">
-        <h1 className="text-card-title text-app-text">Exportação ERP</h1>
+        <h1 className="text-card-title text-app-text">ERP Export</h1>
         <p className="text-body-sm text-app-text-muted">
-          Selecione a integração e envie os lotes pendentes diretamente para o ERP.
+          Select the integration and send pending batches directly to the ERP.
         </p>
       </div>
 
-      {erroGeral && !stats && !loadingBase ? (
+      {generalError && !stats && !loadingBase ? (
         <Card>
           <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-4 m-4">
-            <p className="text-body-sm text-red-700">{erroGeral}</p>
+            <p className="text-body-sm text-red-700">{generalError}</p>
             <button
-              onClick={carregarBase}
+              onClick={loadBase}
               className="mt-2 text-caption font-semibold text-brand hover:underline cursor-pointer"
             >
-              Tentar novamente
+              Try again
             </button>
           </div>
         </Card>
@@ -315,24 +315,24 @@ export default function ExportacaoPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <StatCard
               icon={Receipt}
-              label="Caixinhas pendentes"
-              value={String(stats?.caixa.quantidade ?? 0)}
-              hint={`${fmtMoeda(stats?.caixa.valor ?? 0)} acumulados`}
+              label="Pending expense reports"
+              value={String(stats?.expense_report.quantity ?? 0)}
+              hint={`${fmtCurrency(stats?.expense_report.amount ?? 0)} accumulated`}
             />
             <StatCard
               icon={HandCoins}
-              label="Reembolsos pendentes"
-              value={String(stats?.reembolso.quantidade ?? 0)}
-              hint={`${fmtMoeda(stats?.reembolso.valor ?? 0)} acumulados`}
+              label="Pending reimbursements"
+              value={String(stats?.reimbursement.quantity ?? 0)}
+              hint={`${fmtCurrency(stats?.reimbursement.amount ?? 0)} accumulated`}
             />
             <StatCard
               icon={ClockCounterClockwise}
-              label="Último lote exportado"
-              value={ultimoLote ? fmtData(ultimoLote.created_at) : "—"}
+              label="Last exported batch"
+              value={lastBatch ? fmtDate(lastBatch.created_at) : "—"}
               hint={
-                ultimoLote
-                  ? `${ultimoLote.quantidade_itens} itens • ${ultimoLote.template_utilizado}`
-                  : "Nenhum lote gerado"
+                lastBatch
+                  ? `${lastBatch.item_count} items • ${lastBatch.template_used}`
+                  : "No batch generated"
               }
             />
           </div>
@@ -341,18 +341,18 @@ export default function ExportacaoPage() {
             <div className="px-2 pt-1 border-b border-app-border-subtle relative">
               <div className="flex items-center gap-1">
                 <Tab
-                  active={tab === "CAIXA"}
-                  onClick={() => trocarTab("CAIXA")}
+                  active={tab === "EXPENSE_REPORT"}
+                  onClick={() => changeTab("EXPENSE_REPORT")}
                   icon={Receipt}
-                  label="Prestações de Contas"
-                  count={stats?.caixa.quantidade ?? 0}
+                  label="Expense Reports"
+                  count={stats?.expense_report.quantity ?? 0}
                 />
                 <Tab
-                  active={tab === "REEMBOLSO"}
-                  onClick={() => trocarTab("REEMBOLSO")}
+                  active={tab === "REIMBURSEMENT"}
+                  onClick={() => changeTab("REIMBURSEMENT")}
                   icon={HandCoins}
-                  label="Reembolsos"
-                  count={stats?.reembolso.quantidade ?? 0}
+                  label="Reimbursements"
+                  count={stats?.reimbursement.quantity ?? 0}
                 />
               </div>
             </div>
@@ -361,42 +361,42 @@ export default function ExportacaoPage() {
               <div className="flex-1 max-w-2xl">
                 <Input
                   label=""
-                  placeholder="Buscar por identificador, descrição, prestador ou centro de custo…"
+                  placeholder="Search by identifier, description, provider or cost center…"
                   icon={<MagnifyingGlass size={16} />}
-                  value={busca}
-                  onChange={(e) => setBusca(e.target.value)}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
                   className="!py-3 !text-[13px] placeholder:!text-[13px]"
                 />
               </div>
-              <SelectorIntegracao
-                integracoes={integracoes}
-                onSelecionar={setIntegracaoModal}
-                loading={loadingIntegracoes}
+              <IntegrationSelector
+                integrations={integrations}
+                onSelect={setIntegrationModal}
+                loading={loadingIntegrations}
               />
             </div>
 
             <div className="px-5 py-4">
-              {documentosFiltrados.length === 0 && !isLoadingAba ? (
+              {filteredDocuments.length === 0 && !isLoadingTab ? (
                 <EmptyState
                   icon={Sparkle}
-                  title={busca ? "Nenhum resultado" : "Tudo em dia"}
+                  title={search ? "No results" : "All caught up"}
                   description={
-                    busca
-                      ? "Nenhum documento encontrado para o filtro aplicado."
-                      : "Não há lotes pendentes de exportação neste momento."
+                    search
+                      ? "No documents found for the applied filter."
+                      : "There are no batches pending export at the moment."
                   }
                 />
               ) : (
-                <TabelaPendentes
-                  documentos={documentosFiltrados}
-                  selecao={selecao}
+                <PendingTable
+                  documents={filteredDocuments}
+                  selection={selection}
                   onToggle={toggleDoc}
-                  onToggleTodos={toggleTodos}
-                  onBaixarPdf={handleBaixarPdfPendente}
-                  loading={isLoadingAba}
-                  onLoadMore={carregarMaisAba}
-                  hasMore={hasMoreAba}
-                  loadingMore={loadingMoreAba}
+                  onToggleAll={toggleAll}
+                  onDownloadPdf={handleDownloadPdf}
+                  loading={isLoadingTab}
+                  onLoadMore={loadMoreTab}
+                  hasMore={hasMoreTab}
+                  loadingMore={loadingMoreTab}
                 />
               )}
             </div>
@@ -406,25 +406,25 @@ export default function ExportacaoPage() {
             <div className="flex items-center justify-between px-5 py-4 border-b border-app-border-subtle">
               <div className="flex items-center gap-2">
                 <ClockCounterClockwise size={18} className="text-app-text-muted" />
-                <h2 className="text-feature-title text-app-text">Histórico de exportações</h2>
+                <h2 className="text-feature-title text-app-text">Export history</h2>
               </div>
             </div>
 
-            {historico.length === 0 && !loadingHist ? (
+            {history.length === 0 && !loadingHistory ? (
               <div className="p-5">
                 <EmptyState
                   icon={ClockCounterClockwise}
-                  title="Nenhum lote exportado ainda"
-                  description="Os lotes que você gerar aparecerão aqui."
+                  title="No batch exported yet"
+                  description="The batches you generate will appear here."
                 />
               </div>
             ) : (
-              <TabelaHistorico
-                lotes={historico}
-                loading={loadingHist}
-                onLoadMore={carregarMaisHist}
-                hasMore={hasMoreHist}
-                loadingMore={loadingMoreHist}
+              <HistoryTable
+                batches={history}
+                loading={loadingHistory}
+                onLoadMore={loadMoreHistory}
+                hasMore={hasMoreHistory}
+                loadingMore={loadingMoreHistory}
               />
             )}
           </Card>
@@ -432,69 +432,69 @@ export default function ExportacaoPage() {
       )}
 
       <AnimatePresence>
-        {selecao.size > 0 && !loadingBase && !erroGeral && (
-          <ActionBarEnviarIntegracao
-            quantidade={selecao.size}
-            valorTotal={valorSelecionado}
-            integracaoNome={integracaoAtiva?.nome ?? null}
-            integracaoConfigurada={integracaoAtiva?.configurada ?? false}
-            loading={enviando}
-            onLimpar={() => setSelecao(new Set())}
-            onEnviar={abrirConfirmacao}
+        {selection.size > 0 && !loadingBase && !generalError && (
+          <IntegrationSendActionBar
+            quantity={selection.size}
+            totalAmount={selectedAmount}
+            integrationName={activeIntegration?.name ?? null}
+            integrationConfigured={activeIntegration?.configurada ?? false}
+            loading={sending}
+            onClear={() => setSelection(new Set())}
+            onSend={openConfirmation}
           />
         )}
       </AnimatePresence>
 
-      {integracaoModal && (
-        <ModalChaveIntegracao
-          integracao={integracaoModal}
-          onFechar={() => setIntegracaoModal(null)}
-          onSalvo={() => {
-            setIntegracaoModal(null);
-            carregarIntegracoes();
+      {integrationModal && (
+        <IntegrationKeyModal
+          integration={integrationModal}
+          onClose={() => setIntegrationModal(null)}
+          onSaved={() => {
+            setIntegrationModal(null);
+            loadIntegrations();
           }}
         />
       )}
 
-      <Modal open={confirmando} onClose={() => !enviando && setConfirmando(false)}>
+      <Modal open={confirming} onClose={() => !sending && setConfirming(false)}>
         <div className="p-6 flex flex-col gap-5">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/[0.08] shrink-0">
               <PaperPlaneTilt size={18} weight="fill" className="text-brand" />
             </div>
             <div className="flex flex-col gap-1">
-              <p className="text-feature-title text-app-text">Enviar lançamentos?</p>
+              <p className="text-feature-title text-app-text">Send entries?</p>
               <p className="text-body-sm text-app-text-muted leading-relaxed">
-                {selecao.size} {selecao.size === 1 ? "documento será enviado" : "documentos serão enviados"}{" "}
-                via API para <strong className="text-app-text">{integracaoAtiva?.nome ?? "—"}</strong>.
-                Lotes enviados com sucesso não podem ser revertidos.
+                {selection.size} {selection.size === 1 ? "document will be sent" : "documents will be sent"}{" "}
+                via API to <strong className="text-app-text">{activeIntegration?.name ?? "—"}</strong>.
+                Successfully sent batches cannot be reverted.
               </p>
               <p className="text-small text-app-text-subtle font-normal">
-                Total: {fmtMoeda(valorSelecionado)}
+                Total: {fmtCurrency(selectedAmount)}
               </p>
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-caption font-semibold text-app-text-muted">Conta bancária</label>
-            {loadingContas ? (
-              <div className="text-body-sm text-app-text-muted">Carregando contas…</div>
-            ) : contasDisponiveis.length === 0 ? (
+            <label className="text-caption font-semibold text-app-text-muted">Bank account</label>
+            {loadingAccounts ? (
+              <div className="text-body-sm text-app-text-muted">Loading accounts…</div>
+            ) : availableAccounts.length === 0 ? (
               <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5">
                 <p className="text-body-sm text-amber-800">
-                  Nenhuma conta bancária ativa com código ERP cadastrada. Cadastre uma em &quot;Contas Bancárias&quot; antes de enviar.
+                  No active bank account with an ERP code registered. Register one under &quot;Bank Accounts&quot; before sending.
                 </p>
               </div>
             ) : (
               <select
-                value={contaSelecionadaId ?? ""}
-                onChange={(e) => setContaSelecionadaId(Number(e.target.value))}
-                disabled={enviando}
+                value={selectedAccountId ?? ""}
+                onChange={(e) => setSelectedAccountId(Number(e.target.value))}
+                disabled={sending}
                 className="w-full rounded-xl border border-app-border bg-app-surface px-3 py-2.5 text-body-sm text-app-text outline-none transition-colors focus:border-brand disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {contasDisponiveis.map((c) => (
+                {availableAccounts.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.descricao}
+                    {c.description}
                   </option>
                 ))}
               </select>
@@ -502,16 +502,16 @@ export default function ExportacaoPage() {
           </div>
 
           <div className="flex items-center justify-end gap-2">
-            <Button variant="light" size="sm" onClick={() => setConfirmando(false)} disabled={enviando}>
-              Cancelar
+            <Button variant="light" size="sm" onClick={() => setConfirming(false)} disabled={sending}>
+              Cancel
             </Button>
             <Button
               variant="brand"
               size="sm"
-              onClick={handleEnviar}
-              disabled={enviando || loadingContas || contaSelecionadaId === null}
+              onClick={handleSend}
+              disabled={sending || loadingAccounts || selectedAccountId === null}
             >
-              {enviando ? "Enviando…" : "Enviar agora"}
+              {sending ? "Sending…" : "Send now"}
             </Button>
           </div>
         </div>

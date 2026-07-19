@@ -8,123 +8,121 @@ import Card from "@/ui/Card";
 import Combobox from "@/ui/Combobox";
 import DatePicker from "@/ui/DatePicker";
 import ConfirmModal from "@/ui/ConfirmModal";
-import KanbanView from "@/features/rdc/components/KanbanView";
-import ListaView from "@/features/rdc/components/ListaView";
-import FormRdc from "@/features/rdc/components/FormRdc";
-import AuditoriaView from "@/features/rdc/components/AuditoriaView";
-import ModalAprovarRdcComCaixa from "@/features/caixa-conta/components/ModalAprovarRdcComCaixa";
-import ModalAgendamentoRdc from "@/features/rdc/components/ModalAgendamentoRdc";
-import { useRdcPage } from "@/features/rdc/hooks/useRdcPage";
-import { baixarPdfRdcApi } from "@/features/rdc/rdc.api";
-import { RDC_STATUS_LABEL } from "@/features/rdc/rdc.types";
+import KanbanView from "@/features/expense-report/components/KanbanView";
+import ListView from "@/features/expense-report/components/ListView";
+import ExpenseReportForm from "@/features/expense-report/components/ExpenseReportForm";
+import AuditView from "@/features/expense-report/components/AuditView";
+import ApproveExpenseReportWithFundModal from "@/features/fund/components/ApproveExpenseReportWithFundModal";
+import SchedulePaymentModal from "@/features/expense-report/components/SchedulePaymentModal";
+import { useExpenseReportPage } from "@/features/expense-report/hooks/useExpenseReportPage";
+import { downloadPdfExpenseReportApi } from "@/features/expense-report/expense-report.api";
+import { EXPENSE_REPORT_STATUS_LABEL } from "@/features/expense-report/expense-report.types";
 import { toast } from "@/lib/toast";
 
-export default function RdcPage() {
+export default function ExpenseReportsPage() {
   const {
-    rdcsFiltrados,
+    filteredExpenseReports,
     loading,
-    erro,
-    recarregar,
+    error,
+    reload,
 
     showForm,
     setShowForm,
     viewMode,
     setViewMode,
-    filtros,
-    setFiltros,
+    filters,
+    setFilters,
 
-    rdcSelecionado,
-    setRdcSelecionado,
+    selectedExpenseReport,
+    setSelectedExpenseReport,
     isEditing,
     setIsEditing,
-    editOrigemKanban,
-    setEditOrigemKanban,
+    editFromKanban,
+    setEditFromKanban,
 
-    rdcParaAprovar,
-    setRdcParaAprovar,
-    rdcParaRejeitar,
-    setRdcParaRejeitar,
-    rejeitando,
-    motivoRejeicaoKanban,
-    setMotivoRejeicaoKanban,
-    rdcParaAgendar,
-    setRdcParaAgendar,
-    rdcParaExcluir,
-    setRdcParaExcluir,
-    excluindo,
+    rdcToApprove,
+    setExpenseReportToApprove,
+    rdcToReject,
+    setExpenseReportToReject,
+    rejecting,
+    kanbanRejectReason,
+    setKanbanRejectReason,
+    rdcToSchedule,
+    setExpenseReportToSchedule,
+    rdcToDelete,
+    setExpenseReportToDelete,
+    deleting,
 
-    handleMoverRdc,
-    handleCriarRdc,
-    handleEditarRdc,
-    handleSubmeterRdc,
-    handleConfirmarAprovacao,
-    handleRejeitarRdc,
-    handleConfirmarRejeicao,
-    handleConfirmarAgendamento,
-    handleMarcarPago,
-    handleConfirmarExclusao,
-  } = useRdcPage();
+    handleMoveExpenseReport,
+    handleCreateExpenseReport,
+    handleEditExpenseReport,
+    handleSubmitExpenseReport,
+    handleConfirmApproval,
+    handleRejectExpenseReport,
+    handleConfirmReject,
+    handleConfirmSchedule,
+    handleMarkPaid,
+    handleConfirmDelete,
+  } = useExpenseReportPage();
 
-  async function handleBaixarPdf(id: number) {
+  async function handleDownloadPdf(id: number) {
     try {
-      const blob = await baixarPdfRdcApi(id);
+      const blob = await downloadPdfExpenseReportApi(id);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `rdc-${id}.pdf`;
+      a.download = `report-${id}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      toast.error("Não foi possível baixar o PDF.");
+      toast.error("Could not download the PDF.");
     }
   }
 
-  // ── Vista de auditoria ──────────────────────────────────────────────────────
-
-  if (rdcSelecionado && (!isEditing || !editOrigemKanban)) {
+  if (selectedExpenseReport && (!isEditing || !editFromKanban)) {
     return (
       <>
         <div className="flex h-full flex-col p-4">
-          <AuditoriaView
-            rdc={rdcSelecionado}
-            onFechar={() => setRdcSelecionado(null)}
-            onEditar={() => setIsEditing(true)}
-            onSubmeter={handleSubmeterRdc}
-            onAprovar={(rdc) => setRdcParaAprovar(rdc)}
-            onRejeitar={handleRejeitarRdc}
-            onAgendar={(rdc) => setRdcParaAgendar(rdc)}
-            onMarcarPago={handleMarcarPago}
-            onBaixarPdf={handleBaixarPdf}
-            modalAberto={isEditing || !!rdcParaAprovar || !!rdcParaAgendar}
+          <AuditView
+            expenseReport={selectedExpenseReport}
+            onClose={() => setSelectedExpenseReport(null)}
+            onEdit={() => setIsEditing(true)}
+            onSubmit={handleSubmitExpenseReport}
+            onApprove={(expenseReport) => setExpenseReportToApprove(expenseReport)}
+            onReject={handleRejectExpenseReport}
+            onSchedule={(expenseReport) => setExpenseReportToSchedule(expenseReport)}
+            onMarkPaid={handleMarkPaid}
+            onDownloadPdf={handleDownloadPdf}
+            modalOpen={isEditing || !!rdcToApprove || !!rdcToSchedule}
           />
           <AnimatePresence>
             {isEditing && (
-              <FormRdc
-                rdcInicial={rdcSelecionado}
-                onSalvar={handleEditarRdc}
-                onFechar={() => setIsEditing(false)}
+              <ExpenseReportForm
+                initialExpenseReport={selectedExpenseReport}
+                onSave={handleEditExpenseReport}
+                onClose={() => setIsEditing(false)}
               />
             )}
           </AnimatePresence>
         </div>
 
         <AnimatePresence>
-          {rdcParaAprovar && (
-            <ModalAprovarRdcComCaixa
-              idUsuarioRdc={rdcParaAprovar.id_usuario}
-              idCentroCustoRdc={rdcParaAprovar.id_centro_custo}
-              valorTotal={(rdcParaAprovar.despesas ?? []).reduce((sum, d) => sum + Number(d.valor ?? 0), 0)}
-              onConfirmar={handleConfirmarAprovacao}
-              onFechar={() => setRdcParaAprovar(null)}
+          {rdcToApprove && (
+            <ApproveExpenseReportWithFundModal
+              reportUserId={rdcToApprove.user_id}
+              reportCostCenterId={rdcToApprove.cost_center_id}
+              totalAmount={(rdcToApprove.items ?? []).reduce((sum, d) => sum + Number(d.amount ?? 0), 0)}
+              onConfirm={handleConfirmApproval}
+              onClose={() => setExpenseReportToApprove(null)}
             />
           )}
         </AnimatePresence>
 
         <AnimatePresence>
-          {rdcParaAgendar && (
-            <ModalAgendamentoRdc
-              onConfirmar={handleConfirmarAgendamento}
-              onCancelar={() => setRdcParaAgendar(null)}
+          {rdcToSchedule && (
+            <SchedulePaymentModal
+              onConfirm={handleConfirmSchedule}
+              onCancel={() => setExpenseReportToSchedule(null)}
             />
           )}
         </AnimatePresence>
@@ -132,18 +130,16 @@ export default function RdcPage() {
     );
   }
 
-  // ── Vista principal (kanban / lista) ────────────────────────────────────────
-
   return (
     <>
       <div className="flex flex-col gap-4 p-6">
 
         <Card>
           <div className="flex items-center justify-between px-5 py-4">
-            <h1 className="text-feature-title text-app-text">Caixa de Obra</h1>
+            <h1 className="text-feature-title text-app-text">Expense Reports</h1>
             <Button variant="dark" size="sm" onClick={() => setShowForm(true)}>
               <Plus size={14} />
-              Novo RDC
+              New Report
             </Button>
           </div>
 
@@ -160,14 +156,14 @@ export default function RdcPage() {
                 Kanban
               </button>
               <button
-                onClick={() => setViewMode("lista")}
-                className={`flex items-center gap-1.5 px-3 py-2 text-caption font-semibold transition-colors cursor-pointer ${viewMode === "lista"
+                onClick={() => setViewMode("list")}
+                className={`flex items-center gap-1.5 px-3 py-2 text-caption font-semibold transition-colors cursor-pointer ${viewMode === "list"
                     ? "bg-app-surface-raised text-app-text"
                     : "text-app-text-muted hover:bg-app-hover"
                   }`}
               >
                 <List size={16} />
-                Lista
+                List
               </button>
             </div>
 
@@ -175,32 +171,32 @@ export default function RdcPage() {
               <FunnelSimple size={16} className="text-app-text-muted shrink-0" />
               <input
                 type="text"
-                placeholder="Requisitante"
-                value={filtros.requisitante}
-                onChange={(e) => setFiltros((f) => ({ ...f, requisitante: e.target.value }))}
+                placeholder="Requester"
+                value={filters.requester}
+                onChange={(e) => setFilters((f) => ({ ...f, requester: e.target.value }))}
                 className="h-10 rounded-xl border border-app-border bg-app-surface px-3 text-body-sm text-app-text placeholder:text-app-text-subtle focus:border-brand focus:outline-none w-52"
               />
               <Combobox
                 placeholder="Status"
-                searchPlaceholder="Buscar status…"
-                value={filtros.status}
-                onChange={(v) => setFiltros((f) => ({ ...f, status: v }))}
+                searchPlaceholder="Search status…"
+                value={filters.status}
+                onChange={(v) => setFilters((f) => ({ ...f, status: v }))}
                 className="w-44"
-                options={Object.entries(RDC_STATUS_LABEL).map(([value, label]) => ({ value, label }))}
+                options={Object.entries(EXPENSE_REPORT_STATUS_LABEL).map(([value, label]) => ({ value, label }))}
               />
               <DatePicker
                 size="sm"
-                placeholder="De"
-                value={filtros.dataInicio}
-                onChange={(v) => setFiltros((f) => ({ ...f, dataInicio: v }))}
+                placeholder="From"
+                value={filters.startDate}
+                onChange={(v) => setFilters((f) => ({ ...f, startDate: v }))}
                 className="w-36"
               />
               <DatePicker
                 size="sm"
-                placeholder="Até"
+                placeholder="To"
                 align="right"
-                value={filtros.dataFim}
-                onChange={(v) => setFiltros((f) => ({ ...f, dataFim: v }))}
+                value={filters.endDate}
+                onChange={(v) => setFilters((f) => ({ ...f, endDate: v }))}
                 className="w-36"
               />
             </div>
@@ -211,14 +207,14 @@ export default function RdcPage() {
           <div className="p-5">
             {loading ? (
               <Loading />
-            ) : erro ? (
+            ) : error ? (
               <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-4">
-                <p className="text-body-sm text-red-700">{erro}</p>
+                <p className="text-body-sm text-red-700">{error}</p>
                 <button
-                  onClick={recarregar}
+                  onClick={reload}
                   className="mt-2 text-caption font-semibold text-brand hover:underline"
                 >
-                  Tentar novamente
+                  Try again
                 </button>
               </div>
             ) : (
@@ -232,17 +228,17 @@ export default function RdcPage() {
                 >
                   {viewMode === "kanban" ? (
                     <KanbanView
-                      rdcs={rdcsFiltrados}
-                      onMoverRdc={handleMoverRdc}
-                      onSelecionarRdc={setRdcSelecionado}
-                      onEditarRdc={(rdc) => { setRdcSelecionado(rdc); setIsEditing(true); setEditOrigemKanban(true); }}
-                      onExcluirRdc={setRdcParaExcluir}
-                      onBaixarPdf={handleBaixarPdf}
+                      rdcs={filteredExpenseReports}
+                      onMoveExpenseReport={handleMoveExpenseReport}
+                      onSelectExpenseReport={setSelectedExpenseReport}
+                      onEditExpenseReport={(expenseReport) => { setSelectedExpenseReport(expenseReport); setIsEditing(true); setEditFromKanban(true); }}
+                      onDeleteExpenseReport={setExpenseReportToDelete}
+                      onDownloadPdf={handleDownloadPdf}
                     />
                   ) : (
-                    <ListaView
-                      rdcs={rdcsFiltrados}
-                      onSelecionarRdc={setRdcSelecionado}
+                    <ListView
+                      rdcs={filteredExpenseReports}
+                      onSelectExpenseReport={setSelectedExpenseReport}
                     />
                   )}
                 </motion.div>
@@ -255,23 +251,23 @@ export default function RdcPage() {
 
       <AnimatePresence>
         {showForm && (
-          <FormRdc
-            onSalvar={handleCriarRdc}
-            onFechar={() => setShowForm(false)}
+          <ExpenseReportForm
+            onSave={handleCreateExpenseReport}
+            onClose={() => setShowForm(false)}
           />
         )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {rdcSelecionado && isEditing && (
-          <FormRdc
-            rdcInicial={rdcSelecionado}
-            onSalvar={handleEditarRdc}
-            onFechar={() => {
+        {selectedExpenseReport && isEditing && (
+          <ExpenseReportForm
+            initialExpenseReport={selectedExpenseReport}
+            onSave={handleEditExpenseReport}
+            onClose={() => {
               setIsEditing(false);
-              if (editOrigemKanban) {
-                setRdcSelecionado(null);
-                setEditOrigemKanban(false);
+              if (editFromKanban) {
+                setSelectedExpenseReport(null);
+                setEditFromKanban(false);
               }
             }}
           />
@@ -279,53 +275,53 @@ export default function RdcPage() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {rdcParaAprovar && (
-          <ModalAprovarRdcComCaixa
-            idUsuarioRdc={rdcParaAprovar.id_usuario}
-            idCentroCustoRdc={rdcParaAprovar.id_centro_custo}
-            valorTotal={(rdcParaAprovar.despesas ?? []).reduce((sum, d) => sum + Number(d.valor ?? 0), 0)}
-            onConfirmar={handleConfirmarAprovacao}
-            onFechar={() => setRdcParaAprovar(null)}
+        {rdcToApprove && (
+          <ApproveExpenseReportWithFundModal
+            reportUserId={rdcToApprove.user_id}
+            reportCostCenterId={rdcToApprove.cost_center_id}
+            totalAmount={(rdcToApprove.items ?? []).reduce((sum, d) => sum + Number(d.amount ?? 0), 0)}
+            onConfirm={handleConfirmApproval}
+            onClose={() => setExpenseReportToApprove(null)}
           />
         )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {rdcParaAgendar && (
-          <ModalAgendamentoRdc
-            onConfirmar={handleConfirmarAgendamento}
-            onCancelar={() => setRdcParaAgendar(null)}
+        {rdcToSchedule && (
+          <SchedulePaymentModal
+            onConfirm={handleConfirmSchedule}
+            onCancel={() => setExpenseReportToSchedule(null)}
           />
         )}
       </AnimatePresence>
 
       <ConfirmModal
-        open={!!rdcParaRejeitar}
-        title="Rejeitar Solicitação ?"
-        description="A solicitação será marcada como rejeitada e o prestador precisará criar uma nova se quiser submeter novamente."
-        confirmLabel="Rejeitar"
-        loadingLabel="Rejeitando…"
-        loading={rejeitando}
-        onConfirm={handleConfirmarRejeicao}
-        onCancel={() => { if (!rejeitando) { setRdcParaRejeitar(null); setMotivoRejeicaoKanban(""); } }}
+        open={!!rdcToReject}
+        title="Reject request?"
+        description="The request will be marked as rejected and the provider will need to create a new one to submit again."
+        confirmLabel="Reject"
+        loadingLabel="Rejecting…"
+        loading={rejecting}
+        onConfirm={handleConfirmReject}
+        onCancel={() => { if (!rejecting) { setExpenseReportToReject(null); setKanbanRejectReason(""); } }}
       >
         <textarea
-          value={motivoRejeicaoKanban}
-          onChange={(e) => setMotivoRejeicaoKanban(e.target.value)}
-          placeholder="Justificativa (opcional)"
+          value={kanbanRejectReason}
+          onChange={(e) => setKanbanRejectReason(e.target.value)}
+          placeholder="Reason (optional)"
           rows={3}
           className="w-full rounded-xl border border-app-border bg-app-surface-raised/40 px-3 py-2 text-body-sm text-app-text placeholder:text-app-text-subtle resize-none focus:outline-none focus:ring-2 focus:ring-brand/30"
         />
       </ConfirmModal>
 
       <ConfirmModal
-        open={!!rdcParaExcluir}
-        title="Excluir RDC?"
-        description={rdcParaExcluir ? `Esta ação não pode ser desfeita. O RDC "${rdcParaExcluir.descricao}" e todas as despesas vinculadas serão removidos permanentemente.` : undefined}
-        confirmLabel="Excluir"
-        loading={excluindo}
-        onConfirm={handleConfirmarExclusao}
-        onCancel={() => { if (!excluindo) setRdcParaExcluir(null); }}
+        open={!!rdcToDelete}
+        title="Delete report?"
+        description={rdcToDelete ? `This action cannot be undone. The report "${rdcToDelete.description}" and all its linked items will be permanently removed.` : undefined}
+        confirmLabel="Delete"
+        loading={deleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => { if (!deleting) setExpenseReportToDelete(null); }}
       />
     </>
   );

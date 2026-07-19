@@ -8,7 +8,7 @@ type Fetcher<T> = (page: number, perPage: number) => Promise<Paginated<T>>;
 
 interface Options {
   perPage?: number;
-  mensagemErro?: string;
+  errorMessage?: string;
 }
 
 export interface UsePaginatedListResult<T> {
@@ -17,22 +17,22 @@ export interface UsePaginatedListResult<T> {
   loading: boolean;
   loadingMore: boolean;
   hasMore: boolean;
-  erro: string | null;
-  recarregar: () => Promise<void>;
-  carregarMais: () => void;
+  error: string | null;
+  reload: () => Promise<void>;
+  loadMore: () => void;
 }
 
 export function usePaginatedList<T>(
   fetcher: Fetcher<T>,
   options: Options = {}
 ): UsePaginatedListResult<T> {
-  const { perPage = PAGE_SIZE, mensagemErro = "Não foi possível carregar." } = options;
+  const { perPage = PAGE_SIZE, errorMessage = "Unable to load." } = options;
 
   const [items, setItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
+  const [error, setErro] = useState<string | null>(null);
 
   const pageRef = useRef(0);
   const inFlightRef = useRef(false);
@@ -40,7 +40,7 @@ export function usePaginatedList<T>(
   const fetcherRef = useRef(fetcher);
   fetcherRef.current = fetcher;
 
-  const recarregar = useCallback(async () => {
+  const reload = useCallback(async () => {
     if (inFlightRef.current) return;
     inFlightRef.current = true;
     setLoading(true);
@@ -51,36 +51,36 @@ export function usePaginatedList<T>(
       setHasMore(r.meta.current_page < r.meta.last_page);
       pageRef.current = r.meta.current_page;
     } catch (err) {
-      setErro(err instanceof Error ? err.message : mensagemErro);
+      setErro(err instanceof Error ? err.message : errorMessage);
     } finally {
       setLoading(false);
       inFlightRef.current = false;
     }
-  }, [perPage, mensagemErro]);
+  }, [perPage, errorMessage]);
 
-  const carregarMais = useCallback(() => {
+  const loadMore = useCallback(() => {
     if (inFlightRef.current || !hasMore) return;
     inFlightRef.current = true;
     setLoadingMore(true);
-    const proxima = pageRef.current + 1;
-    fetcherRef.current(proxima, perPage)
+    const nextPage = pageRef.current + 1;
+    fetcherRef.current(nextPage, perPage)
       .then((r) => {
         setItems((prev) => [...prev, ...r.data]);
         setHasMore(r.meta.current_page < r.meta.last_page);
         pageRef.current = r.meta.current_page;
       })
       .catch((err) => {
-        setErro(err instanceof Error ? err.message : mensagemErro);
+        setErro(err instanceof Error ? err.message : errorMessage);
       })
       .finally(() => {
         setLoadingMore(false);
         inFlightRef.current = false;
       });
-  }, [hasMore, perPage, mensagemErro]);
+  }, [hasMore, perPage, errorMessage]);
 
   useEffect(() => {
-    void recarregar();
-  }, [recarregar]);
+    void reload();
+  }, [reload]);
 
   return {
     items,
@@ -88,8 +88,8 @@ export function usePaginatedList<T>(
     loading,
     loadingMore,
     hasMore,
-    erro,
-    recarregar,
-    carregarMais,
+    error,
+    reload,
+    loadMore,
   };
 }

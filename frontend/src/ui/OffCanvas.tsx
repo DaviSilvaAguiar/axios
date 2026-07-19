@@ -52,7 +52,7 @@ export default function OffCanvas({
               <h2 className="text-feature-title text-app-text">{title ?? ""}</h2>
               <button
                 onClick={onClose}
-                aria-label="Fechar"
+                aria-label="Close"
                 className="text-app-text-muted hover:text-app-text transition-colors cursor-pointer"
               >
                 <X size={20} />

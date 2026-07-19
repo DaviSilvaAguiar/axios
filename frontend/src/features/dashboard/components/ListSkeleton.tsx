@@ -1,6 +1,6 @@
 import Card from "@/ui/Card";
 
-export default function ListaSkeleton() {
+export default function ListSkeleton() {
   return (
     <Card className="p-5">
       <div className="h-3 w-32 rounded bg-app-surface-raised animate-pulse mb-4" />

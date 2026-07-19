@@ -1,18 +1,18 @@
 import { api } from "@/lib/api";
-import { mapListarLancamentos } from "./prestador.mapper";
-import type { ListaLancamentos, FiltroTipo } from "./prestador.types";
+import { mapSubmissionList } from "./provider.mapper";
+import type { SubmissionList, SubmissionFilter } from "./provider.types";
 
-export async function listarLancamentosApi(
-  filtro: FiltroTipo = "todos",
+export async function listSubmissionsApi(
+  filter: SubmissionFilter = "all",
   page = 1,
   perPage = 10
-): Promise<ListaLancamentos> {
+): Promise<SubmissionList> {
   const params = new URLSearchParams({
     page: String(page),
     per_page: String(perPage),
   });
-  if (filtro !== "todos") params.append("tipo", filtro);
+  if (filter !== "all") params.append("type", filter);
 
-  const raw = await api.get<unknown>(`/v1/prestador/lancamentos?${params.toString()}`);
-  return mapListarLancamentos(raw);
+  const raw = await api.get<unknown>(`/v1/provider/transactions?${params.toString()}`);
+  return mapSubmissionList(raw);
 }

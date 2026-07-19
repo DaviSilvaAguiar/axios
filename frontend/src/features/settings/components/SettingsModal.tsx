@@ -5,130 +5,130 @@ import { ArrowUUpLeft, Wallet, Gear, CircleNotch, X } from "@phosphor-icons/reac
 import Modal from "@/ui/Modal";
 import Button from "@/ui/Button";
 import { toast } from "@/lib/toast";
-import { useConfigs } from "@/contexts/ConfigContext";
-import { listarConfigsApi, atualizarConfigApi } from "../config.api";
-import type { Config } from "../config.types";
+import { useSettings } from "@/contexts/SettingContext";
+import { listSettingsApi, updateConfigApi } from "../settings.api";
+import type { Config } from "../settings.types";
 
 interface Props {
   open: boolean;
   onClose: () => void;
 }
 
-type ModuloKey = "geral" | "reembolso" | "caixa";
+type ModuleKey = "general" | "reimbursement" | "expense_report";
 
-const MODULOS: { key: ModuloKey; label: string; icon: typeof Wallet }[] = [
-  { key: "geral", label: "Geral", icon: Gear },
-  { key: "reembolso", label: "Reembolso", icon: ArrowUUpLeft },
-  { key: "caixa", label: "Caixa", icon: Wallet },
+const MODULES: { key: ModuleKey; label: string; icon: typeof Wallet }[] = [
+  { key: "general", label: "General", icon: Gear },
+  { key: "reimbursement", label: "Reimbursement", icon: ArrowUUpLeft },
+  { key: "expense_report", label: "Expense Report", icon: Wallet },
 ];
 
-const CONFIGS_POR_MODULO: Record<ModuloKey, string[]> = {
-  geral: ["obrigatorio_codigo_erp"],
-  reembolso: ["habilitar_geolocalizacao_despesa_rcm"],
-  caixa: ["habilitar_geolocalizacao_despesa_rdc"],
+const CONFIGS_BY_MODULE: Record<ModuleKey, string[]> = {
+  general: ["require_erp_code"],
+  reimbursement: ["enable_geolocation_reimbursement_item"],
+  expense_report: ["enable_geolocation_expense_report_item"],
 };
 
-const SUFIXOS_MODULO = ["_rcm", "_rdc"];
+const MODULE_SUFFIXES = ["_rcm", "_rdc"];
 
-function formatarLabelParametro(parametro: string): string {
+function formatParameterLabel(parametro: string): string {
   let base = parametro;
-  for (const sufixo of SUFIXOS_MODULO) {
-    if (base.endsWith(sufixo)) {
-      base = base.slice(0, -sufixo.length);
+  for (const suffix of MODULE_SUFFIXES) {
+    if (base.endsWith(suffix)) {
+      base = base.slice(0, -suffix.length);
       break;
     }
   }
   return base
     .split("_")
     .filter(Boolean)
-    .map((palavra) => palavra.charAt(0).toUpperCase() + palavra.slice(1))
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
 
-export default function ConfiguracoesModal({ open, onClose }: Props) {
-  const { recarregar: recarregarContextConfigs } = useConfigs();
-  const [configsOriginais, setConfigsOriginais] = useState<Config[]>([]);
-  const [configs, setConfigs] = useState<Config[]>([]);
+export default function SettingsModal({ open, onClose }: Props) {
+  const { reload: reloadContextSettings } = useSettings();
+  const [originalSettings, setOriginalSettings] = useState<Config[]>([]);
+  const [configs, setSettings] = useState<Config[]>([]);
   const [loading, setLoading] = useState(false);
-  const [salvando, setSalvando] = useState(false);
-  const [moduloAtivo, setModuloAtivo] = useState<ModuloKey>("geral");
+  const [saving, setSaving] = useState(false);
+  const [activeModule, setActiveModule] = useState<ModuleKey>("general");
 
   useEffect(() => {
     if (!open) return;
     setLoading(true);
-    listarConfigsApi()
+    listSettingsApi()
       .then((res) => {
-        setConfigsOriginais(res);
-        setConfigs(res);
+        setOriginalSettings(res);
+        setSettings(res);
       })
-      .catch((err) => toast.error(err instanceof Error ? err.message : "Erro ao carregar configurações."))
+      .catch((err) => toast.error(err instanceof Error ? err.message : "Error loading settings."))
       .finally(() => setLoading(false));
   }, [open]);
 
   function handleToggle(config: Config) {
-    const novoValor = config.valor === 1 ? 0 : 1;
-    setConfigs((prev) => prev.map((c) => (c.id === config.id ? { ...c, valor: novoValor } : c)));
+    const nextValue = config.value === 1 ? 0 : 1;
+    setSettings((prev) => prev.map((c) => (c.id === config.id ? { ...c, value: nextValue } : c)));
   }
 
-  function getAlteracoes(): Config[] {
-    return configs.filter((atual) => {
-      const original = configsOriginais.find((o) => o.id === atual.id);
-      return original && original.valor !== atual.valor;
+  function getChanges(): Config[] {
+    return configs.filter((current) => {
+      const original = originalSettings.find((o) => o.id === current.id);
+      return original && original.value !== current.value;
     });
   }
 
-  async function handleSalvar() {
-    const alteracoes = getAlteracoes();
-    if (alteracoes.length === 0) {
+  async function handleSave() {
+    const changes = getChanges();
+    if (changes.length === 0) {
       onClose();
       return;
     }
 
-    setSalvando(true);
+    setSaving(true);
     try {
-      const resultados = await Promise.all(
-        alteracoes.map((c) => atualizarConfigApi(c.id, c.valor)),
+      const results = await Promise.all(
+        changes.map((c) => updateConfigApi(c.id, c.value)),
       );
-      setConfigs((prev) =>
+      setSettings((prev) =>
         prev.map((c) => {
-          const atualizado = resultados.find((r) => r.id === c.id);
-          return atualizado ?? c;
+          const updated = results.find((r) => r.id === c.id);
+          return updated ?? c;
         }),
       );
-      setConfigsOriginais((prev) =>
+      setOriginalSettings((prev) =>
         prev.map((c) => {
-          const atualizado = resultados.find((r) => r.id === c.id);
-          return atualizado ?? c;
+          const updated = results.find((r) => r.id === c.id);
+          return updated ?? c;
         }),
       );
-      await recarregarContextConfigs();
-      toast.success("Configurações salvas.");
+      await reloadContextSettings();
+      toast.success("Settings saved.");
       onClose();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível salvar as configurações.");
+      toast.error(err instanceof Error ? err.message : "Unable to save the settings.");
     } finally {
-      setSalvando(false);
+      setSaving(false);
     }
   }
 
   function handleClose() {
-    if (salvando) return;
-    setConfigs(configsOriginais);
+    if (saving) return;
+    setSettings(originalSettings);
     onClose();
   }
 
-  const parametrosDoModulo = CONFIGS_POR_MODULO[moduloAtivo];
-  const configsDoModulo = configs.filter((c) => parametrosDoModulo.includes(c.parametro));
-  const temAlteracoes = getAlteracoes().length > 0;
+  const moduleParameters = CONFIGS_BY_MODULE[activeModule];
+  const moduleSettings = configs.filter((c) => moduleParameters.includes(c.parameter));
+  const hasChanges = getChanges().length > 0;
 
   return (
     <Modal open={open} onClose={handleClose} className="!max-w-4xl">
       <div className="flex flex-col">
         <div className="flex items-center justify-between px-6 py-5 border-b border-app-border">
-          <h2 className="text-feature-title text-app-text">Configurações</h2>
+          <h2 className="text-feature-title text-app-text">Settings</h2>
           <button
             onClick={handleClose}
-            aria-label="Fechar"
+            aria-label="Close"
             className="text-app-text-muted hover:text-app-text transition-colors cursor-pointer"
           >
             <X size={20} />
@@ -138,12 +138,12 @@ export default function ConfiguracoesModal({ open, onClose }: Props) {
         <div className="flex flex-col md:flex-row min-h-[420px]">
           <aside className="md:w-56 md:border-r border-app-border md:border-b-0 border-b">
             <ul className="p-3 space-y-0.5">
-              {MODULOS.map(({ key, label, icon: Icon }) => {
-                const active = moduloAtivo === key;
+              {MODULES.map(({ key, label, icon: Icon }) => {
+                const active = activeModule === key;
                 return (
                   <li key={key}>
                     <button
-                      onClick={() => setModuloAtivo(key)}
+                      onClick={() => setActiveModule(key)}
                       className={[
                         "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer",
                         active
@@ -165,37 +165,37 @@ export default function ConfiguracoesModal({ open, onClose }: Props) {
               <div className="flex items-center justify-center h-full text-app-text-muted">
                 <CircleNotch size={22} className="animate-spin" />
               </div>
-            ) : configsDoModulo.length === 0 ? (
+            ) : moduleSettings.length === 0 ? (
               <p className="text-body-sm text-app-text-muted">
-                Nenhuma configuração disponível para este módulo.
+                No settings available for this module.
               </p>
             ) : (
               <ul className="space-y-3">
-                {configsDoModulo.map((config) => (
+                {moduleSettings.map((config) => (
                   <li
                     key={config.id}
                     className="flex items-start justify-between gap-4 p-4 rounded-xl border border-app-border bg-app-surface-raised"
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-body-sm font-medium text-app-text">
-                        {formatarLabelParametro(config.parametro)}
+                        {formatParameterLabel(config.parameter)}
                       </p>
                       <p className="text-caption text-app-text-muted mt-1">
-                        {config.descricao}
+                        {config.description}
                       </p>
                     </div>
                     <button
                       onClick={() => handleToggle(config)}
-                      aria-pressed={config.valor === 1}
+                      aria-pressed={config.value === 1}
                       className={[
                         "relative shrink-0 w-11 h-6 rounded-full transition-colors cursor-pointer",
-                        config.valor === 1 ? "bg-brand" : "bg-app-border",
+                        config.value === 1 ? "bg-brand" : "bg-app-border",
                       ].join(" ")}
                     >
                       <span
                         className={[
                           "absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform",
-                          config.valor === 1 ? "translate-x-5" : "translate-x-0",
+                          config.value === 1 ? "translate-x-5" : "translate-x-0",
                         ].join(" ")}
                       />
                     </button>
@@ -207,8 +207,8 @@ export default function ConfiguracoesModal({ open, onClose }: Props) {
         </div>
 
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-app-border">
-          <Button onClick={handleSalvar} disabled={salvando || !temAlteracoes}>
-            {salvando ? "Salvando..." : "Salvar"}
+          <Button onClick={handleSave} disabled={saving || !hasChanges}>
+            {saving ? "Saving..." : "Save"}
           </Button>
         </div>
       </div>

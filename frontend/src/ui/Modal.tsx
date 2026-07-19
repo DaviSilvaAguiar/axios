@@ -71,9 +71,9 @@ export default function Modal({ open, onClose, children, className = "", isDirty
 
       <ConfirmModal
         open={confirmOpen}
-        title="Fechar sem salvar?"
-        description="Você tem alterações não salvas. Se fechar agora, elas serão perdidas."
-        confirmLabel="Descartar"
+        title="Close without saving?"
+        description="You have unsaved changes. If you close now, they will be lost."
+        confirmLabel="Discard"
         onConfirm={() => {
           setConfirmOpen(false);
           onClose();

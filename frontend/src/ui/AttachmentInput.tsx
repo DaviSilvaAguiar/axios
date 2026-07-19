@@ -8,7 +8,7 @@ interface Props extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
   error?: string;
 }
 
-const InputAnexo = forwardRef<HTMLInputElement, Props>(function InputAnexo(
+const AttachmentInput = forwardRef<HTMLInputElement, Props>(function AttachmentInput(
   { label, error, accept, onChange, className = "", ...props },
   ref
 ) {
@@ -56,7 +56,7 @@ const InputAnexo = forwardRef<HTMLInputElement, Props>(function InputAnexo(
         )}
 
         <span className={`flex-1 truncate text-left text-small ${fileName ? "text-app-text" : "text-app-text-subtle"}`}>
-          {fileName ?? "Selecione um arquivo…"}
+          {fileName ?? "Select a file…"}
         </span>
 
         {fileName && (
@@ -92,6 +92,6 @@ const InputAnexo = forwardRef<HTMLInputElement, Props>(function InputAnexo(
   );
 });
 
-InputAnexo.displayName = "InputAnexo";
+AttachmentInput.displayName = "AttachmentInput";
 
-export default InputAnexo;
+export default AttachmentInput;

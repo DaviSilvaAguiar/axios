@@ -6,7 +6,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 
 export default function MobileHeader() {
   const { logout } = useAuth();
-  const { tema, toggleTema } = useTheme();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <header className="md:hidden sticky top-0 z-30 bg-app-surface border-b border-app-border-subtle h-14 px-4 flex items-center justify-between">
@@ -15,15 +15,15 @@ export default function MobileHeader() {
       </span>
       <div className="flex items-center gap-1 -mr-3">
         <button
-          onClick={toggleTema}
-          aria-label={tema === "light" ? "Ativar modo escuro" : "Ativar modo claro"}
+          onClick={toggleTheme}
+          aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
           className="flex items-center justify-center h-11 w-11 text-app-text-muted hover:text-app-text"
         >
-          {tema === "light" ? <Moon size={20} weight="bold" /> : <Sun size={20} weight="bold" />}
+          {theme === "light" ? <Moon size={20} weight="bold" /> : <Sun size={20} weight="bold" />}
         </button>
         <button
           onClick={() => { void logout(); }}
-          aria-label="Sair"
+          aria-label="Sign out"
           className="flex items-center justify-center h-11 w-11 text-app-text-muted hover:text-app-text"
         >
           <SignOut size={20} />

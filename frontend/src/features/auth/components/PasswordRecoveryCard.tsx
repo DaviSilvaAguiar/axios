@@ -7,74 +7,74 @@ import { toast } from "@/lib/toast";
 import Button from "@/ui/Button";
 import Input from "@/ui/Input";
 import {
-  recuperarSenhaFormSchema,
-  type RecuperarSenhaFormData,
+  passwordRecoveryFormSchema,
+  type PasswordRecoveryFormData,
 } from "@/features/auth/auth.types";
 
-interface RecuperarSenhaCardProps {
-  onVoltar: () => void;
+interface PasswordRecoveryCardProps {
+  onBack: () => void;
 }
 
 const WHATSAPP_NUMBER = "554896721292";
 
-export default function RecuperarSenhaCard({ onVoltar }: RecuperarSenhaCardProps) {
+export default function PasswordRecoveryCard({ onBack }: PasswordRecoveryCardProps) {
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<RecuperarSenhaFormData>({
-    resolver: zodResolver(recuperarSenhaFormSchema),
+  } = useForm<PasswordRecoveryFormData>({
+    resolver: zodResolver(passwordRecoveryFormSchema),
   });
 
-  async function onSubmit({ empresa, email }: RecuperarSenhaFormData) {
-    const msg = `Olá! Preciso trocar minha senha no *Axios*.\n\n*Empresa:* _${empresa}_\n*E-mail:* ${email}`;
+  async function onSubmit({ company, email }: PasswordRecoveryFormData) {
+    const msg = `Hello! I need to reset my password in *Axios*.\n\n*Company:* _${company}_\n*Email:* ${email}`;
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
     window.open(url, "_blank", "noopener,noreferrer");
-    toast.success("WhatsApp aberto! Envie a mensagem e aguarde o retorno.");
+    toast.success("WhatsApp opened! Send the message and wait for our reply.");
     reset();
-    onVoltar();
+    onBack();
   }
 
   return (
     <div className="flex flex-col gap-8">
       <div className="text-center">
         <h1 className="text-display-third text-ink lg:hidden">Axios</h1>
-        <h2 className="text-section-heading text-ink hidden lg:block">Recuperar senha</h2>
-        <p className="text-body-sm text-ink-muted mt-1">Informe seus dados para continuar</p>
+        <h2 className="text-section-heading text-ink hidden lg:block">Password recovery</h2>
+        <p className="text-body-sm text-ink-muted mt-1">Enter your details to continue</p>
       </div>
 
       <div className="bg-surface rounded-[16px] shadow-[0_1px_8px_rgba(0,0,0,0.05)] p-8">
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
           <button
             type="button"
-            onClick={() => { reset(); onVoltar(); }}
+            onClick={() => { reset(); onBack(); }}
             className="flex items-center gap-1.5 text-ink-muted hover:text-ink transition-colors -mt-1 w-fit cursor-pointer"
           >
             <ArrowLeft size={16} weight="bold" />
-            <span className="text-caption font-normal">Voltar</span>
+            <span className="text-caption font-normal">Back</span>
           </button>
 
           <Input
-            label="Empresa"
+            label="Company"
             icon={<Buildings size={20} weight="bold" />}
-            placeholder="Nome da empresa"
+            placeholder="Company name"
             autoComplete="organization"
-            error={errors.empresa?.message}
-            {...register("empresa")}
+            error={errors.company?.message}
+            {...register("company")}
           />
 
           <Input
-            label="E-mail"
+            label="Email"
             icon={<Envelope size={20} weight="bold" />}
-            placeholder="Seu e-mail"
+            placeholder="Your email"
             autoComplete="email"
             error={errors.email?.message}
             {...register("email")}
           />
 
           <Button type="submit" variant="dark" fullWidth disabled={isSubmitting}>
-            Enviar pelo WhatsApp
+            Send via WhatsApp
           </Button>
         </form>
       </div>

@@ -1,33 +1,29 @@
 import { useCallback, useState } from "react";
-import type { AnexoCaixa } from "../rdc.types";
+import type { AnexoCaixa } from "../expense-report.types";
 
-/**
- * Gerencia arquivos novos (File[][]) e anexos existentes (AnexoCaixa[][])
- * para o array de despesas do FormRdc.
- */
-export function useDespesasAnexos(initialCount: number, initialAnexos: AnexoCaixa[][]) {
+export function useItemAttachments(initialCount: number, initialAttachments: AnexoCaixa[][]) {
   const [itemFiles, setItemFiles] = useState<File[][]>(
     () => Array.from({ length: initialCount }, () => [])
   );
-  const [existingAnexos, setExistingAnexos] = useState<AnexoCaixa[][]>(initialAnexos);
+  const [existingAttachments, setExistingAttachments] = useState<AnexoCaixa[][]>(initialAttachments);
 
-  function adicionarItem() {
+  function addItem() {
     setItemFiles((prev) => [...prev, []]);
-    setExistingAnexos((prev) => [...prev, []]);
+    setExistingAttachments((prev) => [...prev, []]);
   }
 
-  function removerItem(idx: number) {
+  function removeItem(idx: number) {
     setItemFiles((prev) => prev.filter((_, i) => i !== idx));
-    setExistingAnexos((prev) => prev.filter((_, i) => i !== idx));
+    setExistingAttachments((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  const adicionarArquivo = useCallback((idx: number, file: File) => {
+  const addFile = useCallback((idx: number, file: File) => {
     setItemFiles((prev) =>
       prev.map((files, i) => (i === idx ? [...files, file] : files))
     );
   }, []);
 
-  const removerArquivo = useCallback((itemIdx: number, fileIdx: number) => {
+  const removeFile = useCallback((itemIdx: number, fileIdx: number) => {
     setItemFiles((prev) =>
       prev.map((files, i) =>
         i === itemIdx ? files.filter((_, j) => j !== fileIdx) : files
@@ -37,10 +33,10 @@ export function useDespesasAnexos(initialCount: number, initialAnexos: AnexoCaix
 
   return {
     itemFiles,
-    existingAnexos,
-    adicionarItem,
-    removerItem,
-    adicionarArquivo,
-    removerArquivo,
+    existingAttachments,
+    addItem,
+    removeItem,
+    addFile,
+    removeFile,
   };
 }

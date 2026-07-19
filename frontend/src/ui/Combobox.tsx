@@ -24,9 +24,9 @@ export default function Combobox({
   options,
   value,
   onChange,
-  placeholder = "Selecione…",
-  searchPlaceholder = "Buscar…",
-  emptyMessage = "Nenhum resultado.",
+  placeholder = "Select…",
+  searchPlaceholder = "Search…",
+  emptyMessage = "No results.",
   className = "",
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -93,7 +93,6 @@ export default function Combobox({
             transition={{ duration: 0.14 }}
             className="overflow-hidden rounded-2xl border border-app-border bg-app-surface shadow-xl"
           >
-            {/* Search */}
             <div className="flex items-center gap-2 border-b border-app-border px-3 py-2.5">
               <MagnifyingGlass size={14} className="shrink-0 text-app-text-subtle" />
               <input
@@ -110,7 +109,6 @@ export default function Combobox({
               )}
             </div>
 
-            {/* List */}
             <ul className="max-h-60 overflow-y-auto py-1">
               {filtered.length === 0 ? (
                 <li className="px-3 py-2 text-small text-app-text-muted text-center">

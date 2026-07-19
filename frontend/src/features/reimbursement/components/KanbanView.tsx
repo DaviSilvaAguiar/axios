@@ -16,28 +16,28 @@ import { useState } from "react";
 import { FilePdf, PencilSimple, Trash, Tray } from "@phosphor-icons/react";
 import EmptyState from "@/ui/EmptyState";
 import StatusTag from "./StatusTag";
-import { type Rcm, type RcmStatus } from "../rcm.types";
+import { type Reimbursement, type ReimbursementStatus } from "../reimbursement.types";
 import { formatarData, formatarMoeda } from "@/lib/formatters";
 
-const COLUNAS: RcmStatus[] = [1, 2, 3, 4, 5, 6, 7];
+const COLUMNS: ReimbursementStatus[] = [1, 2, 3, 4, 5, 6, 7];
 
-function formatarValor(rcm: Rcm): string {
-  const total = (rcm.despesas ?? []).reduce((acc, d) => acc + parseFloat(d.valor), 0);
+function formatAmount(reimbursement: Reimbursement): string {
+  const total = (reimbursement.items ?? []).reduce((acc, d) => acc + parseFloat(d.amount), 0);
   return formatarMoeda(total);
 }
 
 interface CardProps {
-  rcm: Rcm;
+  reimbursement: Reimbursement;
   isDragging?: boolean;
-  onAbrirAuditoria: (rcm: Rcm) => void;
-  onBaixarPdf: (id: number) => void;
-  onEditarRcm?: (rcm: Rcm) => void;
-  onExcluirRcm?: (rcm: Rcm) => void;
+  onOpenAudit: (reimbursement: Reimbursement) => void;
+  onDownloadPdf: (id: number) => void;
+  onEditReimbursement?: (reimbursement: Reimbursement) => void;
+  onDeleteReimbursement?: (reimbursement: Reimbursement) => void;
 }
 
-function RcmCard({ rcm, isDragging, onAbrirAuditoria, onBaixarPdf, onEditarRcm, onExcluirRcm }: CardProps) {
+function ReimbursementCard({ reimbursement, isDragging, onOpenAudit, onDownloadPdf, onEditReimbursement, onDeleteReimbursement }: CardProps) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: rcm.id,
+    id: reimbursement.id,
   });
 
   const style = transform
@@ -55,43 +55,43 @@ function RcmCard({ rcm, isDragging, onAbrirAuditoria, onBaixarPdf, onEditarRcm, 
     >
       <div className="flex items-start justify-between gap-2 mb-2">
         <p className="text-caption text-app-text font-semibold line-clamp-2 flex-1">
-          {rcm.titulo}
+          {reimbursement.title}
         </p>
         <div className="flex items-center gap-0.5 shrink-0">
-          {rcm.status === 1 && (
+          {reimbursement.status === 1 && (
             <button
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
-                onEditarRcm?.(rcm);
+                onEditReimbursement?.(reimbursement);
               }}
-              title="Editar"
+              title="Edit"
               className="rounded-full p-1.5 text-app-text-muted hover:bg-app-hover hover:text-brand transition-colors cursor-pointer"
             >
               <PencilSimple size={16} />
             </button>
           )}
-          {rcm.status === 1 && (
+          {reimbursement.status === 1 && (
             <button
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
-                onExcluirRcm?.(rcm);
+                onDeleteReimbursement?.(reimbursement);
               }}
-              title="Excluir"
+              title="Delete"
               className="rounded-full p-1.5 text-app-text-muted hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
             >
               <Trash size={16} />
             </button>
           )}
-          {rcm.status >= 4 && (
+          {reimbursement.status >= 4 && (
             <button
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
-                onBaixarPdf(rcm.id);
+                onDownloadPdf(reimbursement.id);
               }}
-              title="Baixar PDF"
+              title="Download PDF"
               className="rounded-full p-1.5 text-app-text-muted hover:bg-app-hover hover:text-brand transition-colors cursor-pointer"
             >
               <FilePdf size={16} />
@@ -101,51 +101,51 @@ function RcmCard({ rcm, isDragging, onAbrirAuditoria, onBaixarPdf, onEditarRcm, 
       </div>
 
       <p className="text-small text-app-text-muted mb-3">
-        {rcm.usuario?.nome ?? "—"}
+        {reimbursement.user?.name ?? "—"}
       </p>
 
       <div className="flex items-center justify-between">
         <span className="text-caption text-app-text font-semibold">
-          {formatarValor(rcm)}
+          {formatAmount(reimbursement)}
         </span>
         <button
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
-            onAbrirAuditoria(rcm);
+            onOpenAudit(reimbursement);
           }}
           className="text-small text-brand hover:underline cursor-pointer"
         >
-          Ver detalhes
+          View details
         </button>
       </div>
 
       <p className="mt-2 text-small text-app-text-subtle">
-        {formatarData(rcm.created_at)}
+        {formatarData(reimbursement.created_at)}
       </p>
     </div>
   );
 }
 
-interface ColunaProps {
-  status: RcmStatus;
-  rcms: Rcm[];
+interface ColumnProps {
+  status: ReimbursementStatus;
+  reimbursements: Reimbursement[];
   isDragOver: boolean;
-  onAbrirAuditoria: (rcm: Rcm) => void;
-  onBaixarPdf: (id: number) => void;
-  onEditarRcm?: (rcm: Rcm) => void;
-  onExcluirRcm?: (rcm: Rcm) => void;
+  onOpenAudit: (reimbursement: Reimbursement) => void;
+  onDownloadPdf: (id: number) => void;
+  onEditReimbursement?: (reimbursement: Reimbursement) => void;
+  onDeleteReimbursement?: (reimbursement: Reimbursement) => void;
   activeId: number | null;
 }
 
-function Coluna({ status, rcms, isDragOver, onAbrirAuditoria, onBaixarPdf, onEditarRcm, onExcluirRcm, activeId }: ColunaProps) {
+function Column({ status, reimbursements, isDragOver, onOpenAudit, onDownloadPdf, onEditReimbursement, onDeleteReimbursement, activeId }: ColumnProps) {
   const { setNodeRef } = useDroppable({ id: status });
 
   return (
     <div className="flex w-72 shrink-0 flex-col gap-3">
       <div className="flex items-center justify-between px-1">
         <StatusTag status={status} />
-        <span className="text-small text-app-text-subtle">{rcms.length}</span>
+        <span className="text-small text-app-text-subtle">{reimbursements.length}</span>
       </div>
 
       <div
@@ -153,19 +153,19 @@ function Coluna({ status, rcms, isDragOver, onAbrirAuditoria, onBaixarPdf, onEdi
         className={`flex min-h-24 max-h-[54rem] flex-col gap-3 overflow-y-auto rounded-2xl p-2 transition-colors ${isDragOver ? "bg-app-nav-active" : "bg-app-surface-raised/40"
           }`}
       >
-        {rcms.map((rcm) => (
-          <RcmCard
-            key={rcm.id}
-            rcm={rcm}
-            isDragging={activeId === rcm.id}
-            onAbrirAuditoria={onAbrirAuditoria}
-            onBaixarPdf={onBaixarPdf}
-            onEditarRcm={onEditarRcm}
-            onExcluirRcm={onExcluirRcm}
+        {reimbursements.map((reimbursement) => (
+          <ReimbursementCard
+            key={reimbursement.id}
+            reimbursement={reimbursement}
+            isDragging={activeId === reimbursement.id}
+            onOpenAudit={onOpenAudit}
+            onDownloadPdf={onDownloadPdf}
+            onEditReimbursement={onEditReimbursement}
+            onDeleteReimbursement={onDeleteReimbursement}
           />
         ))}
-        {rcms.length === 0 && (
-          <EmptyState icon={Tray} title="Sem itens" size="sm" />
+        {reimbursements.length === 0 && (
+          <EmptyState icon={Tray} title="No items" size="sm" />
         )}
       </div>
     </div>
@@ -173,25 +173,25 @@ function Coluna({ status, rcms, isDragOver, onAbrirAuditoria, onBaixarPdf, onEdi
 }
 
 interface KanbanViewProps {
-  rcms: Rcm[];
-  onMoverRcm: (id: number, novoStatus: RcmStatus) => void;
-  onPedirAgendamento: (rcm: Rcm) => void;
-  onPedirRejeicao: (rcm: Rcm) => void;
-  onAbrirAuditoria: (rcm: Rcm) => void;
-  onBaixarPdf: (id: number) => void;
-  onEditarRcm?: (rcm: Rcm) => void;
-  onExcluirRcm?: (rcm: Rcm) => void;
+  reimbursements: Reimbursement[];
+  onMoveReimbursement: (id: number, newStatus: ReimbursementStatus) => void;
+  onRequestScheduling: (reimbursement: Reimbursement) => void;
+  onRequestRejection: (reimbursement: Reimbursement) => void;
+  onOpenAudit: (reimbursement: Reimbursement) => void;
+  onDownloadPdf: (id: number) => void;
+  onEditReimbursement?: (reimbursement: Reimbursement) => void;
+  onDeleteReimbursement?: (reimbursement: Reimbursement) => void;
 }
 
 export default function KanbanView({
-  rcms,
-  onMoverRcm,
-  onPedirAgendamento,
-  onPedirRejeicao,
-  onAbrirAuditoria,
-  onBaixarPdf,
-  onEditarRcm,
-  onExcluirRcm,
+  reimbursements,
+  onMoveReimbursement,
+  onRequestScheduling,
+  onRequestRejection,
+  onOpenAudit,
+  onDownloadPdf,
+  onEditReimbursement,
+  onDeleteReimbursement,
 }: KanbanViewProps) {
   const [activeId, setActiveId] = useState<number | null>(null);
   const [overColumnId, setOverColumnId] = useState<number | null>(null);
@@ -200,7 +200,7 @@ export default function KanbanView({
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
 
-  const activeRcm = activeId ? rcms.find((r) => r.id === activeId) : null;
+  const activeReimbursement = activeId ? reimbursements.find((r) => r.id === activeId) : null;
 
   function handleDragStart({ active }: DragStartEvent) {
     setActiveId(active.id as number);
@@ -210,16 +210,16 @@ export default function KanbanView({
     setActiveId(null);
     setOverColumnId(null);
     if (!over) return;
-    const rcmId = active.id as number;
-    const novoStatus = over.id as RcmStatus;
-    const rcm = rcms.find((r) => r.id === rcmId);
-    if (!rcm || rcm.status === novoStatus) return;
-    if (novoStatus === 5) {
-      onPedirAgendamento(rcm);
-    } else if (novoStatus === 7) {
-      onPedirRejeicao(rcm);
+    const reimbursementId = active.id as number;
+    const newStatus = over.id as ReimbursementStatus;
+    const reimbursement = reimbursements.find((r) => r.id === reimbursementId);
+    if (!reimbursement || reimbursement.status === newStatus) return;
+    if (newStatus === 5) {
+      onRequestScheduling(reimbursement);
+    } else if (newStatus === 7) {
+      onRequestRejection(reimbursement);
     } else {
-      onMoverRcm(rcmId, novoStatus);
+      onMoveReimbursement(reimbursementId, newStatus);
     }
   }
 
@@ -232,32 +232,32 @@ export default function KanbanView({
       onDragCancel={() => { setActiveId(null); setOverColumnId(null); }}
     >
       <div className="flex gap-4 overflow-x-auto pt-1 pb-4">
-        {COLUNAS.map((status) => (
-          <Coluna
+        {COLUMNS.map((status) => (
+          <Column
             key={status}
             status={status}
-            rcms={rcms.filter((r) => r.status === status)}
+            reimbursements={reimbursements.filter((r) => r.status === status)}
             isDragOver={overColumnId === status}
-            onAbrirAuditoria={onAbrirAuditoria}
-            onBaixarPdf={onBaixarPdf}
-            onEditarRcm={onEditarRcm}
-            onExcluirRcm={onExcluirRcm}
+            onOpenAudit={onOpenAudit}
+            onDownloadPdf={onDownloadPdf}
+            onEditReimbursement={onEditReimbursement}
+            onDeleteReimbursement={onDeleteReimbursement}
             activeId={activeId}
           />
         ))}
       </div>
 
       <DragOverlay>
-        {activeRcm ? (
+        {activeReimbursement ? (
           <div className="w-72 rounded-2xl border border-app-border bg-app-surface p-4 shadow-2xl opacity-90">
             <p className="text-caption font-semibold text-app-text line-clamp-2 mb-1">
-              {activeRcm.titulo}
+              {activeReimbursement.title}
             </p>
             <p className="text-small text-app-text-muted">
-              {activeRcm.usuario?.nome ?? "—"}
+              {activeReimbursement.user?.name ?? "—"}
             </p>
             <p className="mt-2 text-caption font-semibold text-app-text">
-              {formatarValor(activeRcm)}
+              {formatAmount(activeReimbursement)}
             </p>
           </div>
         ) : null}

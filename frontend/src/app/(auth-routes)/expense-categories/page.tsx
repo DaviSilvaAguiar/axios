@@ -16,109 +16,109 @@ import Input from "@/ui/Input";
 import EmptyState from "@/ui/EmptyState";
 import DataTable, { type DataTableColumn } from "@/ui/DataTable";
 import ConfirmModal from "@/ui/ConfirmModal";
-import BadgeAtivo from "@/ui/BadgeAtivo";
+import ActiveBadge from "@/ui/ActiveBadge";
 import { toast } from "@/lib/toast";
-import FormCategoriaDespesa from "@/features/categoria-despesa/components/FormCategoriaDespesa";
+import ExpenseCategoryForm from "@/features/expense-category/components/ExpenseCategoryForm";
 import {
-  listarCategoriasDespesaApi,
-  criarCategoriaDespesaApi,
-  atualizarCategoriaDespesaApi,
-  deletarCategoriaDespesaApi,
-} from "@/features/categoria-despesa/categoria-despesa.api";
+  listCategoriasDespesaApi,
+  createExpenseCategoryApi,
+  updateExpenseCategoryApi,
+  deleteExpenseCategoryApi,
+} from "@/features/expense-category/expense-category.api";
 import type {
-  CategoriaDespesa,
-  CategoriaDespesaFormData,
-} from "@/features/categoria-despesa/categoria-despesa.types";
+  ExpenseCategory,
+  ExpenseCategoryFormData,
+} from "@/features/expense-category/expense-category.types";
 
-export default function CategoriaDespesaPage() {
+export default function ExpenseCategoriesPage() {
   const {
-    items: categorias,
-    setItems: setCategorias,
+    items: categories,
+    setItems: setCategories,
     loading,
     loadingMore,
     hasMore,
-    erro,
-    recarregar,
-    carregarMais,
-  } = usePaginatedList<CategoriaDespesa>(
-    (page, perPage) => listarCategoriasDespesaApi(page, perPage),
-    { mensagemErro: "Não foi possível carregar as categorias." }
+    error: error,
+    reload: reload,
+    loadMore: loadMore,
+  } = usePaginatedList<ExpenseCategory>(
+    (page, perPage) => listCategoriasDespesaApi(page, perPage),
+    { errorMessage: "Could not load the categories." }
   );
 
-  const [busca, setBusca] = useState("");
-  const [modalAberto, setModalAberto] = useState(false);
-  const [selecionada, setSelecionada] = useState<CategoriaDespesa | undefined>();
-  const [deletandoId, setDeletandoId] = useState<number | null>(null);
-  const [paraExcluir, setParaExcluir] = useState<CategoriaDespesa | null>(null);
-  const [toggleandoId, setToglandoId] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selected, setSelected] = useState<ExpenseCategory | undefined>();
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [toDelete, setToDelete] = useState<ExpenseCategory | null>(null);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
 
-  function abrirNovo() {
-    setSelecionada(undefined);
-    setModalAberto(true);
+  function openCreate() {
+    setSelected(undefined);
+    setModalOpen(true);
   }
 
-  function abrirEdicao(categoria: CategoriaDespesa) {
-    setSelecionada(categoria);
-    setModalAberto(true);
+  function openEdit(category: ExpenseCategory) {
+    setSelected(category);
+    setModalOpen(true);
   }
 
-  function fecharModal() {
-    setModalAberto(false);
-    setSelecionada(undefined);
+  function closeModal() {
+    setModalOpen(false);
+    setSelected(undefined);
   }
 
-  async function handleSalvar(dados: CategoriaDespesaFormData) {
-    if (selecionada) {
-      const { categoria_despesa } = await atualizarCategoriaDespesaApi(selecionada.id, dados);
-      setCategorias((prev) =>
-        prev.map((c) => (c.id === categoria_despesa.id ? categoria_despesa : c))
+  async function handleSave(data: ExpenseCategoryFormData) {
+    if (selected) {
+      const { expense_category } = await updateExpenseCategoryApi(selected.id, data);
+      setCategories((prev) =>
+        prev.map((c) => (c.id === expense_category.id ? expense_category : c))
       );
-      toast.success("Categoria atualizada.");
+      toast.success("Category updated.");
     } else {
-      const { categoria_despesa } = await criarCategoriaDespesaApi(dados);
-      setCategorias((prev) =>
-        [...prev, categoria_despesa].sort((a, b) => a.descricao.localeCompare(b.descricao))
+      const { expense_category } = await createExpenseCategoryApi(data);
+      setCategories((prev) =>
+        [...prev, expense_category].sort((a, b) => a.description.localeCompare(b.description))
       );
-      toast.success("Categoria criada.");
+      toast.success("Category created.");
     }
-    fecharModal();
+    closeModal();
   }
 
-  async function handleToggleAtivo(c: CategoriaDespesa) {
-    setToglandoId(c.id);
+  async function handleToggleActive(c: ExpenseCategory) {
+    setTogglingId(c.id);
     try {
-      const { categoria_despesa } = await atualizarCategoriaDespesaApi(c.id, { ativo: !c.ativo });
-      setCategorias((prev) => prev.map((x) => (x.id === categoria_despesa.id ? categoria_despesa : x)));
-      toast.success(c.ativo ? "Categoria inativada." : "Categoria ativada.");
+      const { expense_category } = await updateExpenseCategoryApi(c.id, { active: !c.active });
+      setCategories((prev) => prev.map((x) => (x.id === expense_category.id ? expense_category : x)));
+      toast.success(c.active ? "Category deactivated." : "Category activated.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível alterar o status.");
+      toast.error(err instanceof Error ? err.message : "Could not change the status.");
     } finally {
-      setToglandoId(null);
+      setTogglingId(null);
     }
   }
 
-  async function handleDeletar() {
-    if (!paraExcluir) return;
-    setDeletandoId(paraExcluir.id);
+  async function handleDelete() {
+    if (!toDelete) return;
+    setDeletingId(toDelete.id);
     try {
-      await deletarCategoriaDespesaApi(paraExcluir.id);
-      setCategorias((prev) => prev.filter((c) => c.id !== paraExcluir.id));
-      toast.success("Categoria removida.");
-      setParaExcluir(null);
+      await deleteExpenseCategoryApi(toDelete.id);
+      setCategories((prev) => prev.filter((c) => c.id !== toDelete.id));
+      toast.success("Category removed.");
+      setToDelete(null);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível remover a categoria.");
+      toast.error(err instanceof Error ? err.message : "Could not remove the category.");
     } finally {
-      setDeletandoId(null);
+      setDeletingId(null);
     }
   }
 
-  const categoriasFiltradas = categorias.filter(
+  const filteredCategories = categories.filter(
     (c) =>
-      c.descricao.toLowerCase().includes(busca.toLowerCase()) ||
-      (c.codigo_erp ?? "").toLowerCase().includes(busca.toLowerCase())
+      c.description.toLowerCase().includes(search.toLowerCase()) ||
+      (c.erp_code ?? "").toLowerCase().includes(search.toLowerCase())
   );
 
-  const columns: DataTableColumn<CategoriaDespesa>[] = [
+  const columns: DataTableColumn<ExpenseCategory>[] = [
     {
       key: "id",
       header: "ID",
@@ -127,20 +127,20 @@ export default function CategoriaDespesaPage() {
       render: (c) => <span className="text-small text-app-text-subtle">{c.id}</span>,
     },
     {
-      key: "descricao",
-      header: "Descrição",
+      key: "description",
+      header: "Description",
       sortable: true,
-      sortAccessor: (c) => c.descricao,
-      render: (c) => <span className="font-medium text-app-text">{c.descricao}</span>,
+      sortAccessor: (c) => c.description,
+      render: (c) => <span className="font-medium text-app-text">{c.description}</span>,
     },
     {
-      key: "codigo_erp",
-      header: "Código ERP",
+      key: "erp_code",
+      header: "ERP Code",
       sortable: true,
-      sortAccessor: (c) => c.codigo_erp,
+      sortAccessor: (c) => c.erp_code,
       render: (c) => (
         <span className="text-app-text-muted">
-          {c.codigo_erp ?? <span className="text-app-text-subtle">—</span>}
+          {c.erp_code ?? <span className="text-app-text-subtle">—</span>}
         </span>
       ),
     },
@@ -148,33 +148,33 @@ export default function CategoriaDespesaPage() {
       key: "status",
       header: "Status",
       sortable: true,
-      sortAccessor: (c) => (c.ativo ? 1 : 0),
-      render: (c) => <BadgeAtivo ativo={c.ativo} />,
+      sortAccessor: (c) => (c.active ? 1 : 0),
+      render: (c) => <ActiveBadge ativo={c.active} />,
     },
     {
-      key: "acoes",
+      key: "actions",
       header: "",
       align: "right",
       render: (c) => (
         <div className="flex items-center justify-end gap-1">
           <button
-            onClick={(e) => { e.stopPropagation(); handleToggleAtivo(c); }}
-            disabled={toggleandoId === c.id}
+            onClick={(e) => { e.stopPropagation(); handleToggleActive(c); }}
+            disabled={togglingId === c.id}
             className={[
               "p-2 rounded-lg transition-colors cursor-pointer disabled:opacity-40",
-              c.ativo
+              c.active
                 ? "text-app-text-muted hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10"
                 : "text-app-text-muted hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10",
             ].join(" ")}
-            aria-label={c.ativo ? "Inativar" : "Ativar"}
-            title={c.ativo ? "Inativar" : "Ativar"}
+            aria-label={c.active ? "Deactivate" : "Activate"}
+            title={c.active ? "Deactivate" : "Activate"}
           >
             <Power size={15} />
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); setParaExcluir(c); }}
+            onClick={(e) => { e.stopPropagation(); setToDelete(c); }}
             className="p-2 rounded-lg text-app-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors cursor-pointer"
-            aria-label="Remover"
+            aria-label="Remove"
           >
             <Trash size={15} />
           </button>
@@ -189,20 +189,20 @@ export default function CategoriaDespesaPage() {
 
         <Card>
           <div className="flex items-center justify-between px-5 py-4">
-            <h1 className="text-feature-title text-app-text">Categorias de Despesa</h1>
-            <Button variant="dark" size="sm" onClick={abrirNovo}>
+            <h1 className="text-feature-title text-app-text">Expense Categories</h1>
+            <Button variant="dark" size="sm" onClick={openCreate}>
               <Plus size={14} />
-              Nova
+              New
             </Button>
           </div>
 
           <div className="px-5 pb-4 border-t border-app-border pt-4">
             <Input
               label=""
-              placeholder="Buscar por descrição ou código ERP…"
+              placeholder="Search by description or ERP code…"
               icon={<MagnifyingGlass size={16} />}
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               className="!py-3 text-body-sm"
             />
           </div>
@@ -210,36 +210,36 @@ export default function CategoriaDespesaPage() {
 
         <Card>
           <div className="p-5">
-            {erro ? (
+            {error ? (
               <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-4">
-                <p className="text-body-sm text-red-700">{erro}</p>
+                <p className="text-body-sm text-red-700">{error}</p>
                 <button
-                  onClick={() => recarregar()}
+                  onClick={() => reload()}
                   className="mt-2 text-caption font-semibold text-brand hover:underline"
                 >
-                  Tentar novamente
+                  Try again
                 </button>
               </div>
             ) : (
               <DataTable
                 columns={columns}
-                rows={categoriasFiltradas}
-                onRowClick={abrirEdicao}
+                rows={filteredCategories}
+                onRowClick={openEdit}
                 keyExtractor={(c) => c.id}
                 loading={loading}
-                onLoadMore={busca ? undefined : carregarMais}
-                hasMore={busca ? false : hasMore}
+                onLoadMore={search ? undefined : loadMore}
+                hasMore={search ? false : hasMore}
                 loadingMore={loadingMore}
                 empty={
                   <EmptyState
                     icon={Tag}
-                    title="Nenhuma categoria encontrada"
+                    title="No categories found"
                     description={
-                      busca
-                        ? "Nenhum resultado para o filtro aplicado."
-                        : 'Clique em "Nova" para cadastrar a primeira.'
+                      search
+                        ? "No results for the applied filter."
+                        : 'Click "New" to add the first one.'
                     }
-                    action={!busca ? { label: "Nova Categoria", onClick: abrirNovo } : undefined}
+                    action={!search ? { label: "New Category", onClick: openCreate } : undefined}
                   />
                 }
               />
@@ -249,22 +249,22 @@ export default function CategoriaDespesaPage() {
 
       </div>
 
-      <Modal open={modalAberto} onClose={fecharModal}>
-        <FormCategoriaDespesa
-          categoriaDespesa={selecionada}
-          onSalvar={handleSalvar}
-          onCancelar={fecharModal}
+      <Modal open={modalOpen} onClose={closeModal}>
+        <ExpenseCategoryForm
+          expenseCategory={selected}
+          onSave={handleSave}
+          onCancel={closeModal}
         />
       </Modal>
 
       <ConfirmModal
-        open={!!paraExcluir}
-        title="Remover categoria"
-        description={`Tem certeza que deseja remover "${paraExcluir?.descricao}"? Esta ação não pode ser desfeita.`}
-        confirmLabel="Remover"
-        loading={deletandoId !== null}
-        onConfirm={handleDeletar}
-        onCancel={() => setParaExcluir(null)}
+        open={!!toDelete}
+        title="Remove category"
+        description={`Are you sure you want to remove "${toDelete?.description}"? This action cannot be undone.`}
+        confirmLabel="Remove"
+        loading={deletingId !== null}
+        onConfirm={handleDelete}
+        onCancel={() => setToDelete(null)}
       />
     </>
   );

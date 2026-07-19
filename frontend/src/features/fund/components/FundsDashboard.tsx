@@ -5,75 +5,75 @@ import { Vault } from "@phosphor-icons/react";
 import EmptyState from "@/ui/EmptyState";
 import DataTable, { type DataTableColumn } from "@/ui/DataTable";
 import {
-  CAIXA_CONTA_TIPO_LABEL,
-  type CaixaConta,
-} from "../caixa-conta.types";
+  FUND_TIPO_LABEL,
+  type Fund,
+} from "../fund.types";
 import { formatarMoeda } from "@/lib/formatters";
 
 interface Props {
-  caixas: CaixaConta[];
-  onSelecionarCaixa: (caixa: CaixaConta) => void;
-  fechados?: boolean;
+  funds: Fund[];
+  onSelectFund: (fund: Fund) => void;
+  closed?: boolean;
 }
 
-export default function DashboardCaixas({ caixas, onSelecionarCaixa, fechados }: Props) {
-  const columns = useMemo<DataTableColumn<CaixaConta>[]>(() => [
+export default function FundsDashboard({ funds, onSelectFund, closed }: Props) {
+  const columns = useMemo<DataTableColumn<Fund>[]>(() => [
     {
       key: "id",
       header: "#",
       render: (c) => <span className="text-small text-app-text-subtle">{c.id}</span>,
     },
     {
-      key: "descricao",
-      header: "Descrição",
+      key: "description",
+      header: "Description",
       render: (c) => (
-        <span className="text-app-text font-medium max-w-xs truncate block">{c.descricao}</span>
+        <span className="text-app-text font-medium max-w-xs truncate block">{c.description}</span>
       ),
     },
     {
-      key: "responsavel",
-      header: "Responsável",
+      key: "owner",
+      header: "In Charge",
       render: (c) => (
-        <span className="text-app-text">{c.usuario?.nome ?? `Usuário #${c.id_usuario}`}</span>
+        <span className="text-app-text">{c.user?.name ?? `User #${c.user_id}`}</span>
       ),
     },
     {
-      key: "centro_de_custo",
-      header: "Centro de Custo",
+      key: "cost_center",
+      header: "Cost Center",
       render: (c) => (
         <span className="text-app-text-muted">
-          {c.centro_de_custo?.descricao ?? `#${c.id_centro_custo}`}
+          {c.cost_center?.description ?? `#${c.cost_center_id}`}
         </span>
       ),
     },
     {
-      key: "tipo",
-      header: "Tipo",
+      key: "type",
+      header: "Type",
       render: (c) => (
-        <span className="text-small text-app-text-muted">{CAIXA_CONTA_TIPO_LABEL[c.tipo]}</span>
+        <span className="text-small text-app-text-muted">{FUND_TIPO_LABEL[c.type]}</span>
       ),
     },
     {
-      key: "saldo",
-      header: "Saldo",
+      key: "balance",
+      header: "Balance",
       align: "right",
       render: (c) => (
         <span className="text-app-text font-semibold whitespace-nowrap">
-          {formatarMoeda(Number(c.saldo))}
+          {formatarMoeda(Number(c.balance))}
         </span>
       ),
     },
   ], []);
 
-  if (caixas.length === 0) {
+  if (funds.length === 0) {
     return (
       <EmptyState
         icon={Vault}
-        title={fechados ? "Nenhum caixa fechado" : "Nenhum caixa aberto"}
+        title={closed ? "No closed funds" : "No open funds"}
         description={
-          fechados
-            ? "Caixas fechados aparecem aqui após o saldo ser zerado."
-            : "Crie um novo caixa para um colaborador começar a operar."
+          closed
+            ? "Closed funds appear here once their balance reaches zero."
+            : "Create a new fund so a team member can start operating."
         }
       />
     );
@@ -82,9 +82,9 @@ export default function DashboardCaixas({ caixas, onSelecionarCaixa, fechados }:
   return (
     <DataTable
       columns={columns}
-      rows={caixas}
+      rows={funds}
       keyExtractor={(c) => c.id}
-      onRowClick={onSelecionarCaixa}
+      onRowClick={onSelectFund}
     />
   );
 }

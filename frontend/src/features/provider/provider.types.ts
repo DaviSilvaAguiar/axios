@@ -1,17 +1,17 @@
 import { z } from "zod";
 
-export const lancamentoSchema = z.object({
+export const submissionSchema = z.object({
   id: z.number(),
-  tipo: z.enum(["rdc", "rcm"]),
-  titulo: z.string(),
-  valor_total: z.string(),
+  type: z.enum(["expense_report", "reimbursement"]),
+  title: z.string(),
+  total_amount: z.string(),
   status: z.number(),
   created_at: z.string(),
 });
-export type Lancamento = z.infer<typeof lancamentoSchema>;
+export type Submission = z.infer<typeof submissionSchema>;
 
-export const listaLancamentosSchema = z.object({
-  data: z.array(lancamentoSchema),
+export const submissionListSchema = z.object({
+  data: z.array(submissionSchema),
   meta: z.object({
     current_page: z.number(),
     last_page: z.number(),
@@ -19,7 +19,7 @@ export const listaLancamentosSchema = z.object({
     total: z.number(),
   }),
 });
-export type ListaLancamentos = z.infer<typeof listaLancamentosSchema>;
+export type SubmissionList = z.infer<typeof submissionListSchema>;
 
-export type TipoLancamento = "rdc" | "rcm";
-export type FiltroTipo = "todos" | TipoLancamento;
+export type SubmissionType = "expense_report" | "reimbursement";
+export type SubmissionFilter = "all" | SubmissionType;

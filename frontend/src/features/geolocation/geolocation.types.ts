@@ -1,12 +1,12 @@
 import { z } from "zod";
 
-export const localizacaoSchema = z.object({
+export const locationSchema = z.object({
   latitude:  z.number(),
   longitude: z.number(),
-  endereco:  z.string().nullable(),
+  address:  z.string().nullable(),
 });
 
-export type Localizacao = z.infer<typeof localizacaoSchema>;
+export type Localizacao = z.infer<typeof locationSchema>;
 
 export const nominatimResultSchema = z.object({
   lat:          z.string(),

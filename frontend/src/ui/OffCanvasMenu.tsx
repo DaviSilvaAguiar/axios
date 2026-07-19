@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Users, Gear, CaretRight } from "@phosphor-icons/react";
 import { useAuth } from "@/contexts/AuthContext";
 import OffCanvas from "@/ui/OffCanvas";
-import ConfiguracoesModal from "@/features/config/components/ConfiguracoesModal";
+import SettingsModal from "@/features/settings/components/SettingsModal";
 
 interface Props {
   open: boolean;
@@ -13,28 +13,28 @@ interface Props {
 }
 
 export default function OffCanvasMenu({ open, onClose }: Props) {
-  const { usuario } = useAuth();
-  const [configsOpen, setConfigsOpen] = useState(false);
+  const { user } = useAuth();
+  const [configsOpen, setSettingsOpen] = useState(false);
 
-  function abrirConfiguracoes() {
+  function openSettings() {
     onClose();
-    setConfigsOpen(true);
+    setSettingsOpen(true);
   }
 
   return (
     <>
-      <OffCanvas open={open} onClose={onClose} title={usuario?.nome ?? ""}>
+      <OffCanvas open={open} onClose={onClose} title={user?.name ?? ""}>
         <nav className="p-3">
           <ul className="space-y-0.5">
             <li>
               <Link
-                href="/usuarios"
+                href="/users"
                 onClick={onClose}
                 className="w-full flex items-center justify-between gap-3 px-3 py-3 rounded-xl text-sm font-medium text-app-text-muted hover:text-app-text hover:bg-app-hover transition-colors"
               >
                 <span className="flex items-center gap-3">
                   <Users size={19} />
-                  Usuários
+                  Users
                 </span>
                 <CaretRight size={14} className="text-app-text-subtle" />
               </Link>
@@ -42,12 +42,12 @@ export default function OffCanvasMenu({ open, onClose }: Props) {
             <li>
               <button
                 type="button"
-                onClick={abrirConfiguracoes}
+                onClick={openSettings}
                 className="w-full flex items-center justify-between gap-3 px-3 py-3 rounded-xl text-sm font-medium text-app-text-muted hover:text-app-text hover:bg-app-hover transition-colors cursor-pointer"
               >
                 <span className="flex items-center gap-3">
                   <Gear size={19} />
-                  Configurações
+                  Settings
                 </span>
                 <CaretRight size={14} className="text-app-text-subtle" />
               </button>
@@ -56,9 +56,9 @@ export default function OffCanvasMenu({ open, onClose }: Props) {
         </nav>
       </OffCanvas>
 
-      <ConfiguracoesModal
+      <SettingsModal
         open={configsOpen}
-        onClose={() => setConfigsOpen(false)}
+        onClose={() => setSettingsOpen(false)}
       />
     </>
   );

@@ -4,13 +4,13 @@ import { Toaster as SonnerToaster } from "sonner";
 import { useTheme } from "@/contexts/ThemeContext";
 
 export default function Toaster() {
-  const { tema } = useTheme();
-  const isDark = tema === "dark";
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   return (
     <SonnerToaster
       position="top-center"
-      theme={tema}
+      theme={theme}
       closeButton
       gap={8}
       toastOptions={{

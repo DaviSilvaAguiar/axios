@@ -20,8 +20,8 @@ export default function ConfirmModal({
   open,
   title,
   description,
-  confirmLabel = "Confirmar",
-  loadingLabel = "Aguarde…",
+  confirmLabel = "Confirm",
+  loadingLabel = "Please wait…",
   loading = false,
   onConfirm,
   onCancel,
@@ -47,7 +47,6 @@ export default function ConfirmModal({
             className="relative w-full max-w-md rounded-2xl bg-app-surface shadow-2xl overflow-hidden"
             onMouseDown={(e) => e.stopPropagation()}
           >
-            {/* Faixa vermelha no topo */}
             <div className="h-1 w-full bg-red-500" />
 
             <div className="p-6 flex flex-col gap-5">
@@ -67,7 +66,7 @@ export default function ConfirmModal({
                   onClick={onCancel}
                   disabled={loading}
                 >
-                  Cancelar
+                  Cancel
                 </Button>
                 <button
                   onClick={onConfirm}

@@ -11,16 +11,16 @@ export default function MobileTabBar() {
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const isHome = pathname === "/dashboard";
-  const isLanc =
-    pathname.startsWith("/meus-lancamentos") ||
-    pathname.startsWith("/meus-reembolsos") ||
-    pathname.startsWith("/minha-caixa-de-obra");
+  const isEntries =
+    pathname.startsWith("/my-submissions") ||
+    pathname.startsWith("/my-reimbursements") ||
+    pathname.startsWith("/my-expense-reports");
 
   return (
     <>
       <nav
         role="tablist"
-        aria-label="Navegação principal"
+        aria-label="Main navigation"
         className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-app-surface border-t border-app-border-subtle"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
@@ -34,12 +34,12 @@ export default function MobileTabBar() {
             }`}
           >
             <HouseLine size={22} weight={isHome ? "fill" : "regular"} />
-            <span className="text-small">Início</span>
+            <span className="text-small">Home</span>
           </Link>
 
           <div className="flex items-center justify-center -translate-y-3">
             <button
-              aria-label="Novo lançamento"
+              aria-label="New entry"
               onClick={() => setSheetOpen(true)}
               className="h-14 w-14 rounded-full bg-brand text-white flex items-center justify-center shadow-lg shadow-brand/30 active:scale-95 transition-transform"
             >
@@ -48,15 +48,15 @@ export default function MobileTabBar() {
           </div>
 
           <Link
-            href="/meus-lancamentos"
+            href="/my-submissions"
             role="tab"
-            aria-current={isLanc ? "page" : undefined}
+            aria-current={isEntries ? "page" : undefined}
             className={`flex flex-col items-center justify-center gap-1 h-full ${
-              isLanc ? "text-brand" : "text-app-text-muted"
+              isEntries ? "text-brand" : "text-app-text-muted"
             }`}
           >
-            <Receipt size={22} weight={isLanc ? "fill" : "regular"} />
-            <span className="text-small">Lançamentos</span>
+            <Receipt size={22} weight={isEntries ? "fill" : "regular"} />
+            <span className="text-small">Entries</span>
           </Link>
         </div>
       </nav>

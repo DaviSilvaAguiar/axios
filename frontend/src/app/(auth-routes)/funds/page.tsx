@@ -8,45 +8,45 @@ import Button from "@/ui/Button";
 import Card from "@/ui/Card";
 import Loading from "@/ui/Loading";
 import { toast } from "@/lib/toast";
-import DashboardCaixas from "@/features/caixa-conta/components/DashboardCaixas";
-import FormCaixaConta from "@/features/caixa-conta/components/FormCaixaConta";
+import FundsDashboard from "@/features/fund/components/FundsDashboard";
+import FundForm from "@/features/fund/components/FundForm";
 import {
-  criarCaixaContaApi,
-  listarCaixaContasApi,
-  type CaixaContaStatusFiltro,
-} from "@/features/caixa-conta/caixa-conta.api";
+  createFundApi,
+  listFundsApi,
+  type FundStatusFiltro,
+} from "@/features/fund/fund.api";
 import {
-  type CaixaConta,
-  type StoreCaixaContaFormData,
-} from "@/features/caixa-conta/caixa-conta.types";
+  type Fund,
+  type StoreFundFormData,
+} from "@/features/fund/fund.types";
 
-export default function CaixasPage() {
+export default function FundsPage() {
   const router = useRouter();
-  const [caixas, setCaixas] = useState<CaixaConta[]>([]);
+  const [funds, setFunds] = useState<Fund[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<CaixaContaStatusFiltro>("abertos");
+  const [tab, setTab] = useState<FundStatusFiltro>("abertos");
   const [showForm, setShowForm] = useState(false);
 
-  const carregar = useCallback(async (filtro: CaixaContaStatusFiltro) => {
+  const load = useCallback(async (filter: FundStatusFiltro) => {
     setLoading(true);
     try {
-      setCaixas(await listarCaixaContasApi(filtro));
+      setFunds(await listFundsApi(filter));
     } catch {
-      toast.error("Não foi possível carregar os caixas.");
+      toast.error("Could not load the funds.");
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    carregar(tab);
-  }, [carregar, tab]);
+    load(tab);
+  }, [load, tab]);
 
-  async function handleCriar(dados: StoreCaixaContaFormData) {
-    const novo = await criarCaixaContaApi(dados);
-    setCaixas((prev) => [novo, ...prev]);
+  async function handleCreate(data: StoreFundFormData) {
+    const created = await createFundApi(data);
+    setFunds((prev) => [created, ...prev]);
     setShowForm(false);
-    toast.success("Caixa criado com sucesso!");
+    toast.success("Fund created successfully!");
   }
 
   return (
@@ -54,10 +54,10 @@ export default function CaixasPage() {
       <div className="flex flex-col gap-4 p-6">
         <Card>
           <div className="flex items-center justify-between px-5 py-4">
-            <h1 className="text-feature-title text-app-text">Gestão de Caixas</h1>
+            <h1 className="text-feature-title text-app-text">Fund Management</h1>
             <Button variant="dark" size="sm" onClick={() => setShowForm(true)}>
               <Plus size={14} />
-              Novo Caixa
+              New Fund
             </Button>
           </div>
 
@@ -71,7 +71,7 @@ export default function CaixasPage() {
                     : "text-app-text-muted hover:bg-app-hover"
                 }`}
               >
-                Abertos
+                Open
               </button>
               <button
                 onClick={() => setTab("fechados")}
@@ -81,7 +81,7 @@ export default function CaixasPage() {
                     : "text-app-text-muted hover:bg-app-hover"
                 }`}
               >
-                Fechados
+                Closed
               </button>
             </div>
           </div>
@@ -92,10 +92,10 @@ export default function CaixasPage() {
             {loading ? (
               <Loading />
             ) : (
-              <DashboardCaixas
-                caixas={caixas}
-                onSelecionarCaixa={(c) => router.push(`/caixas/${c.id}`)}
-                fechados={tab === "fechados"}
+              <FundsDashboard
+                funds={funds}
+                onSelectFund={(c) => router.push(`/funds/${c.id}`)}
+                closed={tab === "fechados"}
               />
             )}
           </div>
@@ -104,9 +104,9 @@ export default function CaixasPage() {
 
       <AnimatePresence>
         {showForm && (
-          <FormCaixaConta
-            onSalvar={handleCriar}
-            onFechar={() => setShowForm(false)}
+          <FundForm
+            onSave={handleCreate}
+            onClose={() => setShowForm(false)}
           />
         )}
       </AnimatePresence>

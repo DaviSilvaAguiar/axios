@@ -1,14 +1,14 @@
 import {
-  listarRcmsResponseSchema,
+  listReimbursementsResponseSchema,
   rcmResponseSchema,
-  type ListarRcmsResponse,
-  type RcmResponse,
-} from "./rcm.types";
+  type ListarReimbursementsResponse,
+  type ReimbursementResponse,
+} from "./reimbursement.types";
 
-export function mapListarRcmsResponse(raw: unknown): ListarRcmsResponse {
-  return listarRcmsResponseSchema.parse(raw);
+export function mapListarReimbursementsResponse(raw: unknown): ListarReimbursementsResponse {
+  return listReimbursementsResponseSchema.parse(raw);
 }
 
-export function mapRcmResponse(raw: unknown): RcmResponse {
+export function mapReimbursementResponse(raw: unknown): ReimbursementResponse {
   return rcmResponseSchema.parse(raw);
 }

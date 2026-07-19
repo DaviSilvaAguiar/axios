@@ -15,128 +15,128 @@ import { motion, AnimatePresence } from "framer-motion";
 import Loading from "@/ui/Loading";
 import Button from "@/ui/Button";
 import ConfirmModal from "@/ui/ConfirmModal";
-import FormRdc from "@/features/rdc/components/FormRdc";
-import StatusTag from "@/features/rdc/components/StatusTag";
+import ExpenseReportForm from "@/features/expense-report/components/ExpenseReportForm";
+import StatusTag from "@/features/expense-report/components/StatusTag";
 import { toast } from "@/lib/toast";
 import {
-  buscarRdcApi,
-  criarDespesaRdcApi,
-  adicionarAnexoDespesaRdcApi,
-  atualizarRdcApi,
-  atualizarStatusRdcApi,
-  deletarRdcApi,
-} from "@/features/rdc/rdc.api";
+  getExpenseReportApi,
+  createExpenseReportItemApi,
+  adicionarAnexoExpenseReportItemApi,
+  updateExpenseReportApi,
+  updateStatusExpenseReportApi,
+  deleteExpenseReportApi,
+} from "@/features/expense-report/expense-report.api";
 import {
-  RDC_STATUS_RASCUNHO,
-  type DespesaRdcFormItem,
-  type Rdc,
-  type StoreRdcWithDespesasFormData,
-} from "@/features/rdc/rdc.types";
+  EXPENSE_REPORT_STATUS_DRAFT,
+  type ExpenseReportItemFormItem,
+  type ExpenseReport,
+  type StoreExpenseReportWithDespesasFormData,
+} from "@/features/expense-report/expense-report.types";
 
-function fmtValor(v: number) {
+function fmtAmount(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function fmtData(iso: string) {
+function fmtDate(iso: string) {
   const [y, m, d] = iso.split("T")[0].split("-");
   return `${d}/${m}/${y}`;
 }
 
-function buildDespesaFormData(despesa: DespesaRdcFormItem, arquivos: File[]): FormData {
+function buildItemFormData(item: ExpenseReportItemFormItem, files: File[]): FormData {
   const fd = new FormData();
-  fd.append("data_despesa", despesa.data_despesa);
-  fd.append("valor", despesa.valor);
-  fd.append("id_centro_custo", despesa.id_centro_custo);
-  fd.append("descricao", despesa.descricao);
-  if (despesa.id_categoria_despesa) fd.append("id_categoria_despesa", despesa.id_categoria_despesa);
-  if (despesa.latitude != null) fd.append("latitude", String(despesa.latitude));
-  if (despesa.longitude != null) fd.append("longitude", String(despesa.longitude));
-  if (despesa.endereco) fd.append("endereco", despesa.endereco);
-  if (despesa.descricao_fornecedor) fd.append("descricao_fornecedor", despesa.descricao_fornecedor);
-  if (despesa.cpf_cnpj_fornecedor) fd.append("cpf_cnpj_fornecedor", despesa.cpf_cnpj_fornecedor.replace(/\D/g, ""));
-  if (despesa.id_fornecedor) fd.append("id_fornecedor", despesa.id_fornecedor);
-  for (const file of arquivos) fd.append("anexos[]", file);
+  fd.append("expense_date", item.expense_date);
+  fd.append("amount", item.amount);
+  fd.append("cost_center_id", item.cost_center_id);
+  fd.append("description", item.description);
+  if (item.expense_category_id) fd.append("expense_category_id", item.expense_category_id);
+  if (item.latitude != null) fd.append("latitude", String(item.latitude));
+  if (item.longitude != null) fd.append("longitude", String(item.longitude));
+  if (item.address) fd.append("address", item.address);
+  if (item.description_supplier) fd.append("description_supplier", item.description_supplier);
+  if (item.supplier_tax_id) fd.append("supplier_tax_id", item.supplier_tax_id.replace(/\D/g, ""));
+  if (item.supplier_id) fd.append("supplier_id", item.supplier_id);
+  for (const file of files) fd.append("attachments[]", file);
   return fd;
 }
 
-export default function DetalheCaixaDeObraPage({
+export default function ExpenseReportDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const [rdc, setRdc] = useState<Rdc | null>(null);
+  const [expenseReport, setExpenseReport] = useState<ExpenseReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [menuAberto, setMenuAberto] = useState(false);
-  const [modalExcluirAberto, setModalExcluirAberto] = useState(false);
-  const [submetendo, setSubmetendo] = useState(false);
-  const [excluindo, setExcluindo] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    buscarRdcApi(Number(id))
-      .then(setRdc)
-      .catch(() => toast.error("Não foi possível carregar a caixa de obra."))
+    getExpenseReportApi(Number(id))
+      .then(setExpenseReport)
+      .catch(() => toast.error("Could not load the report."))
       .finally(() => setLoading(false));
   }, [id]);
 
-  async function handleEditar(dados: StoreRdcWithDespesasFormData, arquivos: File[][] = []) {
-    if (!rdc) return;
+  async function handleEdit(data: StoreExpenseReportWithDespesasFormData, files: File[][] = []) {
+    if (!expenseReport) return;
     try {
-      const { despesas, ...rdcDados } = dados;
-      await atualizarRdcApi(rdc.id, rdcDados);
+      const { items, ...rdcData } = data;
+      await updateExpenseReportApi(expenseReport.id, rdcData);
 
-      const existingDespesas = rdc.despesas ?? [];
-      const existingCount = existingDespesas.length;
+      const existingItems = expenseReport.items ?? [];
+      const existingCount = existingItems.length;
 
       await Promise.all(
-        existingDespesas.flatMap((orig, idx) =>
-          (arquivos[idx] ?? []).map((file) =>
-            adicionarAnexoDespesaRdcApi(rdc.id, orig.id, file)
+        existingItems.flatMap((originalItem, idx) =>
+          (files[idx] ?? []).map((file) =>
+            adicionarAnexoExpenseReportItemApi(expenseReport.id, originalItem.id, file)
           )
         )
       );
 
-      const novas = (despesas ?? []).slice(existingCount);
-      for (const [i, despesa] of novas.entries()) {
-        await criarDespesaRdcApi(rdc.id, buildDespesaFormData(despesa, arquivos[existingCount + i] ?? []));
+      const newItems = (items ?? []).slice(existingCount);
+      for (const [i, item] of newItems.entries()) {
+        await createExpenseReportItemApi(expenseReport.id, buildItemFormData(item, files[existingCount + i] ?? []));
       }
 
-      const atualizado = await buscarRdcApi(rdc.id);
-      setRdc(atualizado);
+      const updated = await getExpenseReportApi(expenseReport.id);
+      setExpenseReport(updated);
       setIsEditing(false);
-      toast.success("Caixa de Obra atualizada!");
+      toast.success("Report updated!");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível salvar as alterações.");
+      toast.error(err instanceof Error ? err.message : "Could not save the changes.");
     }
   }
 
-  async function handleSubmeter() {
-    if (!rdc) return;
-    setSubmetendo(true);
+  async function handleSubmit() {
+    if (!expenseReport) return;
+    setSubmitting(true);
     try {
-      const atualizado = await atualizarStatusRdcApi(rdc.id, 2);
-      setRdc(atualizado);
-      toast.success("Caixa enviada para aprovação!");
+      const updated = await updateStatusExpenseReportApi(expenseReport.id, 2);
+      setExpenseReport(updated);
+      toast.success("Report sent for approval!");
     } catch {
-      toast.error("Não foi possível enviar para aprovação.");
+      toast.error("Could not send it for approval.");
     } finally {
-      setSubmetendo(false);
+      setSubmitting(false);
     }
   }
 
-  async function handleExcluir() {
-    if (!rdc) return;
-    setExcluindo(true);
+  async function handleDelete() {
+    if (!expenseReport) return;
+    setDeleting(true);
     try {
-      await deletarRdcApi(rdc.id);
-      toast.success("Caixa excluída.");
-      router.push("/minha-caixa-de-obra");
+      await deleteExpenseReportApi(expenseReport.id);
+      toast.success("Report deleted.");
+      router.push("/my-expense-reports");
     } catch {
-      toast.error("Não foi possível excluir a caixa.");
-      setExcluindo(false);
-      setModalExcluirAberto(false);
+      toast.error("Could not delete the report.");
+      setDeleting(false);
+      setDeleteModalOpen(false);
     }
   }
 
@@ -148,43 +148,42 @@ export default function DetalheCaixaDeObraPage({
     );
   }
 
-  if (!rdc) {
+  if (!expenseReport) {
     return (
       <div className="flex flex-col items-center justify-center p-8 gap-4">
-        <p className="text-body text-app-text-muted">Caixa não encontrada.</p>
-        <Button variant="outlined" onClick={() => router.push("/minha-caixa-de-obra")}>
-          Voltar
+        <p className="text-body text-app-text-muted">Report not found.</p>
+        <Button variant="outlined" onClick={() => router.push("/my-expense-reports")}>
+          Back
         </Button>
       </div>
     );
   }
 
-  const isRascunho = rdc.status === RDC_STATUS_RASCUNHO;
-  const despesas = rdc.despesas ?? [];
-  const total = despesas.reduce((acc, d) => acc + Number(d.valor ?? 0), 0);
-  const podeEnviar = isRascunho && despesas.length > 0;
+  const isDraft = expenseReport.status === EXPENSE_REPORT_STATUS_DRAFT;
+  const items = expenseReport.items ?? [];
+  const total = items.reduce((acc, d) => acc + Number(d.amount ?? 0), 0);
+  const canSubmit = isDraft && items.length > 0;
 
   return (
     <>
-      <div className={`flex flex-col min-h-full ${isRascunho ? "pb-28" : "pb-8"}`}>
-        {/* Header */}
+      <div className={`flex flex-col min-h-full ${isDraft ? "pb-28" : "pb-8"}`}>
         <div className="sticky top-0 z-10 bg-app-bg/95 backdrop-blur-sm border-b border-app-border-subtle">
           <div className="flex items-center gap-2 px-3 py-3 sm:px-4">
             <button
-              onClick={() => router.push("/minha-caixa-de-obra")}
-              aria-label="Voltar"
+              onClick={() => router.push("/my-expense-reports")}
+              aria-label="Back"
               className="rounded-full p-2 text-app-text-muted hover:bg-app-hover transition-colors"
             >
               <ArrowLeft size={20} />
             </button>
             <div className="flex-1 min-w-0">
-              <p className="text-feature-title text-app-text truncate">{rdc.descricao}</p>
+              <p className="text-feature-title text-app-text truncate">{expenseReport.description}</p>
             </div>
-            <StatusTag status={rdc.status} />
-            {isRascunho && (
+            <StatusTag status={expenseReport.status} />
+            {isDraft && (
               <button
-                onClick={() => setMenuAberto(true)}
-                aria-label="Mais ações"
+                onClick={() => setMenuOpen(true)}
+                aria-label="More actions"
                 className="rounded-full p-2 text-app-text-muted hover:bg-app-hover transition-colors"
               >
                 <DotsThreeVertical size={20} weight="bold" />
@@ -193,71 +192,68 @@ export default function DetalheCaixaDeObraPage({
           </div>
         </div>
 
-        {/* Resumo compacto */}
         <div className="px-4 sm:px-6 pt-4 space-y-1">
-          {(rdc.centro_de_custo || (rdc.data_inicio_periodo && rdc.data_fim_periodo)) && (
+          {(expenseReport.cost_center || (expenseReport.period_start_date && expenseReport.period_end_date)) && (
             <p className="text-small text-app-text-muted">
-              {rdc.centro_de_custo?.descricao}
-              {rdc.centro_de_custo && rdc.data_inicio_periodo && rdc.data_fim_periodo && " · "}
-              {rdc.data_inicio_periodo && rdc.data_fim_periodo &&
-                `${fmtData(rdc.data_inicio_periodo)} → ${fmtData(rdc.data_fim_periodo)}`}
+              {expenseReport.cost_center?.description}
+              {expenseReport.cost_center && expenseReport.period_start_date && expenseReport.period_end_date && " · "}
+              {expenseReport.period_start_date && expenseReport.period_end_date &&
+                `${fmtDate(expenseReport.period_start_date)} → ${fmtDate(expenseReport.period_end_date)}`}
             </p>
           )}
-          {(rdc.descricao_requisitante || rdc.usuario_requisitante) && (
+          {(expenseReport.requester_description || expenseReport.requester_user) && (
             <p className="text-small text-app-text-muted">
-              Requisitante: {rdc.usuario_requisitante?.nome ?? rdc.descricao_requisitante}
+              Requester: {expenseReport.requester_user?.name ?? expenseReport.requester_description}
             </p>
           )}
-          {rdc.obs && (
-            <p className="text-small text-app-text-muted pt-2 leading-relaxed">{rdc.obs}</p>
+          {expenseReport.notes && (
+            <p className="text-small text-app-text-muted pt-2 leading-relaxed">{expenseReport.notes}</p>
           )}
         </div>
 
-        {/* Total em destaque */}
         <div className="px-4 sm:px-6 pt-6">
           <p className="text-caption font-semibold text-app-text-muted uppercase tracking-wide">
             Total
           </p>
           <p className="text-[2rem] leading-tight font-bold text-app-text">
-            {fmtValor(total)}
+            {fmtAmount(total)}
           </p>
         </div>
 
-        {/* Lista de despesas — estilo extrato */}
         <div className="px-4 sm:px-6 pt-6 flex-1">
           <p className="text-caption font-semibold text-app-text-muted uppercase tracking-wide mb-1">
-            Despesas
+            Items
           </p>
-          {despesas.length === 0 ? (
+          {items.length === 0 ? (
             <p className="text-small text-app-text-muted py-6 text-center">
-              Nenhuma despesa registrada.
+              No items recorded.
             </p>
           ) : (
             <ul className="divide-y divide-app-border-subtle">
-              {despesas.map((despesa) => (
+              {items.map((item) => (
                 <motion.li
-                  key={despesa.id}
+                  key={item.id}
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="flex items-start justify-between gap-3 py-3"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-body text-app-text truncate">
-                      {despesa.descricao}
+                      {item.description}
                     </p>
                     <p className="text-small text-app-text-muted mt-0.5">
-                      {fmtData(despesa.data_despesa)}
-                      {despesa.categoria_despesa && ` · ${despesa.categoria_despesa.descricao}`}
+                      {fmtDate(item.expense_date)}
+                      {item.expense_category && ` · ${item.expense_category.description}`}
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-0.5 shrink-0">
                     <span className="text-body font-semibold text-app-text">
-                      {fmtValor(Number(despesa.valor ?? 0))}
+                      {fmtAmount(Number(item.amount ?? 0))}
                     </span>
-                    {(despesa.anexos ?? []).length > 0 && (
+                    {(item.attachments ?? []).length > 0 && (
                       <span className="flex items-center gap-1 text-small text-app-text-subtle">
                         <Paperclip size={11} />
-                        {despesa.anexos!.length}
+                        {item.attachments!.length}
                       </span>
                     )}
                   </div>
@@ -268,8 +264,7 @@ export default function DetalheCaixaDeObraPage({
         </div>
       </div>
 
-      {/* Barra fixa — Enviar para aprovação */}
-      {isRascunho && (
+      {isDraft && (
         <div
           className="fixed bottom-0 inset-x-0 z-20 bg-app-bg/95 backdrop-blur-sm border-t border-app-border-subtle px-4 py-3 sm:px-6"
           style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
@@ -277,18 +272,17 @@ export default function DetalheCaixaDeObraPage({
           <Button
             variant="dark"
             fullWidth
-            onClick={handleSubmeter}
-            disabled={submetendo || !podeEnviar}
+            onClick={handleSubmit}
+            disabled={submitting || !canSubmit}
           >
             <PaperPlaneTilt size={16} weight="bold" />
-            {submetendo ? "Enviando…" : "Enviar para Aprovação"}
+            {submitting ? "Sending…" : "Send for Approval"}
           </Button>
         </div>
       )}
 
-      {/* Bottom sheet — menu de ações */}
       <AnimatePresence>
-        {menuAberto && (
+        {menuOpen && (
           <motion.div
             className="fixed inset-0 z-50"
             role="dialog"
@@ -296,7 +290,7 @@ export default function DetalheCaixaDeObraPage({
           >
             <motion.div
               className="absolute inset-0 bg-black/40"
-              onClick={() => setMenuAberto(false)}
+              onClick={() => setMenuOpen(false)}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -311,10 +305,10 @@ export default function DetalheCaixaDeObraPage({
               style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
             >
               <div className="flex justify-between items-center mb-3">
-                <p className="text-feature-title text-app-text">Ações</p>
+                <p className="text-feature-title text-app-text">Actions</p>
                 <button
-                  aria-label="Fechar"
-                  onClick={() => setMenuAberto(false)}
+                  aria-label="Close"
+                  onClick={() => setMenuOpen(false)}
                   className="h-11 w-11 -mr-2 flex items-center justify-center text-app-text-muted hover:text-app-text"
                 >
                   <X size={20} />
@@ -323,23 +317,23 @@ export default function DetalheCaixaDeObraPage({
               <div className="flex flex-col gap-2">
                 <button
                   onClick={() => {
-                    setMenuAberto(false);
+                    setMenuOpen(false);
                     setIsEditing(true);
                   }}
                   className="flex items-center gap-3 p-4 rounded-xl border border-app-border bg-app-surface text-body-sm text-left hover:border-brand/30 transition-colors"
                 >
                   <PencilSimple size={20} className="text-app-text-muted shrink-0" />
-                  <span className="font-semibold text-app-text">Editar</span>
+                  <span className="font-semibold text-app-text">Edit</span>
                 </button>
                 <button
                   onClick={() => {
-                    setMenuAberto(false);
-                    setModalExcluirAberto(true);
+                    setMenuOpen(false);
+                    setDeleteModalOpen(true);
                   }}
                   className="flex items-center gap-3 p-4 rounded-xl border border-app-border bg-app-surface text-body-sm text-left hover:border-red-500/40 transition-colors"
                 >
                   <Trash size={20} className="text-red-500 shrink-0" />
-                  <span className="font-semibold text-red-500">Excluir</span>
+                  <span className="font-semibold text-red-500">Delete</span>
                 </button>
               </div>
             </motion.div>
@@ -348,21 +342,21 @@ export default function DetalheCaixaDeObraPage({
       </AnimatePresence>
 
       <ConfirmModal
-        open={modalExcluirAberto}
-        title="Excluir esta caixa?"
-        description="Essa ação não pode ser desfeita."
-        confirmLabel="Excluir"
-        loading={excluindo}
-        onConfirm={handleExcluir}
-        onCancel={() => setModalExcluirAberto(false)}
+        open={deleteModalOpen}
+        title="Delete this report?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteModalOpen(false)}
       />
 
       <AnimatePresence>
         {isEditing && (
-          <FormRdc
-            rdcInicial={rdc}
-            onSalvar={handleEditar}
-            onFechar={() => setIsEditing(false)}
+          <ExpenseReportForm
+            initialExpenseReport={expenseReport}
+            onSave={handleEdit}
+            onClose={() => setIsEditing(false)}
           />
         )}
       </AnimatePresence>

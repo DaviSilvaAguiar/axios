@@ -1,43 +1,43 @@
 import { z } from "zod";
-import { usuarioSchema } from "@/features/auth/auth.types";
+import { userSchema } from "@/features/auth/auth.types";
 import { paginatedSchema } from "@/lib/pagination";
 
-export const tipoLoteSchema = z.enum(["CAIXA", "REEMBOLSO"]);
-export type TipoLote = z.infer<typeof tipoLoteSchema>;
+export const batchTypeSchema = z.enum(["EXPENSE_REPORT", "REIMBURSEMENT"]);
+export type BatchType = z.infer<typeof batchTypeSchema>;
 
-export const documentoPendenteSchema = z.object({
+export const pendingDocumentSchema = z.object({
   id: z.number(),
-  identificador: z.string(),
-  descricao: z.string().nullable(),
-  prestador: z.string(),
-  centro_custo: z.string().nullable(),
-  valor: z.coerce.number(),
-  data: z.string().nullable(),
+  identifier: z.string(),
+  description: z.string().nullable(),
+  provider: z.string(),
+  cost_center: z.string().nullable(),
+  amount: z.coerce.number(),
+  date: z.string().nullable(),
   status: z.string(),
-  tipo: tipoLoteSchema,
+  type: batchTypeSchema,
 });
-export type DocumentoPendente = z.infer<typeof documentoPendenteSchema>;
+export type PendingDocument = z.infer<typeof pendingDocumentSchema>;
 
-export const pendentesPaginadosResponseSchema = paginatedSchema(documentoPendenteSchema);
+export const pendingDocumentsResponseSchema = paginatedSchema(pendingDocumentSchema);
 
-export const statsPendentesResponseSchema = z.object({
+export const pendingStatsResponseSchema = z.object({
   data: z.object({
-    caixa:     z.object({ quantidade: z.number(), valor: z.coerce.number() }),
-    reembolso: z.object({ quantidade: z.number(), valor: z.coerce.number() }),
+    expense_report: z.object({ quantity: z.number(), amount: z.coerce.number() }),
+    reimbursement: z.object({ quantity: z.number(), amount: z.coerce.number() }),
   }),
 });
-export type StatsPendentes = z.infer<typeof statsPendentesResponseSchema>["data"];
+export type PendingStats = z.infer<typeof pendingStatsResponseSchema>["data"];
 
-export const loteHistoricoSchema = z.object({
+export const batchHistorySchema = z.object({
   id: z.number(),
-  tipo_lote: tipoLoteSchema,
-  template_utilizado: z.string(),
-  valor_total: z.coerce.number(),
-  quantidade_itens: z.number(),
-  nome_arquivo: z.string().nullable(),
-  usuario: usuarioSchema.pick({ id: true, nome: true, email: true, perfil: true }).nullable(),
+  batch_type: batchTypeSchema,
+  template_used: z.string(),
+  total_amount: z.coerce.number(),
+  item_count: z.number(),
+  file_name: z.string().nullable(),
+  user: userSchema.pick({ id: true, name: true, email: true, role: true }).nullable(),
   created_at: z.string(),
 });
-export type LoteHistorico = z.infer<typeof loteHistoricoSchema>;
+export type BatchHistory = z.infer<typeof batchHistorySchema>;
 
-export const historicoResponseSchema = paginatedSchema(loteHistoricoSchema);
+export const historyResponseSchema = paginatedSchema(batchHistorySchema);

@@ -1,21 +1,21 @@
 import type { Paginated } from "@/lib/pagination";
 import {
-  pendentesPaginadosResponseSchema,
-  statsPendentesResponseSchema,
-  historicoResponseSchema,
-  type DocumentoPendente,
-  type LoteHistorico,
-  type StatsPendentes,
-} from "./exportacao.types";
+  pendingDocumentsResponseSchema,
+  pendingStatsResponseSchema,
+  historyResponseSchema,
+  type PendingDocument,
+  type BatchHistory,
+  type PendingStats,
+} from "./export.types";
 
-export function mapPendentesPaginados(raw: unknown): Paginated<DocumentoPendente> {
-  return pendentesPaginadosResponseSchema.parse(raw);
+export function mapPendingDocuments(raw: unknown): Paginated<PendingDocument> {
+  return pendingDocumentsResponseSchema.parse(raw);
 }
 
-export function mapStatsPendentes(raw: unknown): StatsPendentes {
-  return statsPendentesResponseSchema.parse(raw).data;
+export function mapPendingStats(raw: unknown): PendingStats {
+  return pendingStatsResponseSchema.parse(raw).data;
 }
 
-export function mapHistorico(raw: unknown): Paginated<LoteHistorico> {
-  return historicoResponseSchema.parse(raw);
+export function mapHistorico(raw: unknown): Paginated<BatchHistory> {
+  return historyResponseSchema.parse(raw);
 }

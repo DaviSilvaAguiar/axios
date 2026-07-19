@@ -21,7 +21,7 @@ const itemVariants = {
 export default function FabActionSheet({ open, onClose }: Props) {
   const router = useRouter();
 
-  function ir(href: string): void {
+  function navigate(href: string): void {
     onClose();
     router.push(href);
   }
@@ -52,9 +52,9 @@ export default function FabActionSheet({ open, onClose }: Props) {
             style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
           >
             <div className="flex justify-between items-center mb-4">
-              <p className="text-feature-title text-app-text">Novo lançamento</p>
+              <p className="text-feature-title text-app-text">New entry</p>
               <button
-                aria-label="Fechar"
+                aria-label="Close"
                 onClick={onClose}
                 className="h-11 w-11 -mr-2 flex items-center justify-center text-app-text-muted hover:text-app-text"
               >
@@ -68,7 +68,7 @@ export default function FabActionSheet({ open, onClose }: Props) {
                 initial="hidden"
                 animate="show"
                 whileTap={{ scale: 0.97 }}
-                onClick={() => ir("/minha-caixa-de-obra?novo=1")}
+                onClick={() => navigate("/my-expense-reports?novo=1")}
                 className="flex items-center gap-3 p-4 rounded-xl border border-app-border bg-app-surface min-h-16 text-body-sm text-left hover:border-brand/30 transition-colors"
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-950/60 shrink-0">
@@ -76,10 +76,10 @@ export default function FabActionSheet({ open, onClose }: Props) {
                 </span>
                 <span className="flex-1">
                   <span className="block font-semibold text-app-text">
-                    Novo lançamento na Caixa de Obra
+                    New expense report entry
                   </span>
                   <span className="block text-small text-app-text-muted">
-                    Registrar despesa do adiantamento
+                    Record an advance expense
                   </span>
                 </span>
               </motion.button>
@@ -89,7 +89,7 @@ export default function FabActionSheet({ open, onClose }: Props) {
                 initial="hidden"
                 animate="show"
                 whileTap={{ scale: 0.97 }}
-                onClick={() => ir("/novo-reembolso")}
+                onClick={() => navigate("/new-reimbursement")}
                 className="flex items-center gap-3 p-4 rounded-xl border border-app-border bg-app-surface min-h-16 text-body-sm text-left hover:border-brand/30 transition-colors"
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-950/60 shrink-0">
@@ -97,10 +97,10 @@ export default function FabActionSheet({ open, onClose }: Props) {
                 </span>
                 <span className="flex-1">
                   <span className="block font-semibold text-app-text">
-                    Nova solicitação de reembolso
+                    New reimbursement request
                   </span>
                   <span className="block text-small text-app-text-muted">
-                    Pedir ressarcimento de despesa pessoal
+                    Request repayment of a personal expense
                   </span>
                 </span>
               </motion.button>

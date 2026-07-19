@@ -9,17 +9,17 @@ import Button from "@/ui/Button";
 import DatePicker from "@/ui/DatePicker";
 
 const schema = z.object({
-  data_pagamento_programado: z.string().min(1, "Informe a data programada"),
+  scheduled_payment_date: z.string().min(1, "Enter the scheduled date"),
 });
 
 type FormData = z.infer<typeof schema>;
 
 interface Props {
-  onConfirmar: (data: string) => Promise<void> | void;
-  onCancelar: () => void;
+  onConfirm: (date: string) => Promise<void> | void;
+  onCancel: () => void;
 }
 
-export default function ModalAgendamento({ onConfirmar, onCancelar }: Props) {
+export default function SchedulingModal({ onConfirm, onCancel }: Props) {
   const {
     control,
     handleSubmit,
@@ -27,7 +27,7 @@ export default function ModalAgendamento({ onConfirmar, onCancelar }: Props) {
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
   async function onSubmit(data: FormData) {
-    await onConfirmar(data.data_pagamento_programado);
+    await onConfirm(data.scheduled_payment_date);
   }
 
   return (
@@ -47,13 +47,13 @@ export default function ModalAgendamento({ onConfirmar, onCancelar }: Props) {
         >
           <div className="mb-4 flex items-start justify-between">
             <div>
-              <h2 className="text-feature-title text-app-text">Agendar Pagamento</h2>
+              <h2 className="text-feature-title text-app-text">Schedule Payment</h2>
               <p className="mt-1 text-body-sm text-app-text-muted">
-                Informe a data programada para o pagamento deste reembolso.
+                Enter the scheduled payment date for this reimbursement.
               </p>
             </div>
             <button
-              onClick={onCancelar}
+              onClick={onCancel}
               className="ml-4 rounded-full p-1 text-app-text-muted hover:bg-app-hover"
             >
               <X size={20} />
@@ -62,25 +62,25 @@ export default function ModalAgendamento({ onConfirmar, onCancelar }: Props) {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Controller
-              name="data_pagamento_programado"
+              name="scheduled_payment_date"
               control={control}
               render={({ field }) => (
                 <DatePicker
-                  label="Data Programada"
+                  label="Scheduled Date"
                   value={field.value ?? ""}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
-                  error={errors.data_pagamento_programado?.message}
+                  error={errors.scheduled_payment_date?.message}
                 />
               )}
             />
 
             <div className="flex gap-3 pt-2">
-              <Button type="button" variant="light" fullWidth onClick={onCancelar}>
-                Cancelar
+              <Button type="button" variant="light" fullWidth onClick={onCancel}>
+                Cancel
               </Button>
               <Button type="submit" variant="dark" fullWidth disabled={isSubmitting}>
-                {isSubmitting ? "Salvando…" : "Confirmar"}
+                {isSubmitting ? "Saving…" : "Confirm"}
               </Button>
             </div>
           </form>

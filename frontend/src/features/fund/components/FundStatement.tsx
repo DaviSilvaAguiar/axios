@@ -13,76 +13,76 @@ import DataTable, { type DataTableColumn } from "@/ui/DataTable";
 import { toast } from "@/lib/toast";
 import { formatarData, formatarMoeda } from "@/lib/formatters";
 import {
-  CAIXA_CONTA_STATUS_FECHADO,
-  CAIXA_CONTA_TIPO_LABEL,
-  SUBTIPO_LABEL,
-  TIPO_TRANSACAO_CREDITO,
+  FUND_STATUS_CLOSED,
+  FUND_TIPO_LABEL,
+  SUBTYPE_LABEL,
+  TIPO_TRANSACAO_CREDIT,
   type ExtratoResponse,
   type LancarAjusteFormData,
   type LancarCreditoFormData,
   type TransacaoExtrato,
-} from "../caixa-conta.types";
+} from "../fund.types";
 import {
-  extratoCaixaContaApi,
-  fecharCaixaContaApi,
+  extratoFundApi,
+  fecharFundApi,
   lancarAjusteApi,
   lancarCreditoApi,
-} from "../caixa-conta.api";
-import ModalLancarCredito from "./ModalLancarCredito";
-import ModalLancarAjuste from "./ModalLancarAjuste";
+} from "../fund.api";
+import PostCreditModal from "./PostCreditModal";
+import PostAdjustmentModal from "./PostAdjustmentModal";
 
 interface Props {
-  idCaixa: number;
+  fundId: number;
 }
 
-export default function ExtratoCaixa({ idCaixa }: Props) {
+export default function FundStatement({ fundId }: Props) {
   const router = useRouter();
   const [data, setData] = useState<ExtratoResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showCredito, setShowCredito] = useState(false);
-  const [showAjuste, setShowAjuste] = useState(false);
-  const [showFechar, setShowFechar] = useState(false);
-  const [fechando, setFechando] = useState(false);
+  const [showCredit, setShowCredit] = useState(false);
+  const [showAdjustment, setShowAdjustment] = useState(false);
+  const [showClose, setShowClose] = useState(false);
+  const [closing, setClosing] = useState(false);
 
-  const carregar = useCallback(async () => {
+  const load = useCallback(async () => {
     try {
-      setData(await extratoCaixaContaApi(idCaixa));
+      setData(await extratoFundApi(fundId));
     } catch {
-      toast.error("Não foi possível carregar o extrato.");
+      toast.error("Could not load the statement.");
     } finally {
       setLoading(false);
     }
-  }, [idCaixa]);
+  }, [fundId]);
 
   useEffect(() => {
-    carregar();
-  }, [carregar]);
+    load();
+  }, [load]);
 
-  async function handleCredito(dados: LancarCreditoFormData) {
-    await lancarCreditoApi(idCaixa, dados);
-    setShowCredito(false);
-    toast.success("Adiantamento lançado!");
-    await carregar();
+  async function handleCredit(values: LancarCreditoFormData) {
+    await lancarCreditoApi(fundId, values);
+    setShowCredit(false);
+    toast.success("Advance posted!");
+    await load();
   }
 
-  async function handleAjuste(dados: LancarAjusteFormData) {
-    await lancarAjusteApi(idCaixa, dados);
-    setShowAjuste(false);
-    toast.success("Ajuste lançado!");
-    await carregar();
+  async function handleAdjustment(values: LancarAjusteFormData) {
+    await lancarAjusteApi(fundId, values);
+    setShowAdjustment(false);
+    toast.success("Adjustment posted!");
+    await load();
   }
 
-  async function handleFechar() {
-    setFechando(true);
+  async function handleClose() {
+    setClosing(true);
     try {
-      await fecharCaixaContaApi(idCaixa);
-      toast.success("Caixa fechado!");
-      router.push("/caixas");
+      await fecharFundApi(fundId);
+      toast.success("Fund closed!");
+      router.push("/funds");
     } catch {
-      toast.error("Não foi possível fechar o caixa. Verifique o saldo.");
+      toast.error("Could not close the fund. Check the balance.");
     } finally {
-      setFechando(false);
-      setShowFechar(false);
+      setClosing(false);
+      setShowClose(false);
     }
   }
 
@@ -96,75 +96,75 @@ export default function ExtratoCaixa({ idCaixa }: Props) {
 
   if (!data) return null;
 
-  const { caixa_conta: caixa, transacoes } = data;
-  const saldo = Number(caixa.saldo);
-  const fechado = caixa.status === CAIXA_CONTA_STATUS_FECHADO;
+  const { fund: fund, transactions: transactions } = data;
+  const balance = Number(fund.balance);
+  const closed = fund.status === FUND_STATUS_CLOSED;
 
   const columns: DataTableColumn<TransacaoExtrato>[] = [
     {
-      key: "data",
-      header: "Data",
+      key: "date",
+      header: "Date",
       render: (t) => (
         <span className="text-small text-app-text-muted whitespace-nowrap">
-          {formatarData(t.data_transacao)}
+          {formatarData(t.transaction_date)}
         </span>
       ),
     },
     {
-      key: "tipo",
-      header: "Lançamento",
+      key: "type",
+      header: "Transaction",
       render: (t) => (
-        <span className="text-app-text font-medium">{SUBTIPO_LABEL[t.subtipo]}</span>
+        <span className="text-app-text font-medium">{SUBTYPE_LABEL[t.subtype]}</span>
       ),
     },
     {
-      key: "referencia",
-      header: "Referência",
+      key: "reference",
+      header: "Reference",
       render: (t) => {
-        if (t.id_caixa && t.caixa) {
+        if (t.expense_report_id && t.caixa) {
           return (
             <Link
-              href={`/rdc?id=${t.id_caixa}`}
+              href={`/expense-reports?id=${t.expense_report_id}`}
               className="text-small font-semibold text-brand hover:underline"
             >
-              RDC #{t.id_caixa} — {t.caixa.descricao}
+              Report #{t.expense_report_id} — {t.caixa.description}
             </Link>
           );
         }
         return (
           <span className="text-small text-app-text-muted">
-            {t.observacao ?? t.motivo ?? "—"}
+            {t.notes ?? t.reason ?? "—"}
           </span>
         );
       },
     },
     {
-      key: "credito",
-      header: "Crédito",
+      key: "credit",
+      header: "Credit",
       align: "right",
       render: (t) => (
         <span className="text-small text-emerald-600 whitespace-nowrap">
-          {t.tipo_transacao === TIPO_TRANSACAO_CREDITO ? formatarMoeda(Number(t.valor)) : "—"}
+          {t.transaction_type === TIPO_TRANSACAO_CREDIT ? formatarMoeda(Number(t.amount)) : "—"}
         </span>
       ),
     },
     {
-      key: "debito",
-      header: "Débito",
+      key: "debit",
+      header: "Debit",
       align: "right",
       render: (t) => (
         <span className="text-small text-red-600 whitespace-nowrap">
-          {t.tipo_transacao !== TIPO_TRANSACAO_CREDITO ? formatarMoeda(Number(t.valor)) : "—"}
+          {t.transaction_type !== TIPO_TRANSACAO_CREDIT ? formatarMoeda(Number(t.amount)) : "—"}
         </span>
       ),
     },
     {
-      key: "saldo",
-      header: "Saldo",
+      key: "balance",
+      header: "Balance",
       align: "right",
       render: (t) => (
         <span className="text-small font-semibold text-app-text whitespace-nowrap">
-          {formatarMoeda(Number(t.saldo_acumulado))}
+          {formatarMoeda(Number(t.accumulated_balance))}
         </span>
       ),
     },
@@ -175,53 +175,53 @@ export default function ExtratoCaixa({ idCaixa }: Props) {
       <div className="flex flex-col gap-4 p-6">
         <button
           type="button"
-          onClick={() => router.push("/caixas")}
+          onClick={() => router.push("/funds")}
           className="flex w-fit items-center gap-1.5 text-caption text-app-text-muted hover:text-app-text"
         >
           <ArrowLeft size={14} />
-          Voltar
+          Back
         </button>
 
         <Card>
           <div className="flex flex-col gap-4 px-5 py-4 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-col gap-1">
               <span className="text-caption text-app-text-muted">
-                #{caixa.id} · {CAIXA_CONTA_TIPO_LABEL[caixa.tipo]}
-                {fechado && " · Fechado"}
+                #{fund.id} · {FUND_TIPO_LABEL[fund.type]}
+                {closed && " · Closed"}
               </span>
-              <h1 className="text-feature-title text-app-text">{caixa.descricao}</h1>
+              <h1 className="text-feature-title text-app-text">{fund.description}</h1>
               <span className="text-small text-app-text-muted">
-                {caixa.usuario?.nome} · {caixa.centro_de_custo?.descricao}
+                {fund.user?.name} · {fund.cost_center?.description}
               </span>
             </div>
 
             <div className="flex flex-col items-start md:items-end">
-              <span className="text-caption text-app-text-muted">Saldo Atual</span>
+              <span className="text-caption text-app-text-muted">Current Balance</span>
               <span className="text-2xl font-semibold text-app-text">
-                {formatarMoeda(saldo)}
+                {formatarMoeda(balance)}
               </span>
             </div>
           </div>
 
-          {!fechado && (
+          {!closed && (
             <div className="flex flex-wrap gap-2 border-t border-app-border px-5 py-3">
-              <Button variant="dark" size="sm" onClick={() => setShowCredito(true)}>
+              <Button variant="dark" size="sm" onClick={() => setShowCredit(true)}>
                 <Plus size={14} />
-                Lançar Adiantamento
+                Post Advance
               </Button>
-              <Button variant="light" size="sm" onClick={() => setShowAjuste(true)}>
+              <Button variant="light" size="sm" onClick={() => setShowAdjustment(true)}>
                 <Scales size={14} />
-                Lançar Ajuste
+                Post Adjustment
               </Button>
               <Button
                 variant="outlined"
                 size="sm"
-                onClick={() => setShowFechar(true)}
-                disabled={saldo !== 0}
-                title={saldo !== 0 ? "Só é possível fechar com saldo R$ 0,00" : undefined}
+                onClick={() => setShowClose(true)}
+                disabled={balance !== 0}
+                title={balance !== 0 ? "The fund can only be closed with a balance of $0.00" : undefined}
               >
                 <Lock size={14} />
-                Fechar Caixa
+                Close Fund
               </Button>
             </div>
           )}
@@ -229,17 +229,17 @@ export default function ExtratoCaixa({ idCaixa }: Props) {
 
         <Card>
           <div className="p-5">
-            {transacoes.length === 0 ? (
+            {transactions.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
                 <ArrowUUpLeft size={20} className="text-app-text-subtle" />
                 <p className="text-small text-app-text-subtle">
-                  Nenhum lançamento ainda. Comece com um adiantamento.
+                  No transactions yet. Start with an advance.
                 </p>
               </div>
             ) : (
               <DataTable
                 columns={columns}
-                rows={transacoes}
+                rows={transactions}
                 keyExtractor={(t) => t.id}
               />
             )}
@@ -248,31 +248,31 @@ export default function ExtratoCaixa({ idCaixa }: Props) {
       </div>
 
       <AnimatePresence>
-        {showCredito && (
-          <ModalLancarCredito
-            onSalvar={handleCredito}
-            onFechar={() => setShowCredito(false)}
+        {showCredit && (
+          <PostCreditModal
+            onSave={handleCredit}
+            onClose={() => setShowCredit(false)}
           />
         )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {showAjuste && (
-          <ModalLancarAjuste
-            onSalvar={handleAjuste}
-            onFechar={() => setShowAjuste(false)}
+        {showAdjustment && (
+          <PostAdjustmentModal
+            onSave={handleAdjustment}
+            onClose={() => setShowAdjustment(false)}
           />
         )}
       </AnimatePresence>
 
       <ConfirmModal
-        open={showFechar}
-        title="Fechar caixa?"
-        description="Após fechado, o caixa não receberá novos lançamentos."
-        confirmLabel="Fechar Caixa"
-        loading={fechando}
-        onConfirm={handleFechar}
-        onCancel={() => setShowFechar(false)}
+        open={showClose}
+        title="Close fund?"
+        description="Once closed, the fund will no longer accept new transactions."
+        confirmLabel="Close Fund"
+        loading={closing}
+        onConfirm={handleClose}
+        onCancel={() => setShowClose(false)}
       />
     </>
   );

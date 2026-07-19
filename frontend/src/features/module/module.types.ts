@@ -2,16 +2,16 @@ import { z } from "zod";
 
 export const moduloSchema = z.object({
   id: z.number(),
-  nome: z.string(),
+  name: z.string(),
   slug: z.string(),
-  descricao: z.string().nullable(),
-  ativo: z.boolean(),
+  description: z.string().nullable(),
+  active: z.boolean(),
 });
 
-export const modulosUsuarioResponseSchema = z.object({
-  modulos: z.array(moduloSchema),
+export const modulesUserResponseSchema = z.object({
+  modules: z.array(moduloSchema),
   habilitados: z.array(z.number()),
 });
 
 export type Modulo = z.infer<typeof moduloSchema>;
-export type ModulosUsuarioResponse = z.infer<typeof modulosUsuarioResponseSchema>;
+export type ModulosUserResponse = z.infer<typeof modulesUserResponseSchema>;

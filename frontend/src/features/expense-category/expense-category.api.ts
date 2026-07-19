@@ -1,43 +1,43 @@
 import { api } from "@/lib/api";
 import { buildPageQuery, type Paginated, PAGE_SIZE } from "@/lib/pagination";
 import {
-  mapCategoriaDespesaResponse,
+  mapExpenseCategoryResponse,
   mapListarCategoriasDespesa,
-} from "./categoria-despesa.mapper";
+} from "./expense-category.mapper";
 import type {
-  CategoriaDespesa,
-  CategoriaDespesaFormData,
-  CategoriaDespesaResponse,
-} from "./categoria-despesa.types";
+  ExpenseCategory,
+  ExpenseCategoryFormData,
+  ExpenseCategoryResponse,
+} from "./expense-category.types";
 
-export async function listarCategoriasDespesaApi(
+export async function listCategoriasDespesaApi(
   page: number = 1,
   perPage: number = PAGE_SIZE
-): Promise<Paginated<CategoriaDespesa>> {
-  const raw = await api.get<unknown>(`/v1/categoria-despesa${buildPageQuery(page, perPage)}`);
+): Promise<Paginated<ExpenseCategory>> {
+  const raw = await api.get<unknown>(`/v1/expense-categories${buildPageQuery(page, perPage)}`);
   return mapListarCategoriasDespesa(raw);
 }
 
-export async function buscarCategoriaDespesaApi(id: number): Promise<CategoriaDespesa> {
-  const raw = await api.get<unknown>(`/v1/categoria-despesa/${id}`);
-  return mapCategoriaDespesaResponse(raw).categoria_despesa;
+export async function getExpenseCategoryApi(id: number): Promise<ExpenseCategory> {
+  const raw = await api.get<unknown>(`/v1/expense-categories/${id}`);
+  return mapExpenseCategoryResponse(raw).expense_category;
 }
 
-export async function criarCategoriaDespesaApi(
-  dados: CategoriaDespesaFormData
-): Promise<CategoriaDespesaResponse> {
-  const raw = await api.post<unknown>("/v1/categoria-despesa", dados);
-  return mapCategoriaDespesaResponse(raw);
+export async function createExpenseCategoryApi(
+  data: ExpenseCategoryFormData
+): Promise<ExpenseCategoryResponse> {
+  const raw = await api.post<unknown>("/v1/expense-categories", data);
+  return mapExpenseCategoryResponse(raw);
 }
 
-export async function atualizarCategoriaDespesaApi(
+export async function updateExpenseCategoryApi(
   id: number,
-  dados: Partial<CategoriaDespesaFormData>
-): Promise<CategoriaDespesaResponse> {
-  const raw = await api.put<unknown>(`/v1/categoria-despesa/${id}`, dados);
-  return mapCategoriaDespesaResponse(raw);
+  data: Partial<ExpenseCategoryFormData>
+): Promise<ExpenseCategoryResponse> {
+  const raw = await api.put<unknown>(`/v1/expense-categories/${id}`, data);
+  return mapExpenseCategoryResponse(raw);
 }
 
-export async function deletarCategoriaDespesaApi(id: number): Promise<void> {
-  await api.delete(`/v1/categoria-despesa/${id}`);
+export async function deleteExpenseCategoryApi(id: number): Promise<void> {
+  await api.delete(`/v1/expense-categories/${id}`);
 }

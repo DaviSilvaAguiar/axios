@@ -5,59 +5,59 @@ import Input from "@/ui/Input";
 import Combobox from "@/ui/Combobox";
 import Checkbox from "@/ui/Checkbox";
 import { maskCpfCnpj } from "@/lib/masks";
-import { listarFornecedoresAtivosApi } from "../fornecedor.api";
-import type { Fornecedor } from "../fornecedor.types";
+import { listSupplieresAtivosApi } from "../supplier.api";
+import type { Supplier } from "../supplier.types";
 
 interface Props {
-  idFornecedor: string;
-  descricaoFornecedor: string;
-  cpfCnpjFornecedor: string;
+  idSupplier: string;
+  descricaoSupplier: string;
+  cpfCnpjSupplier: string;
   onChange: (campos: {
-    id_fornecedor: string;
-    descricao_fornecedor: string;
-    cpf_cnpj_fornecedor: string;
+    supplier_id: string;
+    descricao_supplier: string;
+    cpf_cnpj_supplier: string;
   }) => void;
   errors?: {
-    descricao_fornecedor?: string;
-    cpf_cnpj_fornecedor?: string;
+    descricao_supplier?: string;
+    cpf_cnpj_supplier?: string;
   };
   className?: string;
 }
 
-export default function SecaoFornecedor({
-  idFornecedor,
-  descricaoFornecedor,
-  cpfCnpjFornecedor,
+export default function SupplierSection({
+  idSupplier,
+  descricaoSupplier,
+  cpfCnpjSupplier,
   onChange,
   errors,
   className = "",
 }: Props) {
-  const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
-  const [usarCadastrado, setUsarCadastrado] = useState<boolean>(!!idFornecedor);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [useRegistered, setUseRegistered] = useState<boolean>(!!idSupplier);
 
   useEffect(() => {
-    listarFornecedoresAtivosApi()
-      .then(setFornecedores)
+    listSupplieresAtivosApi()
+      .then(setSuppliers)
       .catch(() => {});
   }, []);
 
   function handleToggle(flag: boolean) {
-    setUsarCadastrado(flag);
+    setUseRegistered(flag);
     if (!flag) {
       onChange({
-        id_fornecedor: "",
-        descricao_fornecedor: descricaoFornecedor,
-        cpf_cnpj_fornecedor: cpfCnpjFornecedor,
+        supplier_id: "",
+        descricao_supplier: descricaoSupplier,
+        cpf_cnpj_supplier: cpfCnpjSupplier,
       });
     }
   }
 
-  function handleSelecionarCadastrado(idStr: string) {
-    const f = fornecedores.find((x) => String(x.id) === idStr);
+  function handleSelectRegistered(idStr: string) {
+    const s = suppliers.find((x) => String(x.id) === idStr);
     onChange({
-      id_fornecedor: idStr,
-      descricao_fornecedor: f?.descricao ?? "",
-      cpf_cnpj_fornecedor: f?.cpf_cnpj ?? "",
+      supplier_id: idStr,
+      descricao_supplier: s?.description ?? "",
+      cpf_cnpj_supplier: s?.tax_id ?? "",
     });
   }
 
@@ -65,61 +65,61 @@ export default function SecaoFornecedor({
     <div className={`flex flex-col gap-3 ${className}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-caption font-semibold text-app-text-muted uppercase tracking-wide">
-          Fornecedor
+          Supplier
         </span>
         <Checkbox
-          checked={usarCadastrado}
+          checked={useRegistered}
           onChange={handleToggle}
-          label="Fornecedor Cadastrado"
+          label="Registered Supplier"
           className={`rounded-full px-3 py-1.5 border transition-all duration-200 ${
-            usarCadastrado
+            useRegistered
               ? "bg-brand/8 border-brand/20"
               : "bg-app-surface-raised border-app-border"
           }`}
         />
       </div>
 
-      {usarCadastrado ? (
+      {useRegistered ? (
         <div className="flex flex-col gap-1.5">
           <Combobox
-            options={fornecedores.map((f) => ({
-              value: String(f.id),
-              label: f.descricao,
+            options={suppliers.map((s) => ({
+              value: String(s.id),
+              label: s.description,
             }))}
-            value={idFornecedor}
-            onChange={handleSelecionarCadastrado}
-            placeholder="Selecione o fornecedor"
-            emptyMessage="Nenhum fornecedor cadastrado."
+            value={idSupplier}
+            onChange={handleSelectRegistered}
+            placeholder="Select the supplier"
+            emptyMessage="No registered suppliers."
             className="w-full"
           />
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input
-            label="Razão social / Nome"
-            placeholder="Nome do fornecedor"
-            value={descricaoFornecedor}
+            label="Legal name / Name"
+            placeholder="Supplier name"
+            value={descricaoSupplier}
             onChange={(e) =>
               onChange({
-                id_fornecedor: "",
-                descricao_fornecedor: e.target.value,
-                cpf_cnpj_fornecedor: cpfCnpjFornecedor,
+                supplier_id: "",
+                descricao_supplier: e.target.value,
+                cpf_cnpj_supplier: cpfCnpjSupplier,
               })
             }
-            error={errors?.descricao_fornecedor}
+            error={errors?.descricao_supplier}
           />
           <Input
             label="CPF / CNPJ"
             placeholder="000.000.000-00"
-            value={cpfCnpjFornecedor}
+            value={cpfCnpjSupplier}
             onChange={(e) =>
               onChange({
-                id_fornecedor: "",
-                descricao_fornecedor: descricaoFornecedor,
-                cpf_cnpj_fornecedor: maskCpfCnpj(e.target.value),
+                supplier_id: "",
+                descricao_supplier: descricaoSupplier,
+                cpf_cnpj_supplier: maskCpfCnpj(e.target.value),
               })
             }
-            error={errors?.cpf_cnpj_fornecedor}
+            error={errors?.cpf_cnpj_supplier}
           />
         </div>
       )}

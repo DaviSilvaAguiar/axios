@@ -16,104 +16,104 @@ import Input from "@/ui/Input";
 import EmptyState from "@/ui/EmptyState";
 import DataTable, { type DataTableColumn } from "@/ui/DataTable";
 import ConfirmModal from "@/ui/ConfirmModal";
-import BadgeAtivo from "@/ui/BadgeAtivo";
+import ActiveBadge from "@/ui/ActiveBadge";
 import { toast } from "@/lib/toast";
-import FormCentroDeCusto from "@/features/centro-de-custo/components/FormCentroDeCusto";
+import CostCenterForm from "@/features/cost-center/components/CostCenterForm";
 import {
-  listarCentrosDeCustoApi,
-  criarCentroDeCustoApi,
-  atualizarCentroDeCustoApi,
-  deletarCentroDeCustoApi,
-} from "@/features/centro-de-custo/centro-de-custo.api";
-import type { CentroDeCusto, CentroDeCustoFormData } from "@/features/centro-de-custo/centro-de-custo.types";
+  listCentrosDeCustoApi,
+  createCostCenterApi,
+  updateCostCenterApi,
+  deleteCostCenterApi,
+} from "@/features/cost-center/cost-center.api";
+import type { CostCenter, CostCenterFormData } from "@/features/cost-center/cost-center.types";
 
-export default function CentroDeCustoPage() {
+export default function CostCentersPage() {
   const {
-    items: centros,
-    setItems: setCentros,
+    items: costCenters,
+    setItems: setCostCenters,
     loading,
     loadingMore,
     hasMore,
-    erro,
-    recarregar,
-    carregarMais,
-  } = usePaginatedList<CentroDeCusto>(
-    (page, perPage) => listarCentrosDeCustoApi(page, perPage),
-    { mensagemErro: "Não foi possível carregar os centros de custo." }
+    error: error,
+    reload: reload,
+    loadMore: loadMore,
+  } = usePaginatedList<CostCenter>(
+    (page, perPage) => listCentrosDeCustoApi(page, perPage),
+    { errorMessage: "Could not load the cost centers." }
   );
 
-  const [busca, setBusca] = useState("");
-  const [modalAberto, setModalAberto] = useState(false);
-  const [selecionado, setSelecionado] = useState<CentroDeCusto | undefined>();
-  const [deletandoId, setDeletandoId] = useState<number | null>(null);
-  const [paraExcluir, setParaExcluir] = useState<CentroDeCusto | null>(null);
-  const [toggleandoId, setToglandoId] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selected, setSelected] = useState<CostCenter | undefined>();
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [toDelete, setToDelete] = useState<CostCenter | null>(null);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
 
-  function abrirNovo() {
-    setSelecionado(undefined);
-    setModalAberto(true);
+  function openCreate() {
+    setSelected(undefined);
+    setModalOpen(true);
   }
 
-  function abrirEdicao(centro: CentroDeCusto) {
-    setSelecionado(centro);
-    setModalAberto(true);
+  function openEdit(costCenter: CostCenter) {
+    setSelected(costCenter);
+    setModalOpen(true);
   }
 
-  function fecharModal() {
-    setModalAberto(false);
-    setSelecionado(undefined);
+  function closeModal() {
+    setModalOpen(false);
+    setSelected(undefined);
   }
 
-  async function handleSalvar(dados: CentroDeCustoFormData) {
-    if (selecionado) {
-      const { centro_custo } = await atualizarCentroDeCustoApi(selecionado.id, dados);
-      setCentros((prev) => prev.map((c) => (c.id === centro_custo.id ? centro_custo : c)));
-      toast.success("Centro de custo atualizado.");
+  async function handleSave(data: CostCenterFormData) {
+    if (selected) {
+      const { cost_center } = await updateCostCenterApi(selected.id, data);
+      setCostCenters((prev) => prev.map((c) => (c.id === cost_center.id ? cost_center : c)));
+      toast.success("Cost center updated.");
     } else {
-      const { centro_custo } = await criarCentroDeCustoApi(dados);
-      setCentros((prev) =>
-        [...prev, centro_custo].sort((a, b) => a.descricao.localeCompare(b.descricao))
+      const { cost_center } = await createCostCenterApi(data);
+      setCostCenters((prev) =>
+        [...prev, cost_center].sort((a, b) => a.description.localeCompare(b.description))
       );
-      toast.success("Centro de custo criado.");
+      toast.success("Cost center created.");
     }
-    fecharModal();
+    closeModal();
   }
 
-  async function handleToggleAtivo(c: CentroDeCusto) {
-    setToglandoId(c.id);
+  async function handleToggleActive(c: CostCenter) {
+    setTogglingId(c.id);
     try {
-      const { centro_custo } = await atualizarCentroDeCustoApi(c.id, { ativo: !c.ativo });
-      setCentros((prev) => prev.map((x) => (x.id === centro_custo.id ? centro_custo : x)));
-      toast.success(c.ativo ? "Centro de custo inativado." : "Centro de custo ativado.");
+      const { cost_center } = await updateCostCenterApi(c.id, { active: !c.active });
+      setCostCenters((prev) => prev.map((x) => (x.id === cost_center.id ? cost_center : x)));
+      toast.success(c.active ? "Cost center deactivated." : "Cost center activated.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível alterar o status.");
+      toast.error(err instanceof Error ? err.message : "Could not change the status.");
     } finally {
-      setToglandoId(null);
+      setTogglingId(null);
     }
   }
 
-  async function handleDeletar() {
-    if (!paraExcluir) return;
-    setDeletandoId(paraExcluir.id);
+  async function handleDelete() {
+    if (!toDelete) return;
+    setDeletingId(toDelete.id);
     try {
-      await deletarCentroDeCustoApi(paraExcluir.id);
-      setCentros((prev) => prev.filter((c) => c.id !== paraExcluir.id));
-      toast.success("Centro de custo removido.");
-      setParaExcluir(null);
+      await deleteCostCenterApi(toDelete.id);
+      setCostCenters((prev) => prev.filter((c) => c.id !== toDelete.id));
+      toast.success("Cost center removed.");
+      setToDelete(null);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível remover o centro de custo.");
+      toast.error(err instanceof Error ? err.message : "Could not remove the cost center.");
     } finally {
-      setDeletandoId(null);
+      setDeletingId(null);
     }
   }
 
-  const centrosFiltrados = centros.filter(
+  const filteredCostCenters = costCenters.filter(
     (c) =>
-      c.descricao.toLowerCase().includes(busca.toLowerCase()) ||
-      (c.codigo_cc_erp ?? "").toLowerCase().includes(busca.toLowerCase())
+      c.description.toLowerCase().includes(search.toLowerCase()) ||
+      (c.erp_code ?? "").toLowerCase().includes(search.toLowerCase())
   );
 
-  const columns: DataTableColumn<CentroDeCusto>[] = [
+  const columns: DataTableColumn<CostCenter>[] = [
     {
       key: "id",
       header: "ID",
@@ -122,20 +122,20 @@ export default function CentroDeCustoPage() {
       render: (c) => <span className="text-small text-app-text-subtle">{c.id}</span>,
     },
     {
-      key: "descricao",
-      header: "Descrição",
+      key: "description",
+      header: "Description",
       sortable: true,
-      sortAccessor: (c) => c.descricao,
-      render: (c) => <span className="font-medium text-app-text">{c.descricao}</span>,
+      sortAccessor: (c) => c.description,
+      render: (c) => <span className="font-medium text-app-text">{c.description}</span>,
     },
     {
-      key: "codigo_cc_erp",
-      header: "Código ERP",
+      key: "erp_code",
+      header: "ERP Code",
       sortable: true,
-      sortAccessor: (c) => c.codigo_cc_erp,
+      sortAccessor: (c) => c.erp_code,
       render: (c) => (
         <span className="text-app-text-muted">
-          {c.codigo_cc_erp ?? <span className="text-app-text-subtle">—</span>}
+          {c.erp_code ?? <span className="text-app-text-subtle">—</span>}
         </span>
       ),
     },
@@ -143,33 +143,33 @@ export default function CentroDeCustoPage() {
       key: "status",
       header: "Status",
       sortable: true,
-      sortAccessor: (c) => (c.ativo ? 1 : 0),
-      render: (c) => <BadgeAtivo ativo={c.ativo} />,
+      sortAccessor: (c) => (c.active ? 1 : 0),
+      render: (c) => <ActiveBadge ativo={c.active} />,
     },
     {
-      key: "acoes",
+      key: "actions",
       header: "",
       align: "right",
       render: (c) => (
         <div className="flex items-center justify-end gap-1">
           <button
-            onClick={(e) => { e.stopPropagation(); handleToggleAtivo(c); }}
-            disabled={toggleandoId === c.id}
+            onClick={(e) => { e.stopPropagation(); handleToggleActive(c); }}
+            disabled={togglingId === c.id}
             className={[
               "p-2 rounded-lg transition-colors cursor-pointer disabled:opacity-40",
-              c.ativo
+              c.active
                 ? "text-app-text-muted hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10"
                 : "text-app-text-muted hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10",
             ].join(" ")}
-            aria-label={c.ativo ? "Inativar" : "Ativar"}
-            title={c.ativo ? "Inativar" : "Ativar"}
+            aria-label={c.active ? "Deactivate" : "Activate"}
+            title={c.active ? "Deactivate" : "Activate"}
           >
             <Power size={15} />
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); setParaExcluir(c); }}
+            onClick={(e) => { e.stopPropagation(); setToDelete(c); }}
             className="p-2 rounded-lg text-app-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors cursor-pointer"
-            aria-label="Remover"
+            aria-label="Remove"
           >
             <Trash size={15} />
           </button>
@@ -184,20 +184,20 @@ export default function CentroDeCustoPage() {
 
         <Card>
           <div className="flex items-center justify-between px-5 py-4">
-            <h1 className="text-feature-title text-app-text">Centros de Custo</h1>
-            <Button variant="dark" size="sm" onClick={abrirNovo}>
+            <h1 className="text-feature-title text-app-text">Cost Centers</h1>
+            <Button variant="dark" size="sm" onClick={openCreate}>
               <Plus size={14} />
-              Novo
+              New
             </Button>
           </div>
 
           <div className="px-5 pb-4 border-t border-app-border pt-4">
             <Input
               label=""
-              placeholder="Buscar por descrição ou código ERP…"
+              placeholder="Search by description or ERP code…"
               icon={<MagnifyingGlass size={16} />}
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               className="!py-3 text-body-sm"
             />
           </div>
@@ -205,36 +205,36 @@ export default function CentroDeCustoPage() {
 
         <Card>
           <div className="p-5">
-            {erro ? (
+            {error ? (
               <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-4">
-                <p className="text-body-sm text-red-700">{erro}</p>
+                <p className="text-body-sm text-red-700">{error}</p>
                 <button
-                  onClick={() => recarregar()}
+                  onClick={() => reload()}
                   className="mt-2 text-caption font-semibold text-brand hover:underline"
                 >
-                  Tentar novamente
+                  Try again
                 </button>
               </div>
             ) : (
               <DataTable
                 columns={columns}
-                rows={centrosFiltrados}
-                onRowClick={abrirEdicao}
+                rows={filteredCostCenters}
+                onRowClick={openEdit}
                 keyExtractor={(c) => c.id}
                 loading={loading}
-                onLoadMore={busca ? undefined : carregarMais}
-                hasMore={busca ? false : hasMore}
+                onLoadMore={search ? undefined : loadMore}
+                hasMore={search ? false : hasMore}
                 loadingMore={loadingMore}
                 empty={
                   <EmptyState
                     icon={Buildings}
-                    title="Nenhum centro de custo encontrado"
+                    title="No cost centers found"
                     description={
-                      busca
-                        ? "Nenhum resultado para o filtro aplicado."
-                        : 'Clique em "Novo" para cadastrar o primeiro.'
+                      search
+                        ? "No results for the applied filter."
+                        : 'Click "New" to add the first one.'
                     }
-                    action={!busca ? { label: "Novo Centro de Custo", onClick: abrirNovo } : undefined}
+                    action={!search ? { label: "New Cost Center", onClick: openCreate } : undefined}
                   />
                 }
               />
@@ -244,22 +244,22 @@ export default function CentroDeCustoPage() {
 
       </div>
 
-      <Modal open={modalAberto} onClose={fecharModal}>
-        <FormCentroDeCusto
-          centroDeCusto={selecionado}
-          onSalvar={handleSalvar}
-          onCancelar={fecharModal}
+      <Modal open={modalOpen} onClose={closeModal}>
+        <CostCenterForm
+          costCenter={selected}
+          onSave={handleSave}
+          onCancel={closeModal}
         />
       </Modal>
 
       <ConfirmModal
-        open={!!paraExcluir}
-        title="Remover centro de custo"
-        description={`Tem certeza que deseja remover "${paraExcluir?.descricao}"? Esta ação não pode ser desfeita.`}
-        confirmLabel="Remover"
-        loading={deletandoId !== null}
-        onConfirm={handleDeletar}
-        onCancel={() => setParaExcluir(null)}
+        open={!!toDelete}
+        title="Remove cost center"
+        description={`Are you sure you want to remove "${toDelete?.description}"? This action cannot be undone.`}
+        confirmLabel="Remove"
+        loading={deletingId !== null}
+        onConfirm={handleDelete}
+        onCancel={() => setToDelete(null)}
       />
     </>
   );

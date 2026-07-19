@@ -9,248 +9,246 @@ import { toast } from "@/lib/toast";
 import Loading from "@/ui/Loading";
 import Card from "@/ui/Card";
 import Combobox from "@/ui/Combobox";
-import KanbanView from "@/features/rcm/components/KanbanView";
-import ListaView from "@/features/rcm/components/ListaView";
-import AuditoriaView from "@/features/rcm/components/AuditoriaView";
-import FormRcm from "@/features/rcm/components/FormRcm";
-import ModalAgendamento from "@/features/rcm/components/ModalAgendamento";
-import ModalRejeicao from "@/features/rcm/components/ModalRejeicao";
+import KanbanView from "@/features/reimbursement/components/KanbanView";
+import ListView from "@/features/reimbursement/components/ListView";
+import AuditView from "@/features/reimbursement/components/AuditView";
+import FormReimbursement from "@/features/reimbursement/components/FormReimbursement";
+import SchedulingModal from "@/features/reimbursement/components/SchedulingModal";
+import RejectionModal from "@/features/reimbursement/components/RejectionModal";
 import ConfirmModal from "@/ui/ConfirmModal";
 import {
-  listarRcmsApi,
-  criarRcmApi,
-  atualizarRcmApi,
-  criarDespesaRcmApi,
-  atualizarDespesaRcmApi,
-  deletarDespesaRcmApi,
-  adicionarAnexoRcmApi,
-  deletarAnexoEspecificoRcmApi,
-  atualizarStatusRcmApi,
-  baixarPdfRcmApi,
-  deletarRcmApi,
-} from "@/features/rcm/rcm.api";
+  listReimbursementsApi,
+  createReimbursementApi,
+  updateReimbursementApi,
+  createReimbursementItemApi,
+  updateReimbursementItemApi,
+  deleteReimbursementItemApi,
+  adicionarAnexoReimbursementApi,
+  deleteAnexoEspecificoReimbursementApi,
+  updateStatusReimbursementApi,
+  downloadPdfReimbursementApi,
+  deleteReimbursementApi,
+} from "@/features/reimbursement/reimbursement.api";
 import { usePaginatedList } from "@/lib/usePaginatedList";
 import {
-  RCM_STATUS_LABEL,
-  type Rcm,
-  type RcmStatus,
-  type StoreRcmWithDespesasFormData,
-} from "@/features/rcm/rcm.types";
-import type { AnexoParaAdicionar, AnexoParaDeletar } from "@/features/rcm/components/FormRcm";
+  REIMBURSEMENT_STATUS_LABEL,
+  type Reimbursement,
+  type ReimbursementStatus,
+  type StoreReimbursementWithDespesasFormData,
+} from "@/features/reimbursement/reimbursement.types";
+import type { AttachmentToAdd, AttachmentToDelete } from "@/features/reimbursement/components/FormReimbursement";
 
-type ViewMode = "kanban" | "lista";
+type ViewMode = "kanban" | "list";
 
-export default function RcmPage() {
+export default function ReimbursementsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
-  const [selectedRcm, setSelectedRcm] = useState<Rcm | null>(null);
+  const [selectedReimbursement, setSelectedReimbursement] = useState<Reimbursement | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [rcmParaEditar, setRcmParaEditar] = useState<Rcm | null>(null);
-  const [modalAgendamento, setModalAgendamento] = useState<Rcm | null>(null);
-  const [modalRejeicao, setModalRejeicao] = useState<Rcm | null>(null);
-  const [rcmParaExcluir, setRcmParaExcluir] = useState<Rcm | null>(null);
-  const [excluindo, setExcluindo] = useState(false);
+  const [reimbursementToEdit, setReimbursementToEdit] = useState<Reimbursement | null>(null);
+  const [schedulingModal, setSchedulingModal] = useState<Reimbursement | null>(null);
+  const [rejectionModal, setRejectionModal] = useState<Reimbursement | null>(null);
+  const [reimbursementToDelete, setReimbursementToDelete] = useState<Reimbursement | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const [filtros, setFiltros] = useState({
-    colaborador: "",
+  const [filters, setFilters] = useState({
+    employee: "",
     status: "",
-    dataInicio: "",
-    dataFim: "",
+    startDate: "",
+    endDate: "",
   });
 
-  const [debouncedFiltros, setDebouncedFiltros] = useState(filtros);
+  const [debouncedFilters, setDebouncedFilters] = useState(filters);
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedFiltros(filtros), 400);
+    const timer = setTimeout(() => setDebouncedFilters(filters), 400);
     return () => clearTimeout(timer);
-  }, [filtros]);
+  }, [filters]);
 
   const fetcher = useCallback((page: number, perPage: number) => {
-    return listarRcmsApi(page, perPage, debouncedFiltros);
-  }, [debouncedFiltros]);
+    return listReimbursementsApi(page, perPage, debouncedFilters);
+  }, [debouncedFilters]);
 
   const {
-    items: rcms,
-    setItems: setRcms,
+    items: reimbursements,
+    setItems: setReimbursements,
     loading,
-    erro,
+    error: error,
     hasMore,
     loadingMore,
-    recarregar,
-    carregarMais,
+    reload: reload,
+    loadMore: loadMore,
   } = usePaginatedList(fetcher);
 
   useEffect(() => {
-    recarregar();
-  }, [debouncedFiltros, recarregar]);
+    reload();
+  }, [debouncedFilters, reload]);
 
-
-
-  function atualizarRcmLocal(id: number, patch: Partial<Rcm>) {
-    setRcms((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
-    setSelectedRcm((prev) => (prev?.id === id ? { ...prev, ...patch } : prev));
+  function updateReimbursementLocal(id: number, patch: Partial<Reimbursement>) {
+    setReimbursements((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+    setSelectedReimbursement((prev) => (prev?.id === id ? { ...prev, ...patch } : prev));
   }
 
-  async function handleConfirmarExclusao() {
-    if (!rcmParaExcluir) return;
-    setExcluindo(true);
+  async function handleConfirmDelete() {
+    if (!reimbursementToDelete) return;
+    setDeleting(true);
     try {
-      await deletarRcmApi(rcmParaExcluir.id);
-      setRcms((prev) => prev.filter((r) => r.id !== rcmParaExcluir.id));
-      setSelectedRcm((prev) => (prev?.id === rcmParaExcluir.id ? null : prev));
-      setRcmParaExcluir(null);
-      toast.success("Reembolso excluído com sucesso!");
+      await deleteReimbursementApi(reimbursementToDelete.id);
+      setReimbursements((prev) => prev.filter((r) => r.id !== reimbursementToDelete.id));
+      setSelectedReimbursement((prev) => (prev?.id === reimbursementToDelete.id ? null : prev));
+      setReimbursementToDelete(null);
+      toast.success("Reimbursement deleted successfully!");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível excluir o reembolso.");
+      toast.error(err instanceof Error ? err.message : "Could not delete the reimbursement.");
     } finally {
-      setExcluindo(false);
+      setDeleting(false);
     }
   }
 
-  async function handleMoverRcm(id: number, novoStatus: RcmStatus) {
+  async function handleMoveReimbursement(id: number, newStatus: ReimbursementStatus) {
     try {
-      await atualizarStatusRcmApi(id, { status: novoStatus });
-      atualizarRcmLocal(id, { status: novoStatus });
+      await updateStatusReimbursementApi(id, { status: newStatus });
+      updateReimbursementLocal(id, { status: newStatus });
     } catch {
     }
   }
 
-  async function handleConfirmarRejeicao(motivo: string) {
-    if (!modalRejeicao) return;
-    await atualizarStatusRcmApi(modalRejeicao.id, { status: 7, motivo_rejeicao: motivo });
-    atualizarRcmLocal(modalRejeicao.id, { status: 7, motivo_rejeicao: motivo });
-    setModalRejeicao(null);
+  async function handleConfirmRejection(reason: string) {
+    if (!rejectionModal) return;
+    await updateStatusReimbursementApi(rejectionModal.id, { status: 7, rejection_reason: reason });
+    updateReimbursementLocal(rejectionModal.id, { status: 7, rejection_reason: reason });
+    setRejectionModal(null);
   }
 
-  async function handleConfirmarAgendamento(data: string) {
-    if (!modalAgendamento) return;
-    await atualizarStatusRcmApi(modalAgendamento.id, {
+  async function handleConfirmScheduling(date: string) {
+    if (!schedulingModal) return;
+    await updateStatusReimbursementApi(schedulingModal.id, {
       status: 5,
-      data_pagamento_programado: data,
+      scheduled_payment_date: date,
     });
-    atualizarRcmLocal(modalAgendamento.id, {
+    updateReimbursementLocal(schedulingModal.id, {
       status: 5,
-      data_pagamento_programado: data,
+      scheduled_payment_date: date,
     });
-    setModalAgendamento(null);
+    setSchedulingModal(null);
   }
 
-  async function handleAprovar(id: number) {
-    await atualizarStatusRcmApi(id, { status: 4 });
-    atualizarRcmLocal(id, { status: 4 });
-    setSelectedRcm(null);
+  async function handleApprove(id: number) {
+    await updateStatusReimbursementApi(id, { status: 4 });
+    updateReimbursementLocal(id, { status: 4 });
+    setSelectedReimbursement(null);
   }
 
-  async function handleRejeitar(id: number, motivo: string) {
-    await atualizarStatusRcmApi(id, { status: 7, motivo_rejeicao: motivo });
-    atualizarRcmLocal(id, { status: 7, motivo_rejeicao: motivo });
-    setSelectedRcm(null);
+  async function handleReject(id: number, reason: string) {
+    await updateStatusReimbursementApi(id, { status: 7, rejection_reason: reason });
+    updateReimbursementLocal(id, { status: 7, rejection_reason: reason });
+    setSelectedReimbursement(null);
   }
 
-  function fecharForm() {
+  function closeForm() {
     setShowForm(false);
-    setRcmParaEditar(null);
+    setReimbursementToEdit(null);
   }
 
-  function handleEditarRcm(rcm: Rcm) {
-    setRcmParaEditar(rcm);
+  function handleEditReimbursement(reimbursement: Reimbursement) {
+    setReimbursementToEdit(reimbursement);
     setShowForm(true);
   }
 
-  async function handleBaixarPdf(id: number) {
+  async function handleDownloadPdf(id: number) {
     try {
-      const blob = await baixarPdfRcmApi(id);
+      const blob = await downloadPdfReimbursementApi(id);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `rcm-${id}.pdf`;
+      a.download = `reimbursement-${id}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
     }
   }
 
-  async function handleSalvarForm(
-    dados: StoreRcmWithDespesasFormData,
-    deletarDespesaIds: number[],
-    deletarAnexos: AnexoParaDeletar[],
-    adicionarAnexos: AnexoParaAdicionar[]
+  async function handleSaveForm(
+    data: StoreReimbursementWithDespesasFormData,
+    deleteItemIds: number[],
+    deleteAttachments: AttachmentToDelete[],
+    addAttachments: AttachmentToAdd[]
   ) {
     try {
-      const { despesas, ...rcmDados } = dados;
-      let rcmId: number;
+      const { items, ...header } = data;
+      let reimbursementId: number;
 
-      if (rcmParaEditar) {
-        await atualizarRcmApi(rcmParaEditar.id, rcmDados);
-        rcmId = rcmParaEditar.id;
+      if (reimbursementToEdit) {
+        await updateReimbursementApi(reimbursementToEdit.id, header);
+        reimbursementId = reimbursementToEdit.id;
       } else {
-        const { rcm } = await criarRcmApi(rcmDados);
-        rcmId = rcm.id;
+        const { reimbursement } = await createReimbursementApi(header);
+        reimbursementId = reimbursement.id;
       }
 
-      for (const id of deletarDespesaIds) {
-        await deletarDespesaRcmApi(rcmId, id);
+      for (const id of deleteItemIds) {
+        await deleteReimbursementItemApi(reimbursementId, id);
       }
 
-      for (const { idDespesa, idAnexo } of deletarAnexos) {
-        await deletarAnexoEspecificoRcmApi(rcmId, idDespesa, idAnexo);
+      for (const { itemId, attachmentId } of deleteAttachments) {
+        await deleteAnexoEspecificoReimbursementApi(reimbursementId, itemId, attachmentId);
       }
 
-      for (const { idDespesa, file } of adicionarAnexos) {
-        await adicionarAnexoRcmApi(rcmId, idDespesa, file);
+      for (const { itemId, file } of addAttachments) {
+        await adicionarAnexoReimbursementApi(reimbursementId, itemId, file);
       }
 
-      for (const despesa of despesas) {
-        if (despesa.despesaId) {
-          await atualizarDespesaRcmApi(rcmId, despesa.despesaId, {
-            data_despesa:         despesa.data_despesa,
-            valor:                despesa.valor,
-            id_centro_custo:      despesa.id_centro_custo,
-            descricao:            despesa.descricao,
-            id_categoria_despesa: despesa.id_categoria_despesa || undefined,
-            latitude:             despesa.latitude  ?? null,
-            longitude:            despesa.longitude ?? null,
-            endereco:             despesa.endereco  ?? null,
-            descricao_fornecedor: despesa.descricao_fornecedor || undefined,
-            cpf_cnpj_fornecedor:  despesa.cpf_cnpj_fornecedor  || undefined,
-            id_fornecedor:        despesa.id_fornecedor        || undefined,
+      for (const item of items) {
+        if (item.itemId) {
+          await updateReimbursementItemApi(reimbursementId, item.itemId, {
+            expense_date: item.expense_date,
+            amount: item.amount,
+            cost_center_id: item.cost_center_id,
+            description: item.description,
+            expense_category_id: item.expense_category_id || undefined,
+            latitude: item.latitude ?? null,
+            longitude: item.longitude ?? null,
+            address: item.address ?? null,
+            description_supplier: item.description_supplier || undefined,
+            supplier_tax_id: item.supplier_tax_id || undefined,
+            supplier_id: item.supplier_id || undefined,
           });
         } else {
           const fd = new FormData();
-          fd.append("data_despesa", despesa.data_despesa);
-          fd.append("valor", despesa.valor);
-          fd.append("id_centro_custo", despesa.id_centro_custo);
-          fd.append("descricao", despesa.descricao);
-          if (despesa.id_categoria_despesa) fd.append("id_categoria_despesa", despesa.id_categoria_despesa);
-          if (despesa.latitude  != null) fd.append("latitude",  String(despesa.latitude));
-          if (despesa.longitude != null) fd.append("longitude", String(despesa.longitude));
-          if (despesa.endereco) fd.append("endereco", despesa.endereco);
-          if (despesa.descricao_fornecedor) fd.append("descricao_fornecedor", despesa.descricao_fornecedor);
-          if (despesa.cpf_cnpj_fornecedor) fd.append("cpf_cnpj_fornecedor", despesa.cpf_cnpj_fornecedor.replace(/\D/g, ""));
-          if (despesa.id_fornecedor) fd.append("id_fornecedor", despesa.id_fornecedor);
-          const files = (despesa.anexo as File[] | undefined) ?? [];
-          files.forEach((f) => fd.append("anexos[]", f));
-          await criarDespesaRcmApi(rcmId, fd);
+          fd.append("expense_date", item.expense_date);
+          fd.append("amount", item.amount);
+          fd.append("cost_center_id", item.cost_center_id);
+          fd.append("description", item.description);
+          if (item.expense_category_id) fd.append("expense_category_id", item.expense_category_id);
+          if (item.latitude != null) fd.append("latitude", String(item.latitude));
+          if (item.longitude != null) fd.append("longitude", String(item.longitude));
+          if (item.address) fd.append("address", item.address);
+          if (item.description_supplier) fd.append("description_supplier", item.description_supplier);
+          if (item.supplier_tax_id) fd.append("supplier_tax_id", item.supplier_tax_id.replace(/\D/g, ""));
+          if (item.supplier_id) fd.append("supplier_id", item.supplier_id);
+          const files = (item.anexo as File[] | undefined) ?? [];
+          files.forEach((f) => fd.append("attachments[]", f));
+          await createReimbursementItemApi(reimbursementId, fd);
         }
       }
 
-      fecharForm();
-      toast.success(rcmParaEditar ? "Solicitação atualizada com sucesso!" : "Solicitação criada com sucesso!");
-      recarregar();
+      closeForm();
+      toast.success(reimbursementToEdit ? "Request updated successfully!" : "Request created successfully!");
+      reload();
     } catch (err) {
-      const mensagem = err instanceof Error ? err.message : "Erro ao salvar solicitação.";
-      toast.error(mensagem);
+      const message = err instanceof Error ? err.message : "Error saving the request.";
+      toast.error(message);
     }
   }
 
-  if (selectedRcm) {
+  if (selectedReimbursement) {
     return (
       <div className="flex h-full flex-col p-4">
-        <AuditoriaView
-          rcm={selectedRcm}
-          onFechar={() => setSelectedRcm(null)}
-          onAprovar={handleAprovar}
-          onRejeitar={handleRejeitar}
-          onBaixarPdf={handleBaixarPdf}
+        <AuditView
+          reimbursement={selectedReimbursement}
+          onClose={() => setSelectedReimbursement(null)}
+          onApprove={handleApprove}
+          onReject={handleReject}
+          onDownloadPdf={handleDownloadPdf}
         />
       </div>
     );
@@ -260,13 +258,12 @@ export default function RcmPage() {
     <>
       <div className="flex flex-col gap-4 p-6">
 
-        {/* Card de cabeçalho */}
         <Card>
           <div className="flex items-center justify-between px-5 py-4">
-            <h1 className="text-feature-title text-app-text">Reembolsos</h1>
+            <h1 className="text-feature-title text-app-text">Reimbursements</h1>
             <Button variant="dark" size="sm" onClick={() => setShowForm(true)}>
               <Plus size={14} />
-              Nova Solicitação
+              New Request
             </Button>
           </div>
 
@@ -283,14 +280,14 @@ export default function RcmPage() {
                 Kanban
               </button>
               <button
-                onClick={() => setViewMode("lista")}
-                className={`flex items-center gap-1.5 px-3 py-2 text-caption font-semibold transition-colors cursor-pointer ${viewMode === "lista"
+                onClick={() => setViewMode("list")}
+                className={`flex items-center gap-1.5 px-3 py-2 text-caption font-semibold transition-colors cursor-pointer ${viewMode === "list"
                   ? "bg-app-surface-raised text-app-text"
                   : "text-app-text-muted hover:bg-app-hover"
                   }`}
               >
                 <List size={16} />
-                Lista
+                List
               </button>
             </div>
 
@@ -299,41 +296,41 @@ export default function RcmPage() {
                 <FunnelSimple size={16} className="hidden sm:block text-app-text-muted shrink-0" />
                 <input
                   type="text"
-                  placeholder="Colaborador"
-                  value={filtros.colaborador}
-                  onChange={(e) => setFiltros((f) => ({ ...f, colaborador: e.target.value }))}
+                  placeholder="Employee"
+                  value={filters.employee}
+                  onChange={(e) => setFilters((f) => ({ ...f, employee: e.target.value }))}
                   className="h-10 rounded-xl border border-app-border bg-app-surface px-3 text-body-sm text-app-text placeholder:text-app-text-subtle focus:border-brand focus:outline-none w-full sm:w-52"
                 />
               </div>
               <Combobox
                 placeholder="Status"
-                searchPlaceholder="Buscar status…"
-                value={filtros.status}
-                onChange={(v) => setFiltros((f) => ({ ...f, status: v }))}
+                searchPlaceholder="Search status…"
+                value={filters.status}
+                onChange={(v) => setFilters((f) => ({ ...f, status: v }))}
                 className="w-full sm:w-44"
                 options={[
-                  { value: "1", label: RCM_STATUS_LABEL[1] },
-                  { value: "2", label: RCM_STATUS_LABEL[2] },
-                  { value: "3", label: RCM_STATUS_LABEL[3] },
-                  { value: "4", label: RCM_STATUS_LABEL[4] },
-                  { value: "5", label: RCM_STATUS_LABEL[5] },
-                  { value: "6", label: RCM_STATUS_LABEL[6] },
+                  { value: "1", label: REIMBURSEMENT_STATUS_LABEL[1] },
+                  { value: "2", label: REIMBURSEMENT_STATUS_LABEL[2] },
+                  { value: "3", label: REIMBURSEMENT_STATUS_LABEL[3] },
+                  { value: "4", label: REIMBURSEMENT_STATUS_LABEL[4] },
+                  { value: "5", label: REIMBURSEMENT_STATUS_LABEL[5] },
+                  { value: "6", label: REIMBURSEMENT_STATUS_LABEL[6] },
                 ]}
               />
               <div className="flex gap-2">
                 <DatePicker
                   size="sm"
-                  placeholder="De"
-                  value={filtros.dataInicio}
-                  onChange={(v) => setFiltros((f) => ({ ...f, dataInicio: v }))}
+                  placeholder="From"
+                  value={filters.startDate}
+                  onChange={(v) => setFilters((f) => ({ ...f, startDate: v }))}
                   className="flex-1 sm:w-36"
                 />
                 <DatePicker
                   size="sm"
-                  placeholder="Até"
+                  placeholder="To"
                   align="right"
-                  value={filtros.dataFim}
-                  onChange={(v) => setFiltros((f) => ({ ...f, dataFim: v }))}
+                  value={filters.endDate}
+                  onChange={(v) => setFilters((f) => ({ ...f, endDate: v }))}
                   className="flex-1 sm:w-36"
                 />
               </div>
@@ -341,19 +338,18 @@ export default function RcmPage() {
           </div>
         </Card>
 
-        {/* Card de conteúdo */}
         <Card>
           <div className="p-5">
             {loading ? (
               <Loading />
-            ) : erro ? (
+            ) : error ? (
               <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-4">
-                <p className="text-body-sm text-red-700">{erro}</p>
+                <p className="text-body-sm text-red-700">{error}</p>
                 <button
-                  onClick={recarregar}
+                  onClick={reload}
                   className="mt-2 text-caption font-semibold text-brand hover:underline"
                 >
-                  Tentar novamente
+                  Try again
                 </button>
               </div>
             ) : (
@@ -367,21 +363,21 @@ export default function RcmPage() {
                 >
                   {viewMode === "kanban" ? (
                     <KanbanView
-                      rcms={rcms}
-                      onMoverRcm={handleMoverRcm}
-                      onPedirAgendamento={(rcm) => setModalAgendamento(rcm)}
-                      onPedirRejeicao={(rcm) => setModalRejeicao(rcm)}
-                      onAbrirAuditoria={setSelectedRcm}
-                      onBaixarPdf={handleBaixarPdf}
-                      onEditarRcm={handleEditarRcm}
-                      onExcluirRcm={setRcmParaExcluir}
+                      reimbursements={reimbursements}
+                      onMoveReimbursement={handleMoveReimbursement}
+                      onRequestScheduling={(reimbursement) => setSchedulingModal(reimbursement)}
+                      onRequestRejection={(reimbursement) => setRejectionModal(reimbursement)}
+                      onOpenAudit={setSelectedReimbursement}
+                      onDownloadPdf={handleDownloadPdf}
+                      onEditReimbursement={handleEditReimbursement}
+                      onDeleteReimbursement={setReimbursementToDelete}
                     />
                   ) : (
-                    <ListaView
-                      rcms={rcms}
-                      onSelecionarRcm={setSelectedRcm}
+                    <ListView
+                      reimbursements={reimbursements}
+                      onSelectReimbursement={setSelectedReimbursement}
                       loading={loading}
-                      onLoadMore={carregarMais}
+                      onLoadMore={loadMore}
                       hasMore={hasMore}
                       loadingMore={loadingMore}
                     />
@@ -396,40 +392,40 @@ export default function RcmPage() {
 
       <AnimatePresence>
         {showForm && (
-          <FormRcm
-            rcmInicial={rcmParaEditar ?? undefined}
-            onSalvar={handleSalvarForm}
-            onFechar={fecharForm}
+          <FormReimbursement
+            initialReimbursement={reimbursementToEdit ?? undefined}
+            onSave={handleSaveForm}
+            onClose={closeForm}
           />
         )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {modalAgendamento && (
-          <ModalAgendamento
-            onConfirmar={handleConfirmarAgendamento}
-            onCancelar={() => setModalAgendamento(null)}
+        {schedulingModal && (
+          <SchedulingModal
+            onConfirm={handleConfirmScheduling}
+            onCancel={() => setSchedulingModal(null)}
           />
         )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {modalRejeicao && (
-          <ModalRejeicao
-            onConfirmar={handleConfirmarRejeicao}
-            onCancelar={() => setModalRejeicao(null)}
+        {rejectionModal && (
+          <RejectionModal
+            onConfirm={handleConfirmRejection}
+            onCancel={() => setRejectionModal(null)}
           />
         )}
       </AnimatePresence>
 
       <ConfirmModal
-        open={!!rcmParaExcluir}
-        title="Excluir Reembolso?"
-        description={rcmParaExcluir ? `Esta ação não pode ser desfeita. O reembolso "${rcmParaExcluir.titulo}" e todas as despesas vinculadas serão removidos permanentemente.` : undefined}
-        confirmLabel="Excluir"
-        loading={excluindo}
-        onConfirm={handleConfirmarExclusao}
-        onCancel={() => { if (!excluindo) setRcmParaExcluir(null); }}
+        open={!!reimbursementToDelete}
+        title="Delete Reimbursement?"
+        description={reimbursementToDelete ? `This action cannot be undone. The reimbursement "${reimbursementToDelete.title}" and all linked items will be permanently removed.` : undefined}
+        confirmLabel="Delete"
+        loading={deleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => { if (!deleting) setReimbursementToDelete(null); }}
       />
     </>
   );

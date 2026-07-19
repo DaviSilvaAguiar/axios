@@ -6,53 +6,53 @@ import { ArrowLeft, CheckCircle } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 import { toast } from "@/lib/toast";
 import Button from "@/ui/Button";
-import FormRcm from "@/features/rcm/components/FormRcm";
+import FormReimbursement from "@/features/reimbursement/components/FormReimbursement";
 import {
-  criarRcmApi,
-  criarDespesaRcmApi,
-} from "@/features/rcm/rcm.api";
-import type { StoreRcmWithDespesasFormData } from "@/features/rcm/rcm.types";
-import type { AnexoParaAdicionar, AnexoParaDeletar } from "@/features/rcm/components/FormRcm";
+  createReimbursementApi,
+  createReimbursementItemApi,
+} from "@/features/reimbursement/reimbursement.api";
+import type { StoreReimbursementWithDespesasFormData } from "@/features/reimbursement/reimbursement.types";
+import type { AttachmentToAdd, AttachmentToDelete } from "@/features/reimbursement/components/FormReimbursement";
 
-export default function NovoReembolsoPage() {
+export default function NewReimbursementPage() {
   const router = useRouter();
-  const [sucesso, setSucesso] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  async function handleSalvar(
-    dados: StoreRcmWithDespesasFormData,
-    _deletarDespesaIds: number[],
-    _deletarAnexos: AnexoParaDeletar[],
-    _adicionarAnexos: AnexoParaAdicionar[]
+  async function handleSave(
+    data: StoreReimbursementWithDespesasFormData,
+    _deleteItemIds: number[],
+    _deleteAttachments: AttachmentToDelete[],
+    _addAttachments: AttachmentToAdd[]
   ) {
     try {
-      const { despesas, ...rcmDados } = dados;
-      const { rcm } = await criarRcmApi(rcmDados);
+      const { items, ...header } = data;
+      const { reimbursement } = await createReimbursementApi(header);
 
-      for (const despesa of despesas) {
+      for (const item of items) {
         const fd = new FormData();
-        fd.append("data_despesa", despesa.data_despesa);
-        fd.append("valor", despesa.valor);
-        fd.append("id_centro_custo", despesa.id_centro_custo);
-        fd.append("descricao", despesa.descricao);
-        if (despesa.id_categoria_despesa) fd.append("id_categoria_despesa", despesa.id_categoria_despesa);
-        if (despesa.latitude  != null) fd.append("latitude",  String(despesa.latitude));
-        if (despesa.longitude != null) fd.append("longitude", String(despesa.longitude));
-        if (despesa.endereco) fd.append("endereco", despesa.endereco);
-        if (despesa.descricao_fornecedor) fd.append("descricao_fornecedor", despesa.descricao_fornecedor);
-        if (despesa.cpf_cnpj_fornecedor) fd.append("cpf_cnpj_fornecedor", despesa.cpf_cnpj_fornecedor.replace(/\D/g, ""));
-        if (despesa.id_fornecedor) fd.append("id_fornecedor", despesa.id_fornecedor);
-        const files = (despesa.anexo as File[] | undefined) ?? [];
-        files.forEach((f) => fd.append("anexos[]", f));
-        await criarDespesaRcmApi(rcm.id, fd);
+        fd.append("expense_date", item.expense_date);
+        fd.append("amount", item.amount);
+        fd.append("cost_center_id", item.cost_center_id);
+        fd.append("description", item.description);
+        if (item.expense_category_id) fd.append("expense_category_id", item.expense_category_id);
+        if (item.latitude != null) fd.append("latitude", String(item.latitude));
+        if (item.longitude != null) fd.append("longitude", String(item.longitude));
+        if (item.address) fd.append("address", item.address);
+        if (item.description_supplier) fd.append("description_supplier", item.description_supplier);
+        if (item.supplier_tax_id) fd.append("supplier_tax_id", item.supplier_tax_id.replace(/\D/g, ""));
+        if (item.supplier_id) fd.append("supplier_id", item.supplier_id);
+        const files = (item.anexo as File[] | undefined) ?? [];
+        files.forEach((f) => fd.append("attachments[]", f));
+        await createReimbursementItemApi(reimbursement.id, fd);
       }
 
-      setSucesso(true);
+      setSuccess(true);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao lançar gastos.");
+      toast.error(err instanceof Error ? err.message : "Error recording expenses.");
     }
   }
 
-  if (sucesso) {
+  if (success) {
     return (
       <div className="flex flex-col items-center justify-center min-h-full px-6 py-16 text-center">
         <motion.div
@@ -70,9 +70,9 @@ export default function NovoReembolsoPage() {
           transition={{ delay: 0.2, duration: 0.3 }}
           className="space-y-3 max-w-xs"
         >
-          <p className="text-section-heading text-app-text">Tudo certo!</p>
+          <p className="text-section-heading text-app-text">All set!</p>
           <p className="text-body-sm text-app-text-muted">
-            Suas notas foram enviadas para o financeiro.
+            Your receipts have been sent to finance.
           </p>
         </motion.div>
 
@@ -82,11 +82,11 @@ export default function NovoReembolsoPage() {
           transition={{ delay: 0.4, duration: 0.28 }}
           className="flex flex-col gap-3 w-full max-w-xs mt-10"
         >
-          <Button variant="dark" fullWidth onClick={() => setSucesso(false)}>
-            Lançar mais gastos
+          <Button variant="dark" fullWidth onClick={() => setSuccess(false)}>
+            Record more expenses
           </Button>
-          <Button variant="light" fullWidth onClick={() => router.push("/meus-reembolsos")}>
-            Ver minhas prestações
+          <Button variant="light" fullWidth onClick={() => router.push("/my-reimbursements")}>
+            View my reimbursements
           </Button>
         </motion.div>
       </div>
@@ -95,25 +95,23 @@ export default function NovoReembolsoPage() {
 
   return (
     <div className="min-h-full bg-app-bg">
-      {/* Header fixo */}
       <div className="sticky top-0 z-10 bg-app-bg/95 backdrop-blur-sm border-b border-app-border-subtle">
         <div className="flex items-center gap-3 px-4 py-4 sm:px-6">
           <button
-            onClick={() => router.push("/meus-reembolsos")}
+            onClick={() => router.push("/my-reimbursements")}
             className="flex items-center justify-center rounded-xl p-1.5 text-app-text-muted hover:bg-app-hover hover:text-app-text transition-colors"
           >
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-feature-title text-app-text">Lançar Gastos</h1>
+          <h1 className="text-feature-title text-app-text">Record Expenses</h1>
         </div>
       </div>
 
-      {/* Formulário em modo página (sem modal) */}
       <div className="max-w-2xl mx-auto">
-        <FormRcm
+        <FormReimbursement
           pageMode
-          onSalvar={handleSalvar}
-          onFechar={() => router.push("/meus-reembolsos")}
+          onSave={handleSave}
+          onClose={() => router.push("/my-reimbursements")}
         />
       </div>
     </div>

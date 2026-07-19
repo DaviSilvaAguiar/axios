@@ -1,20 +1,20 @@
 import { z } from "zod";
 
 export const loginFormSchema = z.object({
-  empresa:     z.string().min(1, "Informe a empresa"),
-  email:       z.string().min(1, "Informe o e-mail").email("E-mail inválido"),
-  senha:       z.string().min(1, "Informe a senha"),
+  company:     z.string().min(1, "Enter the company"),
+  email:       z.string().min(1, "Enter your email").email("Invalid email"),
+  password:       z.string().min(1, "Enter your password"),
   remember_me: z.boolean(),
 });
 
-export const usuarioSchema = z.object({
+export const userSchema = z.object({
   id: z.number(),
-  perfil: z.union([z.literal(1), z.literal(2), z.literal(3)]),
-  nome: z.string(),
+  role: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  name: z.string(),
   email: z.string().email(),
-  ativo: z.boolean(),
-  codigo_credor_erp: z.string().nullable(),
-  cpf_cnpj: z.string().nullable(),
+  active: z.boolean(),
+  erp_code: z.string().nullable(),
+  tax_id: z.string().nullable(),
   created_at: z.string(),
   updated_at: z.string(),
 });
@@ -22,32 +22,32 @@ export const usuarioSchema = z.object({
 export const tenantInfoSchema = z.object({
   id: z.number(),
   slug: z.string(),
-  razao_social: z.string(),
-  fantasia: z.string().nullable(),
-  max_usuarios: z.number().nullable().optional(),
+  legal_name: z.string(),
+  trade_name: z.string().nullable(),
+  max_users: z.number().nullable().optional(),
 });
 
 export const loginResponseSchema = z.object({
   token:      z.string(),
   expires_at: z.string().datetime(),
-  usuario:    usuarioSchema,
+  user:    userSchema,
   tenant:     tenantInfoSchema,
 });
 
 export const meResponseSchema = z.object({
-  usuario: usuarioSchema,
+  user: userSchema,
   tenant: tenantInfoSchema,
-  modulos: z.array(z.string()).default([]),
+  modules: z.array(z.string()).default([]),
 });
 
-export const recuperarSenhaFormSchema = z.object({
-  empresa: z.string().min(1, "Informe a empresa"),
-  email: z.string().min(1, "Informe o e-mail").email("E-mail inválido"),
+export const passwordRecoveryFormSchema = z.object({
+  company: z.string().min(1, "Enter the company"),
+  email: z.string().min(1, "Enter your email").email("Invalid email"),
 });
 
 export type LoginFormData = z.infer<typeof loginFormSchema>;
-export type Usuario = z.infer<typeof usuarioSchema>;
+export type User = z.infer<typeof userSchema>;
 export type TenantInfo = z.infer<typeof tenantInfoSchema>;
 export type LoginResponse = z.infer<typeof loginResponseSchema>;
 export type MeResponse = z.infer<typeof meResponseSchema>;
-export type RecuperarSenhaFormData = z.infer<typeof recuperarSenhaFormSchema>;
+export type PasswordRecoveryFormData = z.infer<typeof passwordRecoveryFormSchema>;

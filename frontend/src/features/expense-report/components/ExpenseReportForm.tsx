@@ -15,7 +15,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import Button from "@/ui/Button";
 import Input from "@/ui/Input";
-import InputMonetario from "@/ui/InputMonetario";
+import InputMonetario from "@/ui/MoneyInput";
 import DatePicker from "@/ui/DatePicker";
 import Combobox from "@/ui/Combobox";
 import Checkbox from "@/ui/Checkbox";
@@ -35,53 +35,53 @@ import type { FieldErrors } from "react-hook-form";
 import EmptyState from "@/ui/EmptyState";
 import { nomeArquivo } from "@/lib/formatters";
 import { useLookups } from "../hooks/useLookups";
-import { useDespesasAnexos } from "../hooks/useDespesasAnexos";
-import { useConfigs } from "@/contexts/ConfigContext";
-import CampoLocalizacao from "@/features/geolocalizacao/components/CampoLocalizacao";
-import SecaoFornecedor from "@/features/fornecedor/components/SecaoFornecedor";
+import { useItemAttachments } from "../hooks/useItemAttachments";
+import { useSettings } from "@/contexts/SettingContext";
+import LocationField from "@/features/geolocation/components/LocationField";
+import SupplierSection from "@/features/supplier/components/SupplierSection";
 import {
-  storeRdcWithDespesasFormSchema,
-  type Rdc,
-  type StoreRdcWithDespesasFormData,
-} from "../rdc.types";
+  storeExpenseReportWithDespesasFormSchema,
+  type ExpenseReport,
+  type StoreExpenseReportWithDespesasFormData,
+} from "../expense-report.types";
 
 interface Props {
-  rdcInicial?: Rdc;
-  onSalvar: (dados: StoreRdcWithDespesasFormData, arquivosPorItem: File[][]) => Promise<void>;
-  onFechar: () => void;
+  initialExpenseReport?: ExpenseReport;
+  onSave: (data: StoreExpenseReportWithDespesasFormData, filesByItem: File[][]) => Promise<void>;
+  onClose: () => void;
 }
 
-function primeiraMensagemErro(errs: unknown): string | null {
+function firstErrorMessage(errs: unknown): string | null {
   if (!errs || typeof errs !== "object") return null;
   for (const key of Object.keys(errs as Record<string, unknown>)) {
     const node = (errs as Record<string, unknown>)[key];
     if (!node || typeof node !== "object") continue;
     const msg = (node as { message?: unknown }).message;
     if (typeof msg === "string") return msg;
-    const aninhado = primeiraMensagemErro(node);
-    if (aninhado) return aninhado;
+    const nested = firstErrorMessage(node);
+    if (nested) return nested;
   }
   return null;
 }
 
-export default function FormRdc({ rdcInicial, onSalvar, onFechar }: Props) {
-  const { isHabilitada } = useConfigs();
-  const geolocalizacaoHabilitada = isHabilitada("habilitar_geolocalizacao_despesa_rdc");
+export default function ExpenseReportForm({ initialExpenseReport, onSave, onClose }: Props) {
+  const { isEnabled } = useSettings();
+  const geolocationEnabled = isEnabled("enable_geolocation_expense_report_item");
 
-  const { centrosCusto, categorias, usuarios } = useLookups();
+  const { costCenters, categories, users } = useLookups();
 
-  const { itemFiles, existingAnexos, adicionarItem, removerItem, adicionarArquivo, removerArquivo } =
-    useDespesasAnexos(
-      rdcInicial?.despesas?.length ?? 0,
-      rdcInicial?.despesas?.map((d) => d.anexos ?? []) ?? [],
+  const { itemFiles, existingAttachments, addItem, removeItem, addFile, removeFile } =
+    useItemAttachments(
+      initialExpenseReport?.items?.length ?? 0,
+      initialExpenseReport?.items?.map((d) => d.attachments ?? []) ?? [],
     );
 
-  const [colaboradorCadastrado, setColaboradorCadastrado] = useState<boolean>(
-    !!rdcInicial?.id_usuario_requisitante,
+  const [registeredEmployee, setRegisteredEmployee] = useState<boolean>(
+    !!initialExpenseReport?.requester_user_id,
   );
-  const [showBancarios, setShowBancarios] = useState(false);
-  const [tipoChavePix, setTipoChavePix] = useState<TipoChavePix | null>(
-    rdcInicial?.chave_pix ? inferirTipoChavePix(rdcInicial.chave_pix) : null,
+  const [showBankDetails, setShowBankDetails] = useState(false);
+  const [pixKeyType, setPixKeyType] = useState<TipoChavePix | null>(
+    initialExpenseReport?.pix_key ? inferirTipoChavePix(initialExpenseReport.pix_key) : null,
   );
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -94,132 +94,131 @@ export default function FormRdc({ rdcInicial, onSalvar, onFechar }: Props) {
     setError,
     clearErrors,
     formState: { errors, isSubmitting, isDirty },
-  } = useForm<StoreRdcWithDespesasFormData>({
-    resolver: zodResolver(storeRdcWithDespesasFormSchema),
-    defaultValues: rdcInicial
+  } = useForm<StoreExpenseReportWithDespesasFormData>({
+    resolver: zodResolver(storeExpenseReportWithDespesasFormSchema),
+    defaultValues: initialExpenseReport
       ? {
-          id_centro_custo:         String(rdcInicial.id_centro_custo),
-          descricao:               rdcInicial.descricao,
-          data_inicio_periodo:     rdcInicial.data_inicio_periodo?.split("T")[0] ?? "",
-          data_fim_periodo:        rdcInicial.data_fim_periodo?.split("T")[0] ?? "",
-          banco:                   rdcInicial.banco ?? "",
-          agencia:                 rdcInicial.agencia ?? "",
-          numero_banco:            rdcInicial.numero_banco ?? "",
-          chave_pix:               rdcInicial.chave_pix ?? "",
-          descricao_requisitante:  rdcInicial.descricao_requisitante ?? "",
-          setor_requisitante:      rdcInicial.setor_requisitante ?? "",
-          cpf_cnpj_requisitante:   rdcInicial.cpf_cnpj_requisitante ?? "",
-          id_usuario_requisitante: rdcInicial.id_usuario_requisitante
-            ? String(rdcInicial.id_usuario_requisitante)
+          cost_center_id:         String(initialExpenseReport.cost_center_id),
+          description:             initialExpenseReport.description,
+          period_start_date:       initialExpenseReport.period_start_date?.split("T")[0] ?? "",
+          period_end_date:         initialExpenseReport.period_end_date?.split("T")[0] ?? "",
+          bank:                    initialExpenseReport.bank ?? "",
+          branch:                  initialExpenseReport.branch ?? "",
+          account_number:          initialExpenseReport.account_number ?? "",
+          pix_key:                 initialExpenseReport.pix_key ?? "",
+          requester_description:   initialExpenseReport.requester_description ?? "",
+          requester_department:    initialExpenseReport.requester_department ?? "",
+          requester_tax_id:        initialExpenseReport.requester_tax_id ?? "",
+          requester_user_id:    initialExpenseReport.requester_user_id
+            ? String(initialExpenseReport.requester_user_id)
             : "",
-          obs:                     rdcInicial.obs ?? "",
-          despesas: rdcInicial.despesas?.map((d) => ({
-            data_despesa:         d.data_despesa.split("T")[0],
-            valor:                d.valor ?? "",
-            id_centro_custo:      String(d.id_centro_custo ?? ""),
-            descricao:            d.descricao,
-            id_categoria_despesa: d.id_categoria_despesa ? String(d.id_categoria_despesa) : "",
+          notes:                     initialExpenseReport.notes ?? "",
+          items: initialExpenseReport.items?.map((d) => ({
+            expense_date:          d.expense_date.split("T")[0],
+            amount:                d.amount ?? "",
+            cost_center_id:       String(d.cost_center_id ?? ""),
+            description:           d.description,
+            expense_category_id:   d.expense_category_id ? String(d.expense_category_id) : "",
             latitude:  d.latitude  != null ? Number(d.latitude)  : null,
             longitude: d.longitude != null ? Number(d.longitude) : null,
-            endereco:  d.endereco ?? null,
-            descricao_fornecedor: d.descricao_fornecedor ?? "",
-            cpf_cnpj_fornecedor:  d.cpf_cnpj_fornecedor  ?? "",
-            id_fornecedor:        d.id_fornecedor ? String(d.id_fornecedor) : "",
+            address:  d.address ?? null,
+            description_supplier: d.description_supplier ?? "",
+            supplier_tax_id:       d.supplier_tax_id  ?? "",
+            supplier_id:         d.supplier_id ? String(d.supplier_id) : "",
           })) ?? [],
         }
       : {
-          id_centro_custo:         "",
-          descricao:               "",
-          data_inicio_periodo:     "",
-          data_fim_periodo:        "",
-          descricao_requisitante:  "",
-          setor_requisitante:      "",
-          cpf_cnpj_requisitante:   "",
-          id_usuario_requisitante: "",
-          obs:                     "",
-          banco:                   "",
-          agencia:                 "",
-          numero_banco:            "",
-          chave_pix:               "",
-          despesas:                [],
+          cost_center_id:         "",
+          description:             "",
+          period_start_date:       "",
+          period_end_date:         "",
+          requester_description:   "",
+          requester_department:    "",
+          requester_tax_id:        "",
+          requester_user_id:    "",
+          notes:                     "",
+          bank:                    "",
+          branch:                  "",
+          account_number:          "",
+          pix_key:                 "",
+          items:                [],
         },
   });
 
-  const { fields, append, remove } = useFieldArray({ control, name: "despesas" });
+  const { fields, append, remove } = useFieldArray({ control, name: "items" });
 
-  const idUsuarioRequisitante = watch("id_usuario_requisitante");
+  const requesterUserId = watch("requester_user_id");
 
-  function handleSelecionarColaborador(idStr: string) {
-    setValue("id_usuario_requisitante", idStr, { shouldValidate: true });
-    const u = usuarios.find((x) => String(x.id) === idStr);
+  function handleSelectEmployee(idStr: string) {
+    setValue("requester_user_id", idStr, { shouldValidate: true });
+    const u = users.find((x) => String(x.id) === idStr);
     if (u) {
-      setValue("descricao_requisitante", u.nome, { shouldValidate: true });
-      setValue("cpf_cnpj_requisitante", u.cpf_cnpj ?? "", { shouldValidate: true });
+      setValue("requester_description", u.name, { shouldValidate: true });
+      setValue("requester_tax_id", u.tax_id ?? "", { shouldValidate: true });
     }
   }
 
-  function handleToggleColaborador(flag: boolean) {
-    setColaboradorCadastrado(flag);
+  function handleToggleEmployee(flag: boolean) {
+    setRegisteredEmployee(flag);
     if (!flag) {
-      setValue("id_usuario_requisitante", "", { shouldValidate: true });
+      setValue("requester_user_id", "", { shouldValidate: true });
     }
   }
 
-  function adicionarDespesa() {
+  function addExpenseItem() {
     append({
-      data_despesa:         "",
-      valor:                "",
-      id_centro_custo:      "",
-      descricao:            "",
-      id_categoria_despesa: "",
-      latitude:             null,
-      longitude:            null,
-      endereco:             null,
-      descricao_fornecedor: "",
-      cpf_cnpj_fornecedor:  "",
-      id_fornecedor:        "",
+      expense_date:          "",
+      amount:                "",
+      cost_center_id:       "",
+      description:           "",
+      expense_category_id:   "",
+      latitude:              null,
+      longitude:             null,
+      address:              null,
+      description_supplier: "",
+      supplier_tax_id:       "",
+      supplier_id:         "",
     });
-    adicionarItem();
+    addItem();
   }
 
-  function removerDespesa(idx: number) {
+  function removeExpenseItem(idx: number) {
     remove(idx);
-    removerItem(idx);
+    removeItem(idx);
   }
 
-  const centrosCustoOptions = useMemo(
-    () => centrosCusto.map((cc) => ({ value: String(cc.id), label: cc.descricao })),
-    [centrosCusto],
+  const costCenterOptions = useMemo(
+    () => costCenters.map((cc) => ({ value: String(cc.id), label: cc.description })),
+    [costCenters],
   );
 
-  const categoriasOptions = useMemo(
-    () => categorias.map((cat) => ({ value: String(cat.id), label: cat.descricao })),
-    [categorias],
+  const categoryOptions = useMemo(
+    () => categories.map((cat) => ({ value: String(cat.id), label: cat.description })),
+    [categories],
   );
 
-  const despesasWatch = watch("despesas");
-  const totalLancado = (despesasWatch ?? []).reduce((acc, d) => acc + (parseFloat(d.valor) || 0), 0);
-  const fmtTotalLancado = totalLancado.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const itemsWatch = watch("items");
+  const totalRecorded = (itemsWatch ?? []).reduce((acc, d) => acc + (parseFloat(d.amount) || 0), 0);
+  const fmtTotalRecorded = totalRecorded.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-  async function onSubmit(dados: StoreRdcWithDespesasFormData) {
-    await onSalvar(dados, itemFiles);
+  async function onSubmit(data: StoreExpenseReportWithDespesasFormData) {
+    await onSave(data, itemFiles);
   }
 
-  function onInvalid(errs: FieldErrors<StoreRdcWithDespesasFormData>) {
-    const primeira = primeiraMensagemErro(errs);
-    toast.error(primeira ?? "Verifique os campos do formulário.");
+  function onInvalid(errs: FieldErrors<StoreExpenseReportWithDespesasFormData>) {
+    const first = firstErrorMessage(errs);
+    toast.error(first ?? "Check the form fields.");
   }
 
   return (
-    <Modal open onClose={onFechar} isDirty={isDirty}>
+    <Modal open onClose={onClose} isDirty={isDirty}>
       <div className="px-4 py-4 sm:px-6 sm:py-5">
-        {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-feature-title text-app-text">
-            {rdcInicial ? "Editar RDC" : "Novo RDC"}
+            {initialExpenseReport ? "Edit Report" : "New Report"}
           </h1>
           <button
-            onClick={onFechar}
+            onClick={onClose}
             className="rounded-full p-2 text-app-text-muted hover:bg-app-hover"
           >
             <X size={20} />
@@ -227,7 +226,6 @@ export default function FormRdc({ rdcInicial, onSalvar, onFechar }: Props) {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4">
-          {/* Dados da Solicitação */}
           <motion.section
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -235,85 +233,84 @@ export default function FormRdc({ rdcInicial, onSalvar, onFechar }: Props) {
             className="rounded-2xl border border-app-border bg-app-surface-raised/40 p-4 sm:p-5 space-y-4"
           >
             <h2 className="text-caption font-semibold text-app-text-muted uppercase tracking-wide">
-              Dados da Solicitação
+              Request Details
             </h2>
 
             <Input
-              label="Descrição"
-              placeholder="Ex: Material de escritório — Abril 2026"
-              error={errors.descricao?.message}
-              {...register("descricao")}
+              label="Description"
+              placeholder="e.g. Office supplies — April 2026"
+              error={errors.description?.message}
+              {...register("description")}
             />
 
             <div className="flex flex-col gap-1.5">
               <label className="text-caption font-semibold text-app-text-muted">
-                Centro de Custo
+                Cost Center
               </label>
               <Controller
-                name="id_centro_custo"
+                name="cost_center_id"
                 control={control}
                 render={({ field }) => (
                   <Combobox
-                    options={centrosCustoOptions}
+                    options={costCenterOptions}
                     value={field.value ?? ""}
                     onChange={field.onChange}
-                    placeholder="Selecione…"
-                    emptyMessage="Nenhum centro de custo."
+                    placeholder="Select…"
+                    emptyMessage="No cost centers."
                     className="w-full"
                   />
                 )}
               />
-              {errors.id_centro_custo && (
+              {errors.cost_center_id && (
                 <p className="mt-0.5 text-small text-red-600">
-                  {errors.id_centro_custo.message}
+                  {errors.cost_center_id.message}
                 </p>
               )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Controller
-                name="data_inicio_periodo"
+                name="period_start_date"
                 control={control}
                 render={({ field }) => (
                   <DatePicker
                     size="sm"
-                    label="Período — Início"
+                    label="Period — Start"
                     value={field.value ?? ""}
                     onChange={field.onChange}
                     onBlur={field.onBlur}
-                    error={errors.data_inicio_periodo?.message}
+                    error={errors.period_start_date?.message}
                   />
                 )}
               />
               <Controller
-                name="data_fim_periodo"
+                name="period_end_date"
                 control={control}
                 render={({ field }) => (
                   <DatePicker
                     size="sm"
-                    label="Período — Fim"
+                    label="Period — End"
                     value={field.value ?? ""}
                     onChange={field.onChange}
                     onBlur={field.onBlur}
-                    error={errors.data_fim_periodo?.message}
+                    error={errors.period_end_date?.message}
                   />
                 )}
               />
             </div>
 
-            {/* Dados bancários colapsáveis */}
             <div>
               <button
                 type="button"
-                onClick={() => setShowBancarios((v) => !v)}
+                onClick={() => setShowBankDetails((v) => !v)}
                 className="flex items-center gap-2 text-caption font-semibold text-brand cursor-pointer"
               >
-                {showBancarios ? <CaretUp size={14} /> : <CaretDown size={14} />}
-                Dados bancários para pagamento
+                {showBankDetails ? <CaretUp size={14} /> : <CaretDown size={14} />}
+                Bank details for payment
               </button>
 
               <AnimatePresence>
-                {showBancarios && (
+                {showBankDetails && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
@@ -324,85 +321,84 @@ export default function FormRdc({ rdcInicial, onSalvar, onFechar }: Props) {
                     <div className="mt-4 space-y-3">
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <Controller
-                          name="banco"
+                          name="bank"
                           control={control}
                           render={({ field }) => (
                             <Input
-                              label="Banco"
-                              placeholder="Ex: 341"
+                              label="Bank"
+                              placeholder="e.g. 341"
                               value={field.value ?? ""}
                               onChange={(e) => field.onChange(maskBanco(e.target.value))}
                               onBlur={field.onBlur}
-                              error={errors.banco?.message}
+                              error={errors.bank?.message}
                             />
                           )}
                         />
                         <Controller
-                          name="agencia"
+                          name="branch"
                           control={control}
                           render={({ field }) => (
                             <Input
-                              label="Agência"
-                              placeholder="Ex: 0001-0"
+                              label="Branch"
+                              placeholder="e.g. 0001-0"
                               value={field.value ?? ""}
                               onChange={(e) => field.onChange(maskAgencia(e.target.value))}
                               onBlur={field.onBlur}
-                              error={errors.agencia?.message}
+                              error={errors.branch?.message}
                             />
                           )}
                         />
                         <Controller
-                          name="numero_banco"
+                          name="account_number"
                           control={control}
                           render={({ field }) => (
                             <Input
-                              label="Conta"
-                              placeholder="Ex: 12345-6"
+                              label="Account"
+                              placeholder="e.g. 12345-6"
                               value={field.value ?? ""}
                               onChange={(e) => field.onChange(maskConta(e.target.value))}
                               onBlur={field.onBlur}
-                              error={errors.numero_banco?.message}
+                              error={errors.account_number?.message}
                             />
                           )}
                         />
                       </div>
 
-                      {/* Chave PIX — tipo + valor */}
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-caption font-semibold text-app-text-muted">Chave Pix</label>
+                        <label className="text-caption font-semibold text-app-text-muted">Pix Key</label>
                         <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] gap-2">
                           <Combobox
                             options={TIPO_CHAVE_PIX_OPTIONS}
-                            value={tipoChavePix ?? ""}
+                            value={pixKeyType ?? ""}
                             onChange={(v) => {
-                              setTipoChavePix(isTipoChavePix(v) ? v : null);
-                              setValue("chave_pix", "", { shouldValidate: false });
-                              clearErrors("chave_pix");
+                              setPixKeyType(isTipoChavePix(v) ? v : null);
+                              setValue("pix_key", "", { shouldValidate: false });
+                              clearErrors("pix_key");
                             }}
-                            placeholder="Selecione o tipo"
+                            placeholder="Select the type"
                           />
                           <Controller
-                            name="chave_pix"
+                            name="pix_key"
                             control={control}
                             render={({ field }) => (
                               <div className="relative flex-1">
                                 <input
                                   className={`h-10 w-full rounded-xl px-3 text-body-sm border text-app-text placeholder:text-app-text-subtle outline-none transition-colors duration-200 ${
-                                    tipoChavePix
+                                    pixKeyType
                                       ? "bg-app-surface border-app-border focus:border-brand"
                                       : "bg-app-surface/50 border-app-border cursor-not-allowed text-app-text-muted"
                                   } ${field.value ? "pr-8" : ""}`}
-                                  placeholder={tipoChavePix ? TIPO_CHAVE_PIX_PLACEHOLDER[tipoChavePix] : "Selecione o tipo primeiro"}
-                                  disabled={!tipoChavePix}
+                                  placeholder={pixKeyType ? TIPO_CHAVE_PIX_PLACEHOLDER[pixKeyType] : "Select the type first"}
+                                  disabled={!pixKeyType}
                                   value={field.value ?? ""}
-                                  onChange={(e) => tipoChavePix && field.onChange(aplicarMascaraChavePix(e.target.value, tipoChavePix))}
+                                  onChange={(e) => pixKeyType && field.onChange(aplicarMascaraChavePix(e.target.value, pixKeyType))}
                                   onBlur={() => {
                                     field.onBlur();
-                                    if (tipoChavePix === "email" && field.value) {
+                                    if (pixKeyType === "email" && field.value) {
                                       if (!EMAIL_REGEX.test(field.value)) {
-                                        setError("chave_pix", { message: "Informe um e-mail válido" });
+                                        setError("pix_key", { message: "Enter a valid email" });
                                       } else {
-                                        clearErrors("chave_pix");
+                                        clearErrors("pix_key");
                                       }
                                     }
                                   }}
@@ -412,8 +408,8 @@ export default function FormRdc({ rdcInicial, onSalvar, onFechar }: Props) {
                                     type="button"
                                     onClick={() => {
                                       field.onChange("");
-                                      setTipoChavePix(null);
-                                      clearErrors("chave_pix");
+                                      setPixKeyType(null);
+                                      clearErrors("pix_key");
                                     }}
                                     className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-app-text-muted hover:bg-app-hover hover:text-app-text"
                                   >
@@ -424,8 +420,8 @@ export default function FormRdc({ rdcInicial, onSalvar, onFechar }: Props) {
                             )}
                           />
                         </div>
-                        {errors.chave_pix && (
-                          <p className="text-small text-red-500">{errors.chave_pix.message}</p>
+                        {errors.pix_key && (
+                          <p className="text-small text-red-500">{errors.pix_key.message}</p>
                         )}
                       </div>
                     </div>
@@ -435,7 +431,6 @@ export default function FormRdc({ rdcInicial, onSalvar, onFechar }: Props) {
             </div>
           </motion.section>
 
-          {/* Requisitante */}
           <motion.section
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -444,75 +439,75 @@ export default function FormRdc({ rdcInicial, onSalvar, onFechar }: Props) {
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-caption font-semibold text-app-text-muted uppercase tracking-wide">
-                Requisitante
+                Requester
               </h2>
               <Checkbox
-                checked={colaboradorCadastrado}
-                onChange={handleToggleColaborador}
-                label="Colaborador Cadastrado"
+                checked={registeredEmployee}
+                onChange={handleToggleEmployee}
+                label="Registered Employee"
                 className={`rounded-full px-3 py-1.5 border transition-all duration-200 ${
-                  colaboradorCadastrado
+                  registeredEmployee
                     ? "bg-brand/8 border-brand/20"
                     : "bg-app-surface-raised border-app-border"
                 }`}
               />
             </div>
 
-            {colaboradorCadastrado ? (
+            {registeredEmployee ? (
               <div className="flex flex-col gap-1.5">
                 <label className="text-caption font-semibold text-app-text-muted">
-                  Colaborador
+                  Employee
                 </label>
                 <Combobox
-                  options={usuarios.map((u) => ({ value: String(u.id), label: u.nome }))}
-                  value={idUsuarioRequisitante ?? ""}
-                  onChange={handleSelecionarColaborador}
-                  placeholder="Selecione o colaborador"
-                  emptyMessage="Nenhum colaborador cadastrado."
+                  options={users.map((u) => ({ value: String(u.id), label: u.name }))}
+                  value={requesterUserId ?? ""}
+                  onChange={handleSelectEmployee}
+                  placeholder="Select the employee"
+                  emptyMessage="No registered employees."
                   className="w-full"
                 />
-                {errors.descricao_requisitante && (
+                {errors.requester_description && (
                   <p className="mt-0.5 text-small text-red-600">
-                    Selecione um colaborador.
+                    Select an employee.
                   </p>
                 )}
 
                 <Input
-                  label="Setor"
-                  placeholder="Ex: Administrativo"
-                  error={errors.setor_requisitante?.message}
+                  label="Department"
+                  placeholder="e.g. Administrative"
+                  error={errors.requester_department?.message}
                   className="mt-2"
-                  {...register("setor_requisitante")}
+                  {...register("requester_department")}
                 />
               </div>
             ) : (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Input
-                    label="Nome"
-                    placeholder="Nome completo"
-                    error={errors.descricao_requisitante?.message}
-                    {...register("descricao_requisitante")}
+                    label="Name"
+                    placeholder="Full name"
+                    error={errors.requester_description?.message}
+                    {...register("requester_description")}
                   />
                   <Input
-                    label="Setor"
-                    placeholder="Ex: Administrativo"
-                    error={errors.setor_requisitante?.message}
-                    {...register("setor_requisitante")}
+                    label="Department"
+                    placeholder="e.g. Administrative"
+                    error={errors.requester_department?.message}
+                    {...register("requester_department")}
                   />
                 </div>
 
                 <Controller
-                  name="cpf_cnpj_requisitante"
+                  name="requester_tax_id"
                   control={control}
                   render={({ field }) => (
                     <Input
-                      label="CPF / CNPJ"
+                      label="Tax ID"
                       placeholder="000.000.000-00"
                       value={field.value ?? ""}
                       onChange={(e) => field.onChange(maskCpfCnpj(e.target.value))}
                       onBlur={field.onBlur}
-                      error={errors.cpf_cnpj_requisitante?.message}
+                      error={errors.requester_tax_id?.message}
                     />
                   )}
                 />
@@ -521,18 +516,17 @@ export default function FormRdc({ rdcInicial, onSalvar, onFechar }: Props) {
 
             <div className="flex flex-col gap-1.5">
               <label className="text-caption font-semibold text-app-text-muted">
-                Observações
+                Notes
               </label>
               <textarea
-                placeholder="Informações adicionais (opcional)"
+                placeholder="Additional information (optional)"
                 rows={3}
                 className="w-full rounded-xl border border-app-border bg-app-surface px-3 py-2.5 text-body-sm text-app-text placeholder:text-app-text-subtle resize-none focus:border-brand focus:outline-none"
-                {...register("obs")}
+                {...register("notes")}
               />
             </div>
           </motion.section>
 
-          {/* Itens de Despesa */}
           <motion.section
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -541,10 +535,10 @@ export default function FormRdc({ rdcInicial, onSalvar, onFechar }: Props) {
           >
             <div className="flex items-center justify-between">
               <h2 className="text-caption font-semibold text-app-text-muted uppercase tracking-wide">
-                Itens de Despesa
+                Expense Items
               </h2>
-              <Button type="button" variant="light" size="sm" onClick={adicionarDespesa}>
-                <Plus size={14} /> Adicionar
+              <Button type="button" variant="light" size="sm" onClick={addExpenseItem}>
+                <Plus size={14} /> Add
               </Button>
             </div>
 
@@ -552,7 +546,7 @@ export default function FormRdc({ rdcInicial, onSalvar, onFechar }: Props) {
               <EmptyState
                 size="sm"
                 icon={Receipt}
-                title="Nenhuma despesa adicionada"
+                title="No items added"
                 iconBackground
               />
             )}
@@ -569,11 +563,11 @@ export default function FormRdc({ rdcInicial, onSalvar, onFechar }: Props) {
                 >
                   <div className="flex items-center justify-between">
                     <p className="text-caption font-semibold text-app-text-muted">
-                      Despesa {idx + 1}
+                      Item {idx + 1}
                     </p>
                     <button
                       type="button"
-                      onClick={() => removerDespesa(idx)}
+                      onClick={() => removeExpenseItem(idx)}
                       className="rounded-full p-1 text-app-text-subtle hover:text-red-600 hover:bg-red-50 transition-colors"
                     >
                       <Trash size={16} />
@@ -582,29 +576,29 @@ export default function FormRdc({ rdcInicial, onSalvar, onFechar }: Props) {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Controller
-                      name={`despesas.${idx}.data_despesa`}
+                      name={`items.${idx}.expense_date`}
                       control={control}
                       render={({ field: f }) => (
                         <DatePicker
                           size="sm"
-                          label="Data"
+                          label="Date"
                           value={f.value ?? ""}
                           onChange={f.onChange}
                           onBlur={f.onBlur}
-                          error={errors.despesas?.[idx]?.data_despesa?.message}
+                          error={errors.items?.[idx]?.expense_date?.message}
                         />
                       )}
                     />
                     <Controller
-                      name={`despesas.${idx}.valor`}
+                      name={`items.${idx}.amount`}
                       control={control}
                       render={({ field: f }) => (
                         <InputMonetario
-                          label="Valor"
+                          label="Amount"
                           value={f.value ?? ""}
                           onChange={f.onChange}
                           onBlur={f.onBlur}
-                          error={errors.despesas?.[idx]?.valor?.message}
+                          error={errors.items?.[idx]?.amount?.message}
                         />
                       )}
                     />
@@ -613,18 +607,18 @@ export default function FormRdc({ rdcInicial, onSalvar, onFechar }: Props) {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="flex flex-col gap-1.5">
                       <label className="text-caption font-semibold text-app-text-muted">
-                        Categoria
+                        Category
                       </label>
                       <Controller
-                        name={`despesas.${idx}.id_categoria_despesa`}
+                        name={`items.${idx}.expense_category_id`}
                         control={control}
                         render={({ field: f }) => (
                           <Combobox
-                            options={categoriasOptions}
+                            options={categoryOptions}
                             value={f.value ?? ""}
                             onChange={f.onChange}
-                            placeholder="Selecione…"
-                            emptyMessage="Nenhuma categoria."
+                            placeholder="Select…"
+                            emptyMessage="No categories."
                             className="w-full"
                           />
                         )}
@@ -633,68 +627,68 @@ export default function FormRdc({ rdcInicial, onSalvar, onFechar }: Props) {
 
                     <div className="flex flex-col gap-1.5">
                       <label className="text-caption font-semibold text-app-text-muted">
-                        Centro de Custo
+                        Cost Center
                       </label>
                       <Controller
-                        name={`despesas.${idx}.id_centro_custo`}
+                        name={`items.${idx}.cost_center_id`}
                         control={control}
                         render={({ field: f }) => (
                           <Combobox
-                            options={centrosCustoOptions}
+                            options={costCenterOptions}
                             value={f.value}
                             onChange={f.onChange}
-                            placeholder="Selecione…"
-                            emptyMessage="Nenhum centro de custo."
+                            placeholder="Select…"
+                            emptyMessage="No cost centers."
                             className="w-full"
                           />
                         )}
                       />
-                      {errors.despesas?.[idx]?.id_centro_custo && (
+                      {errors.items?.[idx]?.cost_center_id && (
                         <p className="mt-0.5 text-small text-red-600">
-                          {errors.despesas[idx]?.id_centro_custo?.message}
+                          {errors.items[idx]?.cost_center_id?.message}
                         </p>
                       )}
                     </div>
                   </div>
 
                   <Input
-                    label="Descrição"
-                    placeholder="Descreva a despesa"
-                    error={errors.despesas?.[idx]?.descricao?.message}
-                    {...register(`despesas.${idx}.descricao`)}
+                    label="Description"
+                    placeholder="Describe the item"
+                    error={errors.items?.[idx]?.description?.message}
+                    {...register(`items.${idx}.description`)}
                   />
 
-                  <SecaoFornecedor
-                    idFornecedor={watch(`despesas.${idx}.id_fornecedor`) ?? ""}
-                    descricaoFornecedor={watch(`despesas.${idx}.descricao_fornecedor`) ?? ""}
-                    cpfCnpjFornecedor={watch(`despesas.${idx}.cpf_cnpj_fornecedor`) ?? ""}
+                  <SupplierSection
+                    idSupplier={watch(`items.${idx}.supplier_id`) ?? ""}
+                    descricaoSupplier={watch(`items.${idx}.description_supplier`) ?? ""}
+                    cpfCnpjSupplier={watch(`items.${idx}.supplier_tax_id`) ?? ""}
                     onChange={(campos) => {
-                      setValue(`despesas.${idx}.id_fornecedor`, campos.id_fornecedor, { shouldDirty: true });
-                      setValue(`despesas.${idx}.descricao_fornecedor`, campos.descricao_fornecedor, { shouldDirty: true });
-                      setValue(`despesas.${idx}.cpf_cnpj_fornecedor`, campos.cpf_cnpj_fornecedor, { shouldDirty: true });
+                      setValue(`items.${idx}.supplier_id`, campos.supplier_id, { shouldDirty: true });
+                      setValue(`items.${idx}.description_supplier`, campos.descricao_supplier, { shouldDirty: true });
+                      setValue(`items.${idx}.supplier_tax_id`, campos.cpf_cnpj_supplier, { shouldDirty: true });
                     }}
                   />
 
-                  {geolocalizacaoHabilitada && (
+                  {geolocationEnabled && (
                     <Controller
-                      name={`despesas.${idx}.latitude`}
+                      name={`items.${idx}.latitude`}
                       control={control}
                       render={() => {
-                        const lat = watch(`despesas.${idx}.latitude`);
-                        const lon = watch(`despesas.${idx}.longitude`);
-                        const end = watch(`despesas.${idx}.endereco`);
-                        const valor =
+                        const lat = watch(`items.${idx}.latitude`);
+                        const lon = watch(`items.${idx}.longitude`);
+                        const end = watch(`items.${idx}.address`);
+                        const value =
                           lat != null && lon != null
-                            ? { latitude: Number(lat), longitude: Number(lon), endereco: end ?? null }
+                            ? { latitude: Number(lat), longitude: Number(lon), address: end ?? null }
                             : null;
                         return (
-                          <CampoLocalizacao
-                            label="Local da despesa"
-                            valor={valor}
+                          <LocationField
+                            label="Item location"
+                            valor={value}
                             onChange={(loc) => {
-                              setValue(`despesas.${idx}.latitude`,  loc?.latitude  ?? null, { shouldDirty: true });
-                              setValue(`despesas.${idx}.longitude`, loc?.longitude ?? null, { shouldDirty: true });
-                              setValue(`despesas.${idx}.endereco`,  loc?.endereco  ?? null, { shouldDirty: true });
+                              setValue(`items.${idx}.latitude`,  loc?.latitude  ?? null, { shouldDirty: true });
+                              setValue(`items.${idx}.longitude`, loc?.longitude ?? null, { shouldDirty: true });
+                              setValue(`items.${idx}.address`,  loc?.address  ?? null, { shouldDirty: true });
                             }}
                           />
                         );
@@ -702,20 +696,19 @@ export default function FormRdc({ rdcInicial, onSalvar, onFechar }: Props) {
                     />
                   )}
 
-                  {/* Anexos múltiplos */}
                   <div className="space-y-2">
                     <label className="text-caption font-semibold text-app-text-muted">
-                      Anexos
+                      Attachments
                     </label>
 
-                    {(existingAnexos[idx] ?? []).map((anexo) => (
+                    {(existingAttachments[idx] ?? []).map((attachment) => (
                       <div
-                        key={anexo.id}
+                        key={attachment.id}
                         className="flex items-center gap-2 rounded-lg border border-app-border-subtle bg-app-surface/60 px-3 py-2"
                       >
                         <Paperclip size={14} className="text-app-text-subtle shrink-0" />
                         <span className="flex-1 truncate text-small text-app-text-muted">
-                          {nomeArquivo(anexo.caminho)}
+                          {nomeArquivo(attachment.path)}
                         </span>
                       </div>
                     ))}
@@ -731,7 +724,7 @@ export default function FormRdc({ rdcInicial, onSalvar, onFechar }: Props) {
                         </span>
                         <button
                           type="button"
-                          onClick={() => removerArquivo(idx, fileIdx)}
+                          onClick={() => removeFile(idx, fileIdx)}
                           className="text-app-text-subtle hover:text-red-600 transition-colors"
                         >
                           <X size={14} />
@@ -745,7 +738,7 @@ export default function FormRdc({ rdcInicial, onSalvar, onFechar }: Props) {
                       className="flex items-center gap-1.5 text-caption font-semibold text-brand hover:opacity-80 transition-opacity"
                     >
                       <Plus size={14} />
-                      Adicionar anexo
+                      Add attachment
                     </button>
 
                     <input
@@ -755,7 +748,7 @@ export default function FormRdc({ rdcInicial, onSalvar, onFechar }: Props) {
                       className="hidden"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) adicionarArquivo(idx, file);
+                        if (file) addFile(idx, file);
                         e.target.value = "";
                       }}
                     />
@@ -765,19 +758,18 @@ export default function FormRdc({ rdcInicial, onSalvar, onFechar }: Props) {
             </AnimatePresence>
           </motion.section>
 
-          {/* Total + Rodapé */}
           <div className="space-y-3 pt-1">
             <div className="rounded-2xl border border-app-border bg-app-surface-raised/40 px-5 py-4 flex items-center justify-between">
-              <span className="text-body-sm text-app-text-muted">Total lançado</span>
-              <span className="text-feature-title font-bold text-app-text tabular-nums">{fmtTotalLancado}</span>
+              <span className="text-body-sm text-app-text-muted">Total recorded</span>
+              <span className="text-feature-title font-bold text-app-text tabular-nums">{fmtTotalRecorded}</span>
             </div>
 
             <div className="flex gap-3">
-              <Button type="button" variant="light" fullWidth onClick={onFechar}>
-                Cancelar
+              <Button type="button" variant="light" fullWidth onClick={onClose}>
+                Cancel
               </Button>
               <Button type="submit" variant="dark" fullWidth disabled={isSubmitting}>
-                {isSubmitting ? "Salvando…" : "Salvar"}
+                {isSubmitting ? "Saving…" : "Save"}
               </Button>
             </div>
           </div>

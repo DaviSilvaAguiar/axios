@@ -1,15 +1,15 @@
 import {
   caixaContaSchema,
   extratoResponseSchema,
-  listarCaixaContasResponseSchema,
-} from "./caixa-conta.types";
-import type { CaixaConta, ExtratoResponse } from "./caixa-conta.types";
+  listFundsResponseSchema,
+} from "./fund.types";
+import type { Fund, ExtratoResponse } from "./fund.types";
 
-export function mapListarCaixaContasResponse(raw: unknown): CaixaConta[] {
-  return listarCaixaContasResponseSchema.parse(raw);
+export function mapListarFundsResponse(raw: unknown): Fund[] {
+  return listFundsResponseSchema.parse(raw);
 }
 
-export function mapCaixaContaResponse(raw: unknown): CaixaConta {
+export function mapFundResponse(raw: unknown): Fund {
   return caixaContaSchema.parse(raw);
 }
 

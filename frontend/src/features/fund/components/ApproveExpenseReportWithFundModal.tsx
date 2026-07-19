@@ -8,63 +8,62 @@ import Combobox from "@/ui/Combobox";
 import Loading from "@/ui/Loading";
 import { toast } from "@/lib/toast";
 import { formatarMoeda } from "@/lib/formatters";
-import { listarCaixaContasApi } from "../caixa-conta.api";
-import type { CaixaConta } from "../caixa-conta.types";
+import { listFundsApi } from "../fund.api";
+import type { Fund } from "../fund.types";
 
 interface Props {
-  idUsuarioRdc: number;
-  idCentroCustoRdc: number;
-  valorTotal: number;
-  onConfirmar: (idCaixaConta: number) => Promise<void>;
-  onFechar: () => void;
+  reportUserId: number;
+  reportCostCenterId: number;
+  totalAmount: number;
+  onConfirm: (fundId: number) => Promise<void>;
+  onClose: () => void;
 }
 
-export default function ModalAprovarRdcComCaixa({
-  idUsuarioRdc,
-  idCentroCustoRdc,
-  valorTotal,
-  onConfirmar,
-  onFechar,
+export default function ApproveExpenseReportWithFundModal({
+  reportUserId,
+  reportCostCenterId,
+  totalAmount,
+  onConfirm,
+  onClose,
 }: Props) {
-  const [caixas, setCaixas] = useState<CaixaConta[]>([]);
+  const [funds, setFunds] = useState<Fund[]>([]);
   const [loading, setLoading] = useState(true);
-  const [idSelecionado, setIdSelecionado] = useState<string>("");
-  const [enviando, setEnviando] = useState(false);
+  const [selectedId, setSelectedId] = useState<string>("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    listarCaixaContasApi("abertos")
-      .then((todos) => {
-        // Prioriza caixas do mesmo responsável e/ou mesmo CC.
-        const compativeis = todos.filter(
-          (c) => c.id_usuario === idUsuarioRdc || c.id_centro_custo === idCentroCustoRdc,
+    listFundsApi("abertos")
+      .then((all) => {
+        const compatible = all.filter(
+          (c) => c.user_id === reportUserId || c.cost_center_id === reportCostCenterId,
         );
-        setCaixas(compativeis.length > 0 ? compativeis : todos);
+        setFunds(compatible.length > 0 ? compatible : all);
       })
-      .catch(() => toast.error("Não foi possível carregar os caixas."))
+      .catch(() => toast.error("Could not load the funds."))
       .finally(() => setLoading(false));
-  }, [idUsuarioRdc, idCentroCustoRdc]);
+  }, [reportUserId, reportCostCenterId]);
 
-  async function handleConfirmar() {
-    if (!idSelecionado) return;
-    setEnviando(true);
+  async function handleConfirm() {
+    if (!selectedId) return;
+    setSubmitting(true);
     try {
-      await onConfirmar(Number(idSelecionado));
+      await onConfirm(Number(selectedId));
     } finally {
-      setEnviando(false);
+      setSubmitting(false);
     }
   }
 
-  const selecionado = caixas.find((c) => String(c.id) === idSelecionado);
-  const saldoInsuficiente = selecionado && Number(selecionado.saldo) < valorTotal;
+  const selected = funds.find((c) => String(c.id) === selectedId);
+  const insufficientBalance = selected && Number(selected.balance) < totalAmount;
 
   return (
-    <Modal open onClose={onFechar} className="max-w-md">
+    <Modal open onClose={onClose} className="max-w-md">
       <div className="px-6 py-5">
         <div className="mb-5 flex items-start justify-between">
-          <h1 className="text-feature-title text-app-text">Aprovar Solicitação</h1>
+          <h1 className="text-feature-title text-app-text">Approve Request</h1>
           <button
             type="button"
-            onClick={onFechar}
+            onClick={onClose}
             className="rounded-full p-2 text-app-text-muted hover:bg-app-hover"
           >
             <X size={20} />
@@ -72,7 +71,7 @@ export default function ModalAprovarRdcComCaixa({
         </div>
 
         <p className="mb-4 text-body-sm text-app-text-muted">
-          Selecione o caixa do qual o valor de {formatarMoeda(valorTotal)} será abatido.
+          Select the fund the amount of {formatarMoeda(totalAmount)} will be deducted from.
         </p>
 
         {loading ? (
@@ -81,38 +80,38 @@ export default function ModalAprovarRdcComCaixa({
           <div className="space-y-3">
             <div className="flex flex-col gap-1.5">
               <label className="text-caption font-semibold text-app-text-muted">
-                Caixa para abatimento
+                Fund to deduct from
               </label>
               <Combobox
-                options={caixas.map((c) => ({
+                options={funds.map((c) => ({
                   value: String(c.id),
-                  label: `${c.descricao} — ${formatarMoeda(Number(c.saldo))}`,
+                  label: `${c.description} — ${formatarMoeda(Number(c.balance))}`,
                 }))}
-                value={idSelecionado}
-                onChange={setIdSelecionado}
-                placeholder="Selecione o caixa"
+                value={selectedId}
+                onChange={setSelectedId}
+                placeholder="Select the fund"
               />
             </div>
 
-            {saldoInsuficiente && (
+            {insufficientBalance && (
               <p className="text-small text-red-600">
-                Saldo insuficiente neste caixa para abater o RDC.
+                Insufficient balance in this fund to cover the report.
               </p>
             )}
           </div>
         )}
 
         <div className="mt-6 flex gap-3">
-          <Button variant="light" fullWidth onClick={onFechar}>
-            Cancelar
+          <Button variant="light" fullWidth onClick={onClose}>
+            Cancel
           </Button>
           <Button
             variant="dark"
             fullWidth
-            disabled={!idSelecionado || enviando || saldoInsuficiente}
-            onClick={handleConfirmar}
+            disabled={!selectedId || submitting || insufficientBalance}
+            onClick={handleConfirm}
           >
-            {enviando ? "Aprovando…" : "Aprovar"}
+            {submitting ? "Approving…" : "Approve"}
           </Button>
         </div>
       </div>

@@ -24,45 +24,45 @@ import {
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSidebar } from '@/contexts/SidebarContext';
-import { listarUsuariosApi } from '@/features/usuario/usuario.api';
+import { listUsersApi } from '@/features/user/user.api';
 
 const navItemsAdmin = [
-  { href: '/dashboard', label: 'Início', icon: HouseLine },
-  { href: '/painel', label: 'Dashboard', icon: ChartBar },
-  { href: '/rdc', label: 'Caixa de Obra', icon: Receipt, modulo: 'rdc' },
-  { href: '/caixas', label: 'Gestão de Caixas', icon: Wallet, modulo: 'caixas' },
-  { href: '/rcm', label: 'Reembolso', icon: ArrowUUpLeft, modulo: 'rcm' },
-  { href: '/exportacao', label: 'Exportação ERP', icon: DownloadSimple, modulo: 'exportacao' },
-  { href: '/centro-de-custo', label: 'Centros de Custo', icon: Buildings, modulo: 'centro-custo' },
-  { href: '/categoria-despesa', label: 'Categorias', icon: Tag, modulo: 'categoria' },
-  { href: '/conta-bancaria', label: 'Contas Bancárias', icon: Bank, modulo: 'conta-bancaria' },
-  { href: '/fornecedor', label: 'Fornecedores', icon: Storefront, modulo: 'fornecedor' },
+  { href: '/dashboard', label: 'Home', icon: HouseLine },
+  { href: '/overview', label: 'Dashboard', icon: ChartBar },
+  { href: '/expense-reports', label: 'Expense Reports', icon: Receipt, modulo: 'rdc' },
+  { href: '/funds', label: 'Fund Management', icon: Wallet, modulo: 'expense-reports' },
+  { href: '/reimbursements', label: 'Reimbursement', icon: ArrowUUpLeft, modulo: 'reimbursement' },
+  { href: '/export', label: 'ERP Export', icon: DownloadSimple, modulo: 'export' },
+  { href: '/cost-centers', label: 'Cost Centers', icon: Buildings, modulo: 'cost-center' },
+  { href: '/expense-categories', label: 'Categories', icon: Tag, modulo: 'expense-category' },
+  { href: '/bank-accounts', label: 'Bank Accounts', icon: Bank, modulo: 'bank-account' },
+  { href: '/suppliers', label: 'Suppliers', icon: Storefront, modulo: 'supplier' },
 ];
 
-const navItemsPrestador = [
-  { href: '/dashboard', label: 'Início', icon: HouseLine },
-  { href: '/meus-lancamentos', label: 'Meus lançamentos', icon: Receipt },
+const navItemsProvider = [
+  { href: '/dashboard', label: 'Home', icon: HouseLine },
+  { href: '/my-submissions', label: 'My entries', icon: Receipt },
 ];
 
 export default function Sidebar() {
   const { open, setOpen, collapsed, setCollapsed } = useSidebar();
   const pathname = usePathname();
-  const { logout, tenant, usuario, modulosHabilitados } = useAuth();
+  const { logout, tenant, user, enabledModules } = useAuth();
 
-  const baseNavItems = usuario?.perfil === 3 ? navItemsPrestador : navItemsAdmin;
+  const baseNavItems = user?.role === 3 ? navItemsProvider : navItemsAdmin;
   const navItems = baseNavItems.filter(
-    (item) => !('modulo' in item) || modulosHabilitados.includes(item.modulo as string)
+    (item) => !('modulo' in item) || enabledModules.includes(item.modulo as string)
   );
-  const isPrestador = usuario?.perfil === 3;
-  const [totalUsuarios, setTotalUsuarios] = useState<number>(0);
+  const isProvider = user?.role === 3;
+  const [totalUsers, setTotalUsers] = useState<number>(0);
 
   useEffect(() => {
-    if (isPrestador) return;
-    listarUsuariosApi(1, 1).then((res) => setTotalUsuarios(res.meta.total)).catch(() => { });
-  }, [isPrestador]);
+    if (isProvider) return;
+    listUsersApi(1, 1).then((res) => setTotalUsers(res.meta.total)).catch(() => { });
+  }, [isProvider]);
 
-  const maxUsuarios = tenant?.max_usuarios ?? null;
-  const pct = maxUsuarios ? Math.min((totalUsuarios / maxUsuarios) * 100, 100) : 0;
+  const maxUsers = tenant?.max_users ?? null;
+  const pct = maxUsers ? Math.min((totalUsers / maxUsers) * 100, 100) : 0;
   const barColor = pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : '#0052ff';
 
   const close = () => setOpen(false);
@@ -70,7 +70,6 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Overlay — apenas mobile */}
       {open && (
         <div
           className="md:hidden fixed inset-0 bg-black/40 z-40"
@@ -78,7 +77,6 @@ export default function Sidebar() {
         />
       )}
 
-      {/* Painel lateral flutuante */}
       <aside
         className={[
           'fixed inset-y-0 left-0 z-50 flex flex-col bg-app-surface',
@@ -92,7 +90,6 @@ export default function Sidebar() {
           open ? 'translate-x-0' : '-translate-x-full',
         ].join(' ')}
       >
-        {/* Cabeçalho */}
         <div
           className={[
             'flex items-center py-5 border-b border-app-border-subtle',
@@ -108,26 +105,23 @@ export default function Sidebar() {
             Axios
           </span>
 
-          {/* Toggle colapsar — apenas desktop */}
           <button
             className="hidden md:flex items-center justify-center text-app-text-muted hover:text-app-text transition-colors rounded-lg p-0.5 cursor-pointer"
             onClick={toggleCollapsed}
-            aria-label={collapsed ? 'Expandir menu' : 'Retrair menu'}
+            aria-label={collapsed ? 'Expand menu' : 'Collapse menu'}
           >
             {collapsed ? <ArrowLineRight size={18} /> : <ArrowLineLeft size={18} />}
           </button>
 
-          {/* Fechar — apenas mobile */}
           <button
             className="md:hidden text-app-text-muted hover:text-app-text transition-colors"
             onClick={close}
-            aria-label="Fechar menu"
+            aria-label="Close menu"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Navegação */}
         <nav className="flex-1 overflow-y-auto py-3">
           <ul className="space-y-0.5 px-3">
             {navItems.map(({ href, label, icon: Icon }) => {
@@ -154,11 +148,10 @@ export default function Sidebar() {
           </ul>
         </nav>
 
-        {/* Botão CTA — Prestador */}
-        {isPrestador && (
+        {isProvider && (
           <div className="px-3 pb-3">
             <Link
-              href="/novo-reembolso"
+              href="/new-reimbursement"
               onClick={close}
               className={[
                 'flex items-center gap-2.5 rounded-xl bg-brand text-white px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-[#578bfa]',
@@ -166,22 +159,20 @@ export default function Sidebar() {
               ].join(' ')}
             >
               <Plus size={17} weight="bold" />
-              <span className={collapsed ? 'md:hidden' : ''}>Nova Solicitação</span>
+              <span className={collapsed ? 'md:hidden' : ''}>New Request</span>
             </Link>
           </div>
         )}
 
-        {/* Rodapé */}
         <div className="px-3 pb-4 border-t border-app-border-subtle pt-3 space-y-0.5">
-          {/* Widget de limite de usuários — apenas para Admin/Gestor */}
-          {!isPrestador && !collapsed && (
+          {!isProvider && !collapsed && (
             <div className="px-3 py-2.5 mb-1">
-              {maxUsuarios ? (
+              {maxUsers ? (
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-caption font-semibold text-app-text-muted">Usuários</span>
+                    <span className="text-caption font-semibold text-app-text-muted">Users</span>
                     <span className="text-caption font-semibold" style={{ color: barColor }}>
-                      {totalUsuarios}/{maxUsuarios}
+                      {totalUsers}/{maxUsers}
                     </span>
                   </div>
                   <div className="h-1.5 w-full rounded-full bg-app-hover overflow-hidden">
@@ -194,22 +185,22 @@ export default function Sidebar() {
                     />
                   </div>
                   <span className="text-small text-app-text-subtle">
-                    {Math.round(pct)}% do limite utilizado
+                    {Math.round(pct)}% of limit used
                   </span>
                 </div>
               ) : (
                 <div className="flex items-center gap-1.5">
                   <Users size={13} className="text-app-text-subtle shrink-0" />
-                  <p className="text-small text-app-text-muted leading-snug">Sem limite de usuários</p>
+                  <p className="text-small text-app-text-muted leading-snug">No user limit</p>
                 </div>
               )}
             </div>
           )}
 
-          {!isPrestador && collapsed && maxUsuarios && (
+          {!isProvider && collapsed && maxUsers && (
             <div
               className="md:flex hidden justify-center py-2"
-              title={`${totalUsuarios}/${maxUsuarios} usuários`}
+              title={`${totalUsers}/${maxUsers} users`}
             >
               <Users size={19} style={{ color: barColor }} />
             </div>
@@ -223,15 +214,14 @@ export default function Sidebar() {
             ].join(' ')}
           >
             <SignOut size={19} />
-            <span className={collapsed ? 'md:hidden' : ''}>Sair</span>
+            <span className={collapsed ? 'md:hidden' : ''}>Sign out</span>
           </button>
         </div>
       </aside>
 
-      {/* FAB global — oculto em telas de detalhe (cada tela renderiza o seu próprio) */}
-      {isPrestador && pathname !== '/novo-reembolso' && !pathname.startsWith('/minha-caixa-de-obra') && !pathname.match(/^\/meus-reembolsos\/.+/) && (
+      {isProvider && pathname !== '/new-reimbursement' && !pathname.startsWith('/my-expense-reports') && !pathname.match(/^\/my-reimbursements\/.+/) && (
         <Link
-          href="/novo-reembolso"
+          href="/new-reimbursement"
           className="md:hidden fixed bottom-6 right-4 z-30"
         >
           <motion.div

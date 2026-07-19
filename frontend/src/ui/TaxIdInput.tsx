@@ -14,8 +14,8 @@ interface Props {
   className?: string;
 }
 
-const InputCpfCnpj = forwardRef<HTMLInputElement, Props>(function InputCpfCnpj(
-  { label, value, onChange, onBlur, error, placeholder = "CPF ou CNPJ", disabled, className = "" },
+const TaxIdInput = forwardRef<HTMLInputElement, Props>(function TaxIdInput(
+  { label, value, onChange, onBlur, error, placeholder = "CPF or CNPJ", disabled, className = "" },
   ref
 ) {
   const handleChange = useCallback(
@@ -46,4 +46,4 @@ const InputCpfCnpj = forwardRef<HTMLInputElement, Props>(function InputCpfCnpj(
   );
 });
 
-export default InputCpfCnpj;
+export default TaxIdInput;

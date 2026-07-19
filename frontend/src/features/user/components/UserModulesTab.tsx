@@ -5,34 +5,34 @@ import Button from "@/ui/Button";
 import Switch from "@/ui/Switch";
 import { toast } from "@/lib/toast";
 import {
-  listarModulosUsuarioApi,
-  atualizarModulosUsuarioApi,
-} from "@/features/modulo/modulo.api";
-import type { Modulo } from "@/features/modulo/modulo.types";
+  listModulosUserApi,
+  updateModulosUserApi,
+} from "@/features/module/module.api";
+import type { Modulo } from "@/features/module/module.types";
 
 interface Props {
-  usuarioId: number;
+  userId: number;
 }
 
-export default function TabModulosUsuario({ usuarioId }: Props) {
-  const [modulos, setModulos] = useState<Modulo[]>([]);
-  const [habilitados, setHabilitados] = useState<Set<number>>(new Set());
+export default function UserModulesTab({ userId }: Props) {
+  const [modules, setModules] = useState<Modulo[]>([]);
+  const [enabled, setEnabled] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
-  const [salvando, setSalvando] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setLoading(true);
-    listarModulosUsuarioApi(usuarioId)
-      .then(({ modulos: lista, habilitados: ids }) => {
-        setModulos(lista);
-        setHabilitados(new Set(ids));
+    listModulosUserApi(userId)
+      .then(({ modules: list, habilitados: ids }) => {
+        setModules(list);
+        setEnabled(new Set(ids));
       })
-      .catch(() => toast.error("Não foi possível carregar os módulos."))
+      .catch(() => toast.error("Could not load the modules."))
       .finally(() => setLoading(false));
-  }, [usuarioId]);
+  }, [userId]);
 
   function toggle(id: number) {
-    setHabilitados((prev) => {
+    setEnabled((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -43,15 +43,15 @@ export default function TabModulosUsuario({ usuarioId }: Props) {
     });
   }
 
-  async function handleSalvar() {
-    setSalvando(true);
+  async function handleSave() {
+    setSaving(true);
     try {
-      await atualizarModulosUsuarioApi(usuarioId, Array.from(habilitados));
-      toast.success("Módulos atualizados.");
+      await updateModulosUserApi(userId, Array.from(enabled));
+      toast.success("Modules updated.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível salvar.");
+      toast.error(err instanceof Error ? err.message : "Could not save.");
     } finally {
-      setSalvando(false);
+      setSaving(false);
     }
   }
 
@@ -74,23 +74,23 @@ export default function TabModulosUsuario({ usuarioId }: Props) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-2">
-        {modulos.map((modulo) => {
-          const ativo = habilitados.has(modulo.id);
+        {modules.map((module) => {
+          const active = enabled.has(module.id);
           return (
             <div
-              key={modulo.id}
+              key={module.id}
               className="flex items-center justify-between px-4 py-3 rounded-xl border border-app-border bg-app-surface-raised"
             >
               <div className="flex flex-col gap-0.5 mr-4">
-                <span className="text-caption font-semibold text-app-text">{modulo.nome}</span>
-                {modulo.descricao && (
-                  <span className="text-small text-app-text-muted">{modulo.descricao}</span>
+                <span className="text-caption font-semibold text-app-text">{module.name}</span>
+                {module.description && (
+                  <span className="text-small text-app-text-muted">{module.description}</span>
                 )}
               </div>
               <Switch
-                checked={ativo}
-                onChange={() => toggle(modulo.id)}
-                label={ativo ? "Desabilitar" : "Habilitar"}
+                checked={active}
+                onChange={() => toggle(module.id)}
+                label={active ? "Disable" : "Enable"}
               />
             </div>
           );
@@ -98,8 +98,8 @@ export default function TabModulosUsuario({ usuarioId }: Props) {
       </div>
 
       <div className="flex justify-end pt-2">
-        <Button type="button" variant="dark" size="sm" disabled={salvando} onClick={handleSalvar}>
-          {salvando ? "Salvando…" : "Salvar módulos"}
+        <Button type="button" variant="dark" size="sm" disabled={saving} onClick={handleSave}>
+          {saving ? "Saving…" : "Save modules"}
         </Button>
       </div>
     </div>

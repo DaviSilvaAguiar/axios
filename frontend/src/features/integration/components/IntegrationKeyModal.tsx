@@ -7,37 +7,37 @@ import Modal from "@/ui/Modal";
 import Button from "@/ui/Button";
 import Input from "@/ui/Input";
 import { toast } from "@/lib/toast";
-import { salvarChaveFormSchema, type SalvarChaveForm, type Integracao } from "../integracao.types";
-import { salvarChaveIntegracaoApi } from "../integracao.api";
+import { saveKeyFormSchema, type SaveKeyForm, type Integration } from "../integration.types";
+import { saveKeyIntegrationApi } from "../integration.api";
 
 interface Props {
-  integracao: Integracao;
-  onFechar: () => void;
-  onSalvo: () => void;
+  integration: Integration;
+  onClose: () => void;
+  onSaved: () => void;
 }
 
-export default function ModalChaveIntegracao({ integracao, onFechar, onSalvo }: Props) {
+export default function IntegrationKeyModal({ integration, onClose, onSaved }: Props) {
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<SalvarChaveForm>({
-    resolver: zodResolver(salvarChaveFormSchema),
-    defaultValues: { chave: "" },
+  } = useForm<SaveKeyForm>({
+    resolver: zodResolver(saveKeyFormSchema),
+    defaultValues: { key: "" },
   });
 
-  async function onSubmit(dados: SalvarChaveForm) {
+  async function onSubmit(data: SaveKeyForm) {
     try {
-      await salvarChaveIntegracaoApi(integracao.id, dados.chave);
-      toast.success("Chave da integração salva com sucesso.");
-      onSalvo();
+      await saveKeyIntegrationApi(integration.id, data.key);
+      toast.success("Integration key saved successfully.");
+      onSaved();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível salvar a chave.");
+      toast.error(err instanceof Error ? err.message : "Unable to save the key.");
     }
   }
 
   return (
-    <Modal open onClose={onFechar} className="max-w-md">
+    <Modal open onClose={onClose} className="max-w-md">
       <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-5">
         <div className="mb-5 flex items-start justify-between">
           <div className="flex items-center gap-3">
@@ -45,13 +45,13 @@ export default function ModalChaveIntegracao({ integracao, onFechar, onSalvo }: 
               <Key size={18} weight="duotone" className="text-brand" />
             </div>
             <div className="flex flex-col gap-0.5">
-              <h1 className="text-feature-title text-app-text">Configurar token</h1>
-              <p className="text-small text-app-text-muted">{integracao.nome}</p>
+              <h1 className="text-feature-title text-app-text">Configure token</h1>
+              <p className="text-small text-app-text-muted">{integration.name}</p>
             </div>
           </div>
           <button
             type="button"
-            onClick={onFechar}
+            onClick={onClose}
             className="rounded-full p-2 text-app-text-muted hover:bg-app-hover"
           >
             <X size={20} />
@@ -60,25 +60,25 @@ export default function ModalChaveIntegracao({ integracao, onFechar, onSalvo }: 
 
         <div className="space-y-3">
           <Input
-            label="Token de autenticação"
+            label="Authentication token"
             type="text"
-            placeholder="Cole o token fornecido pela integração"
+            placeholder="Paste the token provided by the integration"
             autoComplete="off"
             spellCheck={false}
-            error={errors.chave?.message}
-            {...register("chave")}
+            error={errors.key?.message}
+            {...register("key")}
           />
           <p className="text-small text-app-text-subtle">
-            O token é criptografado antes de ser armazenado no banco.
+            The token is encrypted before being stored in the database.
           </p>
         </div>
 
         <div className="mt-6 flex gap-3">
-          <Button type="button" variant="light" fullWidth onClick={onFechar}>
-            Cancelar
+          <Button type="button" variant="light" fullWidth onClick={onClose}>
+            Cancel
           </Button>
           <Button type="submit" variant="dark" fullWidth disabled={isSubmitting}>
-            {isSubmitting ? "Salvando…" : "Salvar"}
+            {isSubmitting ? "Saving…" : "Save"}
           </Button>
         </div>
       </form>

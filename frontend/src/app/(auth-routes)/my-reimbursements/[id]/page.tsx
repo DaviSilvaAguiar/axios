@@ -27,40 +27,40 @@ import { motion, AnimatePresence } from "framer-motion";
 import Card from "@/ui/Card";
 import Loading from "@/ui/Loading";
 import Button from "@/ui/Button";
-import FormRcm from "@/features/rcm/components/FormRcm";
+import FormReimbursement from "@/features/reimbursement/components/FormReimbursement";
 import { toast } from "@/lib/toast";
 import {
-  buscarRcmApi,
-  deletarRcmApi,
-  atualizarRcmApi,
-  criarDespesaRcmApi,
-  atualizarDespesaRcmApi,
-  deletarDespesaRcmApi,
-  adicionarAnexoRcmApi,
-  deletarAnexoEspecificoRcmApi,
-  buscarAnexoEspecificoRcmApi,
-} from "@/features/rcm/rcm.api";
-import { RCM_STATUS_LABEL } from "@/features/rcm/rcm.types";
-import type { Rcm, RcmStatus, StoreRcmWithDespesasFormData } from "@/features/rcm/rcm.types";
-import type { AnexoParaAdicionar, AnexoParaDeletar } from "@/features/rcm/components/FormRcm";
+  getReimbursementApi,
+  deleteReimbursementApi,
+  updateReimbursementApi,
+  createReimbursementItemApi,
+  updateReimbursementItemApi,
+  deleteReimbursementItemApi,
+  adicionarAnexoReimbursementApi,
+  deleteAnexoEspecificoReimbursementApi,
+  getAnexoEspecificoReimbursementApi,
+} from "@/features/reimbursement/reimbursement.api";
+import { REIMBURSEMENT_STATUS_LABEL } from "@/features/reimbursement/reimbursement.types";
+import type { Reimbursement, StoreReimbursementWithDespesasFormData } from "@/features/reimbursement/reimbursement.types";
+import type { AttachmentToAdd, AttachmentToDelete } from "@/features/reimbursement/components/FormReimbursement";
 
-function fmtValor(valor: number) {
-  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+function fmtAmount(amount: number) {
+  return amount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function fmtData(iso: string) {
+function fmtDate(iso: string) {
   const [y, m, d] = iso.split("T")[0].split("-");
   return `${d}/${m}/${y}`;
 }
 
-function fmtDataCurta(iso: string) {
+function fmtShortDate(iso: string) {
   const [, m, d] = iso.split("T")[0].split("-");
   return `${d}/${m}`;
 }
 
-function getCategoriaIcon(descricao: string | undefined | null): Icon {
-  if (!descricao) return Receipt;
-  const d = descricao.toLowerCase();
+function getCategoryIcon(description: string | undefined | null): Icon {
+  if (!description) return Receipt;
+  const d = description.toLowerCase();
   if (/alimenta|refeição|almoço|jantar|lanche|restaurante/.test(d)) return ForkKnife;
   if (/combustível|gasolina|etanol|diesel|transporte|uber|taxi|táxi|ônibus/.test(d)) return Car;
   if (/hospedagem|hotel|pousada|airbnb/.test(d)) return House;
@@ -68,9 +68,9 @@ function getCategoriaIcon(descricao: string | undefined | null): Icon {
   return Receipt;
 }
 
-function getCategoriaColors(descricao: string | undefined | null): { bg: string; fg: string } {
-  if (!descricao) return { bg: "bg-app-surface-raised", fg: "text-app-text-muted" };
-  const d = descricao.toLowerCase();
+function getCategoryColors(description: string | undefined | null): { bg: string; fg: string } {
+  if (!description) return { bg: "bg-app-surface-raised", fg: "text-app-text-muted" };
+  const d = description.toLowerCase();
   if (/alimenta|refeição|almoço|jantar|lanche|restaurante/.test(d))
     return { bg: "bg-amber-100 dark:bg-amber-950/60", fg: "text-amber-700 dark:text-amber-300" };
   if (/combustível|gasolina|etanol|diesel|transporte|uber|taxi|táxi|ônibus/.test(d))
@@ -82,8 +82,6 @@ function getCategoriaColors(descricao: string | undefined | null): { bg: string;
   return { bg: "bg-app-surface-raised", fg: "text-app-text-muted" };
 }
 
-// ── Status mini-card ────────────────────────────────────────────
-
 const STATUS_MINI_CONFIG: Record<
   number,
   { icon: Icon; bg: string; border: string; fg: string; helperFg: string; helper: string }
@@ -94,7 +92,7 @@ const STATUS_MINI_CONFIG: Record<
     border: "border-blue-200 dark:border-blue-800",
     fg: "text-blue-700 dark:text-blue-300",
     helperFg: "text-blue-600/80 dark:text-blue-400/80",
-    helper: "Aguardando aprovação",
+    helper: "Awaiting approval",
   },
   2: {
     icon: MagnifyingGlass,
@@ -102,7 +100,7 @@ const STATUS_MINI_CONFIG: Record<
     border: "border-amber-200 dark:border-amber-800",
     fg: "text-amber-700 dark:text-amber-300",
     helperFg: "text-amber-600/80 dark:text-amber-400/80",
-    helper: "Em análise financeira",
+    helper: "Under financial review",
   },
   3: {
     icon: CheckCircle,
@@ -110,7 +108,7 @@ const STATUS_MINI_CONFIG: Record<
     border: "border-green-200 dark:border-green-800",
     fg: "text-green-700 dark:text-green-300",
     helperFg: "text-green-600/80 dark:text-green-400/80",
-    helper: "Aprovado para pagamento",
+    helper: "Approved for payment",
   },
   4: {
     icon: CalendarCheck,
@@ -118,7 +116,7 @@ const STATUS_MINI_CONFIG: Record<
     border: "border-purple-200 dark:border-purple-800",
     fg: "text-purple-700 dark:text-purple-300",
     helperFg: "text-purple-600/80 dark:text-purple-400/80",
-    helper: "Pagamento agendado",
+    helper: "Payment scheduled",
   },
   5: {
     icon: Wallet,
@@ -126,7 +124,7 @@ const STATUS_MINI_CONFIG: Record<
     border: "border-app-border",
     fg: "text-app-text",
     helperFg: "text-app-text-muted",
-    helper: "Reembolso concluído",
+    helper: "Reimbursement completed",
   },
   6: {
     icon: XCircle,
@@ -134,51 +132,48 @@ const STATUS_MINI_CONFIG: Record<
     border: "border-red-200 dark:border-red-900",
     fg: "text-red-600 dark:text-red-400",
     helperFg: "text-red-500/80 dark:text-red-400/70",
-    helper: "Solicitação rejeitada",
+    helper: "Request rejected",
   },
 };
 
-
-// ── Anexo thumbnail ─────────────────────────────────────────────
-
-interface AnexoThumbnailProps {
-  rcmId: number;
-  despesaId: number;
-  idAnexo: number;
-  caminho: string;
-  onAbrir: () => void;
+interface AttachmentThumbnailProps {
+  reimbursementId: number;
+  itemId: number;
+  attachmentId: number;
+  path: string;
+  onOpen: () => void;
 }
 
-function AnexoThumbnailItem({ rcmId, despesaId, idAnexo, caminho, onAbrir }: AnexoThumbnailProps) {
+function AttachmentThumbnailItem({ reimbursementId, itemId, attachmentId, path, onOpen }: AttachmentThumbnailProps) {
   const [src, setSrc] = useState<string | null>(null);
-  const [carregando, setCarregando] = useState(true);
-  const isImage = /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(caminho);
+  const [loading, setLoading] = useState(true);
+  const isImage = /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(path);
 
   useEffect(() => {
     let url: string;
-    buscarAnexoEspecificoRcmApi(rcmId, despesaId, idAnexo)
+    getAnexoEspecificoReimbursementApi(reimbursementId, itemId, attachmentId)
       .then((blob) => {
         url = URL.createObjectURL(blob);
         setSrc(url);
       })
       .catch(() => setSrc(null))
-      .finally(() => setCarregando(false));
+      .finally(() => setLoading(false));
     return () => {
       if (url) URL.revokeObjectURL(url);
     };
-  }, [rcmId, despesaId, idAnexo]);
+  }, [reimbursementId, itemId, attachmentId]);
 
   const baseClass =
     "group relative h-16 w-16 rounded-xl shrink-0 border border-app-border overflow-hidden cursor-pointer transition";
 
-  if (carregando) {
+  if (loading) {
     return <div className={`${baseClass} animate-pulse bg-app-surface-raised`} />;
   }
 
   if (isImage && src) {
     return (
-      <button onClick={onAbrir} className={`${baseClass} p-0`} type="button">
-        <img src={src} alt="Anexo" className="h-full w-full object-cover" />
+      <button onClick={onOpen} className={`${baseClass} p-0`} type="button">
+        <img src={src} alt="Attachment" className="h-full w-full object-cover" />
         <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition">
           <Eye size={18} weight="bold" className="text-white" />
         </span>
@@ -188,7 +183,7 @@ function AnexoThumbnailItem({ rcmId, despesaId, idAnexo, caminho, onAbrir }: Ane
 
   return (
     <button
-      onClick={onAbrir}
+      onClick={onOpen}
       className={`${baseClass} bg-app-surface-raised flex items-center justify-center hover:bg-app-surface-raised-hover`}
       type="button"
     >
@@ -197,16 +192,14 @@ function AnexoThumbnailItem({ rcmId, despesaId, idAnexo, caminho, onAbrir }: Ane
   );
 }
 
-// ── Modal exclusão ──────────────────────────────────────────────
-
-interface ModalConfirmarProps {
-  titulo: string;
-  onConfirmar: () => void;
-  onCancelar: () => void;
-  carregando: boolean;
+interface ConfirmDialogProps {
+  title: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  loading: boolean;
 }
 
-function ModalConfirmar({ titulo, onConfirmar, onCancelar, carregando }: ModalConfirmarProps) {
+function ConfirmDialog({ title, onConfirm, onCancel, loading }: ConfirmDialogProps) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -214,7 +207,7 @@ function ModalConfirmar({ titulo, onConfirmar, onCancelar, carregando }: ModalCo
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
       style={{ backdropFilter: "blur(6px)", backgroundColor: "rgba(0,0,0,0.45)" }}
-      onMouseDown={onCancelar}
+      onMouseDown={onCancel}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 16 }}
@@ -225,23 +218,23 @@ function ModalConfirmar({ titulo, onConfirmar, onCancelar, carregando }: ModalCo
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="space-y-1.5">
-          <h2 className="text-feature-title text-app-text">{titulo}</h2>
+          <h2 className="text-feature-title text-app-text">{title}</h2>
           <p className="text-small text-app-text-muted">
-            Esta ação não pode ser desfeita. O registro será removido permanentemente.
+            This action cannot be undone. The record will be permanently removed.
           </p>
         </div>
         <div className="flex gap-3">
-          <Button variant="light" fullWidth onClick={onCancelar} disabled={carregando}>
-            Cancelar
+          <Button variant="light" fullWidth onClick={onCancel} disabled={loading}>
+            Cancel
           </Button>
           <Button
             variant="dark"
             fullWidth
-            onClick={onConfirmar}
-            disabled={carregando}
+            onClick={onConfirm}
+            disabled={loading}
             className="!bg-red-600 hover:!bg-red-700"
           >
-            {carregando ? "Excluindo…" : "Excluir"}
+            {loading ? "Deleting…" : "Delete"}
           </Button>
         </div>
       </motion.div>
@@ -249,26 +242,24 @@ function ModalConfirmar({ titulo, onConfirmar, onCancelar, carregando }: ModalCo
   );
 }
 
-// ── Página ──────────────────────────────────────────────────────
-
-export default function DetalheRcmPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ReimbursementDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const [rcm, setRcm] = useState<Rcm | null>(null);
+  const [reimbursement, setReimbursement] = useState<Reimbursement | null>(null);
   const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [showConfirmarExclusao, setShowConfirmarExclusao] = useState(false);
-  const [excluindo, setExcluindo] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [despesaParaExcluir, setDespesaParaExcluir] = useState<number | null>(null);
-  const [excluindoDespesa, setExcluindoDespesa] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
+  const [deletingItem, setDeletingItem] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    buscarRcmApi(Number(id))
-      .then(setRcm)
-      .catch(() => setErro("Não foi possível carregar a prestação de contas."))
+    getReimbursementApi(Number(id))
+      .then(setReimbursement)
+      .catch(() => setError("Could not load the reimbursement."))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -283,109 +274,109 @@ export default function DetalheRcmPage({ params }: { params: Promise<{ id: strin
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showMenu]);
 
-  async function handleExcluir() {
-    setExcluindo(true);
+  async function handleDelete() {
+    setDeleting(true);
     try {
-      await deletarRcmApi(Number(id));
-      toast.success("Prestação de contas excluída com sucesso.");
-      router.push("/meus-reembolsos");
+      await deleteReimbursementApi(Number(id));
+      toast.success("Reimbursement deleted successfully.");
+      router.push("/my-reimbursements");
     } catch {
-      toast.error("Erro ao excluir a prestação de contas.");
-      setExcluindo(false);
-      setShowConfirmarExclusao(false);
+      toast.error("Error deleting the reimbursement.");
+      setDeleting(false);
+      setShowConfirmDelete(false);
     }
   }
 
-  async function handleExcluirDespesa() {
-    if (!rcm || despesaParaExcluir === null) return;
-    setExcluindoDespesa(true);
+  async function handleDeleteItem() {
+    if (!reimbursement || itemToDelete === null) return;
+    setDeletingItem(true);
     try {
-      await deletarDespesaRcmApi(rcm.id, despesaParaExcluir);
-      toast.success("Despesa excluída.");
-      setDespesaParaExcluir(null);
-      const atualizado = await buscarRcmApi(rcm.id);
-      setRcm(atualizado);
+      await deleteReimbursementItemApi(reimbursement.id, itemToDelete);
+      toast.success("Item deleted.");
+      setItemToDelete(null);
+      const updated = await getReimbursementApi(reimbursement.id);
+      setReimbursement(updated);
     } catch {
-      toast.error("Erro ao excluir a despesa.");
+      toast.error("Error deleting the item.");
     } finally {
-      setExcluindoDespesa(false);
+      setDeletingItem(false);
     }
   }
 
-  async function handleSalvarEdicao(
-    dados: StoreRcmWithDespesasFormData,
-    deletarDespesaIds: number[],
-    deletarAnexos: AnexoParaDeletar[],
-    adicionarAnexos: AnexoParaAdicionar[]
+  async function handleSaveEdit(
+    data: StoreReimbursementWithDespesasFormData,
+    deleteItemIds: number[],
+    deleteAttachments: AttachmentToDelete[],
+    addAttachments: AttachmentToAdd[]
   ) {
-    if (!rcm) return;
+    if (!reimbursement) return;
     try {
-      const { despesas, ...rcmDados } = dados;
+      const { items, ...header } = data;
 
-      await atualizarRcmApi(rcm.id, rcmDados);
+      await updateReimbursementApi(reimbursement.id, header);
 
-      for (const idDespesa of deletarDespesaIds) {
-        await deletarDespesaRcmApi(rcm.id, idDespesa);
+      for (const itemId of deleteItemIds) {
+        await deleteReimbursementItemApi(reimbursement.id, itemId);
       }
 
-      for (const { idDespesa, idAnexo } of deletarAnexos) {
-        await deletarAnexoEspecificoRcmApi(rcm.id, idDespesa, idAnexo);
+      for (const { itemId, attachmentId } of deleteAttachments) {
+        await deleteAnexoEspecificoReimbursementApi(reimbursement.id, itemId, attachmentId);
       }
 
-      for (const { idDespesa, file } of adicionarAnexos) {
-        await adicionarAnexoRcmApi(rcm.id, idDespesa, file);
+      for (const { itemId, file } of addAttachments) {
+        await adicionarAnexoReimbursementApi(reimbursement.id, itemId, file);
       }
 
-      for (const despesa of despesas) {
-        if (despesa.despesaId) {
-          await atualizarDespesaRcmApi(rcm.id, despesa.despesaId, {
-            data_despesa: despesa.data_despesa,
-            valor: despesa.valor,
-            id_centro_custo: despesa.id_centro_custo,
-            descricao: despesa.descricao,
-            id_categoria_despesa: despesa.id_categoria_despesa || undefined,
-            latitude:             despesa.latitude  ?? null,
-            longitude:            despesa.longitude ?? null,
-            endereco:             despesa.endereco  ?? null,
-            descricao_fornecedor: despesa.descricao_fornecedor || undefined,
-            cpf_cnpj_fornecedor:  despesa.cpf_cnpj_fornecedor  || undefined,
-            id_fornecedor:        despesa.id_fornecedor        || undefined,
+      for (const item of items) {
+        if (item.itemId) {
+          await updateReimbursementItemApi(reimbursement.id, item.itemId, {
+            expense_date: item.expense_date,
+            amount: item.amount,
+            cost_center_id: item.cost_center_id,
+            description: item.description,
+            expense_category_id: item.expense_category_id || undefined,
+            latitude: item.latitude ?? null,
+            longitude: item.longitude ?? null,
+            address: item.address ?? null,
+            description_supplier: item.description_supplier || undefined,
+            supplier_tax_id: item.supplier_tax_id || undefined,
+            supplier_id: item.supplier_id || undefined,
           });
         } else {
           const fd = new FormData();
-          fd.append("data_despesa", despesa.data_despesa);
-          fd.append("valor", despesa.valor);
-          fd.append("id_centro_custo", despesa.id_centro_custo);
-          fd.append("descricao", despesa.descricao);
-          if (despesa.id_categoria_despesa) fd.append("id_categoria_despesa", despesa.id_categoria_despesa);
-          if (despesa.latitude  != null) fd.append("latitude",  String(despesa.latitude));
-          if (despesa.longitude != null) fd.append("longitude", String(despesa.longitude));
-          if (despesa.endereco) fd.append("endereco", despesa.endereco);
-          if (despesa.descricao_fornecedor) fd.append("descricao_fornecedor", despesa.descricao_fornecedor);
-          if (despesa.cpf_cnpj_fornecedor) fd.append("cpf_cnpj_fornecedor", despesa.cpf_cnpj_fornecedor.replace(/\D/g, ""));
-          if (despesa.id_fornecedor) fd.append("id_fornecedor", despesa.id_fornecedor);
-          const files = (despesa.anexo as File[] | undefined) ?? [];
-          files.forEach((f) => fd.append("anexos[]", f));
-          await criarDespesaRcmApi(rcm.id, fd);
+          fd.append("expense_date", item.expense_date);
+          fd.append("amount", item.amount);
+          fd.append("cost_center_id", item.cost_center_id);
+          fd.append("description", item.description);
+          if (item.expense_category_id) fd.append("expense_category_id", item.expense_category_id);
+          if (item.latitude != null) fd.append("latitude", String(item.latitude));
+          if (item.longitude != null) fd.append("longitude", String(item.longitude));
+          if (item.address) fd.append("address", item.address);
+          if (item.description_supplier) fd.append("description_supplier", item.description_supplier);
+          if (item.supplier_tax_id) fd.append("supplier_tax_id", item.supplier_tax_id.replace(/\D/g, ""));
+          if (item.supplier_id) fd.append("supplier_id", item.supplier_id);
+          const files = (item.anexo as File[] | undefined) ?? [];
+          files.forEach((f) => fd.append("attachments[]", f));
+          await createReimbursementItemApi(reimbursement.id, fd);
         }
       }
 
-      toast.success("Prestação de contas atualizada com sucesso!");
+      toast.success("Reimbursement updated successfully!");
       setShowForm(false);
-      const atualizado = await buscarRcmApi(rcm.id);
-      setRcm(atualizado);
+      const updated = await getReimbursementApi(reimbursement.id);
+      setReimbursement(updated);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao salvar.");
+      toast.error(err instanceof Error ? err.message : "Error saving.");
     }
   }
 
-  async function abrirAnexo(idRcm: number, idDespesa: number, idAnexo: number) {
+  async function openAttachment(reimbursementId: number, itemId: number, attachmentId: number) {
     try {
-      const blob = await buscarAnexoEspecificoRcmApi(idRcm, idDespesa, idAnexo);
+      const blob = await getAnexoEspecificoReimbursementApi(reimbursementId, itemId, attachmentId);
       const url = URL.createObjectURL(blob);
       window.open(url, "_blank");
     } catch {
-      toast.error("Não foi possível abrir o anexo.");
+      toast.error("Could not open the attachment.");
     }
   }
 
@@ -397,7 +388,7 @@ export default function DetalheRcmPage({ params }: { params: Promise<{ id: strin
     );
   }
 
-  if (erro || !rcm) {
+  if (error || !reimbursement) {
     return (
       <div className="p-4 sm:p-6 max-w-3xl mx-auto">
         <button
@@ -405,62 +396,59 @@ export default function DetalheRcmPage({ params }: { params: Promise<{ id: strin
           className="flex items-center gap-1.5 text-small font-semibold text-app-text-muted hover:text-app-text mb-4"
         >
           <ArrowLeft size={16} />
-          Voltar
+          Back
         </button>
         <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-center">
-          <p className="text-small text-red-700">{erro ?? "Prestação de contas não encontrada."}</p>
+          <p className="text-small text-red-700">{error ?? "Reimbursement not found."}</p>
         </div>
       </div>
     );
   }
 
-  const despesas = rcm.despesas ?? [];
-  const valorTotal = despesas.reduce((acc, d) => acc + parseFloat(d.valor), 0);
-  const podeEditar = rcm.status === 1;
-  const temBanco = Boolean(rcm.banco || rcm.chave_pix || rcm.agencia || rcm.numero_banco);
+  const items = reimbursement.items ?? [];
+  const totalAmount = items.reduce((acc, d) => acc + parseFloat(d.amount), 0);
+  const canEdit = reimbursement.status === 1;
+  const hasBank = Boolean(reimbursement.bank || reimbursement.pix_key || reimbursement.branch || reimbursement.account_number);
 
   return (
     <>
       <div className="p-4 sm:p-6 max-w-3xl mx-auto space-y-6 pb-8">
-        {/* Voltar + status badge */}
         <div className="flex items-center justify-between">
           <button
-            onClick={() => router.push("/meus-reembolsos")}
+            onClick={() => router.push("/my-reimbursements")}
             className="flex items-center gap-1.5 text-small font-semibold text-app-text-muted hover:text-app-text -ml-0.5"
           >
             <ArrowLeft size={16} />
-            Meus Reembolsos
+            My Reimbursements
           </button>
           {(() => {
-            const cfg = STATUS_MINI_CONFIG[rcm.status] ?? STATUS_MINI_CONFIG[1];
+            const cfg = STATUS_MINI_CONFIG[reimbursement.status] ?? STATUS_MINI_CONFIG[1];
             const StatusIcon = cfg.icon;
             return (
               <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] font-semibold ${cfg.bg} ${cfg.border} ${cfg.fg}`}>
                 <StatusIcon size={13} weight="bold" />
-                {RCM_STATUS_LABEL[rcm.status]}
+                {REIMBURSEMENT_STATUS_LABEL[reimbursement.status]}
               </span>
             );
           })()}
         </div>
 
-        {/* Header */}
         <Card className="p-5 sm:p-6">
-          {/* título + menu */}
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               <h1 className="text-xl sm:text-2xl font-bold text-app-text leading-snug break-words">
-                {rcm.titulo}
+                {reimbursement.title}
               </h1>
               <p className="text-[13px] text-app-text-subtle mt-2 leading-snug">
-                #{rcm.id}
+                #{reimbursement.id}
                 <span className="mx-1.5 opacity-60">•</span>
-                {fmtData(rcm.created_at)}
+                {fmtDate(reimbursement.created_at)}
                 <span className="mx-1.5 opacity-60">•</span>
-                {fmtDataCurta(rcm.data_inicio_periodo)} a {fmtDataCurta(rcm.data_fim_periodo)}
+                {fmtShortDate(reimbursement.period_start_date)} to {fmtShortDate(reimbursement.period_end_date)}
               </p>
             </div>
 
-            {podeEditar && (
+            {canEdit && (
               <div ref={menuRef} className="relative shrink-0">
                 <button
                   onClick={() => setShowMenu((v) => !v)}
@@ -486,17 +474,17 @@ export default function DetalheRcmPage({ params }: { params: Promise<{ id: strin
                         className="flex items-center gap-2 px-3 py-2.5 text-base text-app-text hover:bg-app-hover rounded-lg w-full text-left transition-colors"
                       >
                         <PencilSimple size={16} />
-                        Editar
+                        Edit
                       </button>
                       <button
                         onClick={() => {
                           setShowMenu(false);
-                          setShowConfirmarExclusao(true);
+                          setShowConfirmDelete(true);
                         }}
                         className="flex items-center gap-2 px-3 py-2.5 text-base text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg w-full text-left transition-colors"
                       >
                         <Trash size={16} />
-                        Excluir
+                        Delete
                       </button>
                     </motion.div>
                   )}
@@ -507,80 +495,78 @@ export default function DetalheRcmPage({ params }: { params: Promise<{ id: strin
 
         </Card>
 
-        {/* Hero Stat — valor total */}
         <Card className="p-6 sm:py-10 text-center">
           <p className="text-[13px] font-semibold uppercase tracking-widest text-app-text-muted">
-            Valor Total a Receber
+            Total Amount to Receive
           </p>
           <p className="text-4xl sm:text-5xl font-bold text-app-text mt-3 break-words">
-            {fmtValor(valorTotal)}
+            {fmtAmount(totalAmount)}
           </p>
           <p className="text-base text-app-text-subtle mt-3">
-            {despesas.length} {despesas.length === 1 ? "despesa registrada" : "despesas registradas"}
+            {items.length} {items.length === 1 ? "item recorded" : "items recorded"}
           </p>
         </Card>
 
-        {/* Dados bancários + alertas */}
-        {(temBanco || (rcm.status === 5 && rcm.data_pagamento_programado) ||
-          (rcm.status === 7 && rcm.motivo_rejeicao)) && (
+        {(hasBank || (reimbursement.status === 5 && reimbursement.scheduled_payment_date) ||
+          (reimbursement.status === 7 && reimbursement.rejection_reason)) && (
           <Card className="p-4 sm:p-5 space-y-4">
-            {temBanco && (
+            {hasBank && (
               <div className="space-y-3">
                 <p className="text-[13px] font-semibold uppercase tracking-widest text-app-text-muted">
-                  Dados bancários
+                  Bank details
                 </p>
                 <div className="grid grid-cols-2 gap-4">
-                  {rcm.banco && (
+                  {reimbursement.bank && (
                     <div>
-                      <p className="text-[13px] text-app-text-subtle">Banco</p>
-                      <p className="text-base text-app-text mt-0.5">{rcm.banco}</p>
+                      <p className="text-[13px] text-app-text-subtle">Bank</p>
+                      <p className="text-base text-app-text mt-0.5">{reimbursement.bank}</p>
                     </div>
                   )}
-                  {rcm.agencia && (
+                  {reimbursement.branch && (
                     <div>
-                      <p className="text-[13px] text-app-text-subtle">Agência</p>
-                      <p className="text-base text-app-text mt-0.5">{rcm.agencia}</p>
+                      <p className="text-[13px] text-app-text-subtle">Branch</p>
+                      <p className="text-base text-app-text mt-0.5">{reimbursement.branch}</p>
                     </div>
                   )}
-                  {rcm.numero_banco && (
+                  {reimbursement.account_number && (
                     <div>
-                      <p className="text-[13px] text-app-text-subtle">Conta</p>
-                      <p className="text-base text-app-text mt-0.5">{rcm.numero_banco}</p>
+                      <p className="text-[13px] text-app-text-subtle">Account</p>
+                      <p className="text-base text-app-text mt-0.5">{reimbursement.account_number}</p>
                     </div>
                   )}
-                  {rcm.chave_pix && (
+                  {reimbursement.pix_key && (
                     <div className="col-span-2">
-                      <p className="text-[13px] text-app-text-subtle">Chave Pix</p>
-                      <p className="text-base text-app-text mt-0.5 truncate">{rcm.chave_pix}</p>
+                      <p className="text-[13px] text-app-text-subtle">Pix Key</p>
+                      <p className="text-base text-app-text mt-0.5 truncate">{reimbursement.pix_key}</p>
                     </div>
                   )}
                 </div>
               </div>
             )}
 
-            {rcm.status === 5 && rcm.data_pagamento_programado && (
+            {reimbursement.status === 5 && reimbursement.scheduled_payment_date && (
               <div className="flex items-center gap-3 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 px-4 py-3">
                 <CalendarCheck size={20} className="text-purple-600 dark:text-purple-400 shrink-0" />
                 <div>
                   <p className="text-base font-semibold text-purple-700 dark:text-purple-300 leading-tight">
-                    Pagamento Agendado
+                    Scheduled Payment
                   </p>
                   <p className="text-base text-purple-600 dark:text-purple-400 leading-tight mt-0.5">
-                    {fmtData(rcm.data_pagamento_programado)}
+                    {fmtDate(reimbursement.scheduled_payment_date)}
                   </p>
                 </div>
               </div>
             )}
 
-            {rcm.status === 7 && rcm.motivo_rejeicao && (
+            {reimbursement.status === 7 && reimbursement.rejection_reason && (
               <div className="flex items-start gap-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 px-4 py-3">
                 <XCircle size={20} className="text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-base font-semibold text-red-700 dark:text-red-300 leading-tight">
-                    Motivo da Rejeição
+                    Rejection Reason
                   </p>
                   <p className="text-base text-red-600 dark:text-red-400 leading-snug mt-1">
-                    {rcm.motivo_rejeicao}
+                    {reimbursement.rejection_reason}
                   </p>
                 </div>
               </div>
@@ -588,26 +574,25 @@ export default function DetalheRcmPage({ params }: { params: Promise<{ id: strin
           </Card>
         )}
 
-        {/* Lista de Despesas */}
         <div className="space-y-3">
           <p className="text-[13px] font-semibold text-app-text-muted uppercase tracking-widest px-1">
-            Despesas ({despesas.length})
+            Items ({items.length})
           </p>
 
-          {despesas.length === 0 ? (
+          {items.length === 0 ? (
             <Card className="p-6 text-center">
-              <p className="text-base text-app-text-subtle">Nenhuma despesa registrada.</p>
+              <p className="text-base text-app-text-subtle">No items recorded.</p>
             </Card>
           ) : (
             <div className="space-y-2.5">
-              {despesas.map((despesa) => {
-                const CategoriaIcon = getCategoriaIcon(despesa.categoria_despesa?.descricao);
-                const cores = getCategoriaColors(despesa.categoria_despesa?.descricao);
+              {items.map((item) => {
+                const CategoryIcon = getCategoryIcon(item.expense_category?.description);
+                const colors = getCategoryColors(item.expense_category?.description);
                 return (
-                  <div key={despesa.id} className="relative">
-                    {podeEditar && (
+                  <div key={item.id} className="relative">
+                    {canEdit && (
                       <button
-                        onClick={() => setDespesaParaExcluir(despesa.id)}
+                        onClick={() => setItemToDelete(item.id)}
                         className="absolute -top-3 -right-3 z-10 h-7 w-7 flex items-center justify-center rounded-full bg-app-surface border border-app-border text-app-text-muted hover:text-red-600 hover:border-red-300 dark:hover:border-red-800 transition-colors shadow-sm"
                         type="button"
                       >
@@ -615,60 +600,56 @@ export default function DetalheRcmPage({ params }: { params: Promise<{ id: strin
                       </button>
                     )}
                   <Card className="p-4">
-                    {/* Linha principal: ícone + descrição + metadata */}
                     <div className="flex items-start gap-3">
-                      <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${cores.bg}`}>
-                        <CategoriaIcon size={20} className={cores.fg} weight="bold" />
+                      <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${colors.bg}`}>
+                        <CategoryIcon size={20} className={colors.fg} weight="bold" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-3">
                           <p className="text-base font-semibold text-app-text leading-snug">
-                            {despesa.descricao}
+                            {item.description}
                           </p>
                           <span className="text-[13px] text-app-text-subtle shrink-0 mt-0.5">
-                            {fmtData(despesa.data_despesa)}
+                            {fmtDate(item.expense_date)}
                           </span>
                         </div>
-                        {despesa.centro_de_custo && (
+                        {item.cost_center && (
                           <p className="text-[13px] text-app-text-subtle mt-1.5">
-                            {despesa.centro_de_custo.descricao}
+                            {item.cost_center.description}
                           </p>
                         )}
                       </div>
                     </div>
 
-                    {/* Valor */}
                     <div className="mt-3 pt-3 border-t border-app-border-subtle">
                       <p className="text-lg font-bold text-app-text">
-                        {fmtValor(parseFloat(despesa.valor))}
+                        {fmtAmount(parseFloat(item.amount))}
                       </p>
                     </div>
 
-                    {/* Anexos */}
-                    {(despesa.anexos ?? []).length > 0 && (
+                    {(item.attachments ?? []).length > 0 && (
                       <div className="mt-3 pt-3 border-t border-app-border-subtle flex gap-2 overflow-x-auto scrollbar-none">
-                        {(despesa.anexos ?? []).map((anexo) => (
-                          <AnexoThumbnailItem
-                            key={anexo.id}
-                            rcmId={rcm.id}
-                            despesaId={despesa.id}
-                            idAnexo={anexo.id}
-                            caminho={anexo.caminho}
-                            onAbrir={() => abrirAnexo(rcm.id, despesa.id, anexo.id)}
+                        {(item.attachments ?? []).map((attachment) => (
+                          <AttachmentThumbnailItem
+                            key={attachment.id}
+                            reimbursementId={reimbursement.id}
+                            itemId={item.id}
+                            attachmentId={attachment.id}
+                            path={attachment.path}
+                            onOpen={() => openAttachment(reimbursement.id, item.id, attachment.id)}
                           />
                         ))}
                       </div>
                     )}
 
-                    {/* Editar */}
-                    {podeEditar && (
+                    {canEdit && (
                       <button
                         onClick={() => setShowForm(true)}
                         className="mt-3 pt-3 border-t border-app-border-subtle w-full flex items-center justify-center gap-1.5 text-[13px] font-semibold text-app-text-muted hover:text-app-text active:bg-app-hover active:text-app-text rounded-b-2xl transition-colors"
                         type="button"
                       >
                         <PencilSimple size={13} />
-                        Editar
+                        Edit
                       </button>
                     )}
                   </Card>
@@ -679,44 +660,42 @@ export default function DetalheRcmPage({ params }: { params: Promise<{ id: strin
           )}
         </div>
 
-        {podeEditar && (
+        {canEdit && (
           <Button variant="dark" fullWidth onClick={() => setShowForm(true)}>
             <Plus size={18} weight="bold" />
-            Adicionar Despesa
+            Add Item
           </Button>
         )}
       </div>
 
-      {/* Modal de edição */}
       <AnimatePresence>
         {showForm && (
-          <FormRcm
-            rcmInicial={rcm}
-            onSalvar={handleSalvarEdicao}
-            onFechar={() => setShowForm(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Modal de exclusão */}
-      <AnimatePresence>
-        {showConfirmarExclusao && (
-          <ModalConfirmar
-            titulo="Excluir prestação de contas?"
-            onConfirmar={handleExcluir}
-            onCancelar={() => setShowConfirmarExclusao(false)}
-            carregando={excluindo}
+          <FormReimbursement
+            initialReimbursement={reimbursement}
+            onSave={handleSaveEdit}
+            onClose={() => setShowForm(false)}
           />
         )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {despesaParaExcluir !== null && (
-          <ModalConfirmar
-            titulo="Excluir despesa?"
-            onConfirmar={handleExcluirDespesa}
-            onCancelar={() => setDespesaParaExcluir(null)}
-            carregando={excluindoDespesa}
+        {showConfirmDelete && (
+          <ConfirmDialog
+            title="Delete reimbursement?"
+            onConfirm={handleDelete}
+            onCancel={() => setShowConfirmDelete(false)}
+            loading={deleting}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {itemToDelete !== null && (
+          <ConfirmDialog
+            title="Delete item?"
+            onConfirm={handleDeleteItem}
+            onCancel={() => setItemToDelete(null)}
+            loading={deletingItem}
           />
         )}
       </AnimatePresence>

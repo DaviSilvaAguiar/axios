@@ -5,38 +5,38 @@ import { useForm, useController } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X } from "@phosphor-icons/react";
 import Input from "@/ui/Input";
-import InputCpfCnpj from "@/ui/InputCpfCnpj";
+import TaxIdInput from "@/ui/TaxIdInput";
 import Button from "@/ui/Button";
-import BadgeAtivo from "@/ui/BadgeAtivo";
+import ActiveBadge from "@/ui/ActiveBadge";
 import Combobox, { type ComboboxOption } from "@/ui/Combobox";
-import TabModulosUsuario from "./TabModulosUsuario";
+import UserModulesTab from "./UserModulesTab";
 import {
-  criarUsuarioFormSchema,
-  editarUsuarioFormSchema,
-  type CriarUsuarioFormData,
-  type EditarUsuarioFormData,
-  type Usuario,
-} from "../usuario.types";
+  createUserFormSchema,
+  editarUserFormSchema,
+  type CriarUserFormData,
+  type EditarUserFormData,
+  type User,
+} from "../user.types";
 
-const PERFIS_OPTIONS: ComboboxOption[] = [
+const ROLE_OPTIONS: ComboboxOption[] = [
   { value: "1", label: "Admin" },
-  { value: "2", label: "Gestor" },
-  { value: "3", label: "Prestador" },
+  { value: "2", label: "Auditor" },
+  { value: "3", label: "Provider" },
 ];
 
 interface Props {
-  usuario?: Usuario;
-  onSalvar: (dados: CriarUsuarioFormData | EditarUsuarioFormData) => Promise<void>;
-  onCancelar: () => void;
+  user?: User;
+  onSave: (data: CriarUserFormData | EditarUserFormData) => Promise<void>;
+  onCancel: () => void;
 }
 
-export default function FormUsuario({ usuario, onSalvar, onCancelar }: Props) {
-  const isEdicao = !!usuario;
-  const isAdmin = usuario?.perfil === 1;
-  const podeEditarModulos = isEdicao && !isAdmin;
-  const schema = isEdicao ? editarUsuarioFormSchema : criarUsuarioFormSchema;
+export default function UserForm({ user, onSave, onCancel }: Props) {
+  const isEditing = !!user;
+  const isAdmin = user?.role === 1;
+  const canEditModules = isEditing && !isAdmin;
+  const schema = isEditing ? editarUserFormSchema : createUserFormSchema;
 
-  const [aba, setAba] = useState<"dados" | "modulos">("dados");
+  const [tab, setTab] = useState<"details" | "modules">("details");
 
   const {
     register,
@@ -46,147 +46,147 @@ export default function FormUsuario({ usuario, onSalvar, onCancelar }: Props) {
     setValue,
     control,
     formState: { errors, isSubmitting },
-  } = useForm<CriarUsuarioFormData | EditarUsuarioFormData>({
+  } = useForm<CriarUserFormData | EditarUserFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      perfil: usuario?.perfil ?? 3,
-      nome: usuario?.nome ?? "",
-      email: usuario?.email ?? "",
-      senha: "",
-      ativo: usuario?.ativo ?? true,
-      codigo_credor_erp: usuario?.codigo_credor_erp ?? "",
-      cpf_cnpj: usuario?.cpf_cnpj ?? "",
+      role: user?.role ?? 3,
+      name: user?.name ?? "",
+      email: user?.email ?? "",
+      password: "",
+      active: user?.active ?? true,
+      erp_code: user?.erp_code ?? "",
+      tax_id: user?.tax_id ?? "",
     },
   });
 
-  const { field: perfilField } = useController({ name: "perfil", control });
-  const { field: cpfCnpjField } = useController({ name: "cpf_cnpj", control });
+  const { field: roleField } = useController({ name: "role", control });
+  const { field: taxIdField } = useController({ name: "tax_id", control });
 
   useEffect(() => {
     reset({
-      perfil: usuario?.perfil ?? 3,
-      nome: usuario?.nome ?? "",
-      email: usuario?.email ?? "",
-      senha: "",
-      ativo: usuario?.ativo ?? true,
-      codigo_credor_erp: usuario?.codigo_credor_erp ?? "",
-      cpf_cnpj: usuario?.cpf_cnpj ?? "",
+      role: user?.role ?? 3,
+      name: user?.name ?? "",
+      email: user?.email ?? "",
+      password: "",
+      active: user?.active ?? true,
+      erp_code: user?.erp_code ?? "",
+      tax_id: user?.tax_id ?? "",
     });
-  }, [usuario, reset]);
+  }, [user, reset]);
 
-  const ativo = watch("ativo");
+  const active = watch("active");
 
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-feature-title text-app-text">
-          {isEdicao ? "Editar Usuário" : "Novo Usuário"}
+          {isEditing ? "Edit User" : "New User"}
         </h2>
         <button
-          onClick={onCancelar}
+          onClick={onCancel}
           className="text-app-text-muted hover:text-app-text transition-colors"
-          aria-label="Fechar"
+          aria-label="Close"
         >
           <X size={20} />
         </button>
       </div>
 
-      {podeEditarModulos && (
+      {canEditModules && (
         <div className="flex gap-1 mb-5 border-b border-app-border">
-          {(["dados", "modulos"] as const).map((t) => (
+          {(["details", "modules"] as const).map((t) => (
             <button
               key={t}
               type="button"
-              onClick={() => setAba(t)}
+              onClick={() => setTab(t)}
               className={[
                 "px-3 py-2 text-caption font-semibold transition-colors border-b-2 -mb-px",
-                aba === t
+                tab === t
                   ? "border-brand text-brand"
                   : "border-transparent text-app-text-muted hover:text-app-text",
               ].join(" ")}
             >
-              {t === "dados" ? "Dados" : "Módulos"}
+              {t === "details" ? "Details" : "Modules"}
             </button>
           ))}
         </div>
       )}
 
-      {podeEditarModulos && aba === "modulos" ? (
-        <TabModulosUsuario usuarioId={usuario!.id} />
+      {canEditModules && tab === "modules" ? (
+        <UserModulesTab userId={user!.id} />
       ) : (
-      <form onSubmit={handleSubmit(onSalvar)} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit(onSave)} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
-          <label className="text-caption font-semibold text-app-text-muted">Perfil</label>
+          <label className="text-caption font-semibold text-app-text-muted">Role</label>
           <Combobox
-            options={PERFIS_OPTIONS}
-            value={String(perfilField.value ?? 3)}
+            options={ROLE_OPTIONS}
+            value={String(roleField.value ?? 3)}
             onChange={(v) => {
-              if (v) perfilField.onChange(Number(v));
+              if (v) roleField.onChange(Number(v));
             }}
-            placeholder="Selecione o perfil"
-            searchPlaceholder="Buscar perfil…"
+            placeholder="Select the role"
+            searchPlaceholder="Search role…"
             className="w-full"
           />
-          {"perfil" in errors && errors.perfil && (
-            <p className="text-small text-red-500">{errors.perfil.message}</p>
+          {"role" in errors && errors.role && (
+            <p className="text-small text-red-500">{errors.role.message}</p>
           )}
         </div>
 
         <Input
-          label="Nome"
-          placeholder="Nome completo"
-          error={"nome" in errors ? errors.nome?.message : undefined}
-          {...register("nome")}
+          label="Name"
+          placeholder="Full name"
+          error={"name" in errors ? errors.name?.message : undefined}
+          {...register("name")}
         />
 
         <Input
-          label="E-mail"
+          label="Email"
           type="email"
-          placeholder="email@exemplo.com"
+          placeholder="email@example.com"
           error={"email" in errors ? errors.email?.message : undefined}
           {...register("email")}
         />
 
         <Input
-          label={isEdicao ? "Nova senha (deixe em branco para não alterar)" : "Senha"}
+          label={isEditing ? "New password (leave blank to keep)" : "Password"}
           type="password"
-          placeholder={isEdicao ? "••••••••" : "Mínimo 8 caracteres"}
-          error={"senha" in errors ? errors.senha?.message : undefined}
-          {...register("senha")}
+          placeholder={isEditing ? "••••••••" : "Minimum 8 characters"}
+          error={"password" in errors ? errors.password?.message : undefined}
+          {...register("password")}
         />
 
-        <InputCpfCnpj
+        <TaxIdInput
           label="CPF / CNPJ"
-          value={cpfCnpjField.value ?? ""}
-          onChange={cpfCnpjField.onChange}
-          onBlur={cpfCnpjField.onBlur}
-          error={"cpf_cnpj" in errors ? errors.cpf_cnpj?.message : undefined}
+          value={taxIdField.value ?? ""}
+          onChange={taxIdField.onChange}
+          onBlur={taxIdField.onBlur}
+          error={"tax_id" in errors ? errors.tax_id?.message : undefined}
         />
 
         <Input
-          label="Código Credor no ERP"
-          placeholder="Código de integração"
-          error={"codigo_credor_erp" in errors ? errors.codigo_credor_erp?.message : undefined}
-          {...register("codigo_credor_erp")}
+          label="ERP Creditor Code"
+          placeholder="Integration code"
+          error={"erp_code" in errors ? errors.erp_code?.message : undefined}
+          {...register("erp_code")}
         />
 
         <div className="flex flex-col gap-1.5">
           <span className="text-caption font-semibold text-app-text-muted">Status</span>
           <button
             type="button"
-            onClick={() => setValue("ativo", !ativo)}
+            onClick={() => setValue("active", !active)}
             className="w-fit cursor-pointer transition-opacity hover:opacity-80"
           >
-            <BadgeAtivo ativo={ativo} />
+            <ActiveBadge ativo={active} />
           </button>
         </div>
 
         <div className="flex justify-end gap-3 pt-2">
-          <Button type="button" variant="light" size="sm" onClick={onCancelar}>
-            Cancelar
+          <Button type="button" variant="light" size="sm" onClick={onCancel}>
+            Cancel
           </Button>
           <Button type="submit" variant="dark" size="sm" disabled={isSubmitting}>
-            {isSubmitting ? "Salvando…" : "Salvar"}
+            {isSubmitting ? "Saving…" : "Save"}
           </Button>
         </div>
       </form>

@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { MapPin, X } from "@phosphor-icons/react";
-import SeletorLocalizacao from "./SeletorLocalizacao";
-import type { Localizacao } from "../geolocalizacao.types";
+import LocationSelector from "./LocationSelector";
+import type { Localizacao } from "../geolocation.types";
 
 interface Props {
   valor: Localizacao | null;
@@ -12,15 +12,15 @@ interface Props {
   disabled?: boolean;
 }
 
-export default function CampoLocalizacao({ valor, onChange, label = "Localização", disabled }: Props) {
+export default function LocationField({ valor, onChange, label = "Location", disabled }: Props) {
   const [open, setOpen] = useState(false);
 
-  function abrir() {
+  function handleOpen() {
     if (disabled) return;
     setOpen(true);
   }
 
-  function remover(e: React.MouseEvent) {
+  function handleRemove(e: React.MouseEvent) {
     e.stopPropagation();
     onChange(null);
   }
@@ -31,7 +31,7 @@ export default function CampoLocalizacao({ valor, onChange, label = "Localizaç�
         <label className="text-caption font-semibold text-app-text-muted">{label}</label>
         <button
           type="button"
-          onClick={abrir}
+          onClick={handleOpen}
           disabled={disabled}
           className="flex items-center gap-2.5 w-full text-left rounded-xl border border-app-border bg-app-surface px-3 py-2.5 hover:bg-app-hover transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -39,9 +39,9 @@ export default function CampoLocalizacao({ valor, onChange, label = "Localizaç�
           {valor ? (
             <span className="flex-1 min-w-0">
               <span className="block text-body-sm text-app-text truncate">
-                {valor.endereco ?? `${valor.latitude.toFixed(6)}, ${valor.longitude.toFixed(6)}`}
+                {valor.address ?? `${valor.latitude.toFixed(6)}, ${valor.longitude.toFixed(6)}`}
               </span>
-              {valor.endereco && (
+              {valor.address && (
                 <span className="block text-caption text-app-text-subtle">
                   {valor.latitude.toFixed(6)}, {valor.longitude.toFixed(6)}
                 </span>
@@ -49,14 +49,14 @@ export default function CampoLocalizacao({ valor, onChange, label = "Localizaç�
             </span>
           ) : (
             <span className="flex-1 text-body-sm text-app-text-subtle">
-              Selecionar localização
+              Select location
             </span>
           )}
           {valor && !disabled && (
             <span
-              onClick={remover}
+              onClick={handleRemove}
               role="button"
-              aria-label="Remover localização"
+              aria-label="Remove location"
               className="p-1 rounded-md text-app-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors cursor-pointer"
             >
               <X size={14} />
@@ -65,11 +65,11 @@ export default function CampoLocalizacao({ valor, onChange, label = "Localizaç�
         </button>
       </div>
 
-      <SeletorLocalizacao
+      <LocationSelector
         open={open}
         onClose={() => setOpen(false)}
-        valorInicial={valor}
-        onConfirmar={onChange}
+        initialValue={valor}
+        onConfirm={onChange}
       />
     </>
   );

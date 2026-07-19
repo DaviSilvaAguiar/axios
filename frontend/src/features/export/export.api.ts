@@ -1,33 +1,33 @@
 import { api } from "@/lib/api";
 import { buildPageQuery, type Paginated, PAGE_SIZE } from "@/lib/pagination";
-import { mapPendentesPaginados, mapStatsPendentes, mapHistorico } from "./exportacao.mapper";
-import type { DocumentoPendente, LoteHistorico, StatsPendentes } from "./exportacao.types";
+import { mapPendingDocuments, mapPendingStats, mapHistorico } from "./export.mapper";
+import type { PendingDocument, BatchHistory, PendingStats } from "./export.types";
 
-export async function obterCaixasPendentesApi(
+export async function getPendingExpenseReportsApi(
   page: number = 1,
   perPage: number = PAGE_SIZE
-): Promise<Paginated<DocumentoPendente>> {
-  const raw = await api.get<unknown>(`/v1/exportacao/pendentes/caixas${buildPageQuery(page, perPage)}`);
-  return mapPendentesPaginados(raw);
+): Promise<Paginated<PendingDocument>> {
+  const raw = await api.get<unknown>(`/v1/export/pending/expense-reports${buildPageQuery(page, perPage)}`);
+  return mapPendingDocuments(raw);
 }
 
-export async function obterRcmsPendentesApi(
+export async function getPendingReimbursementsApi(
   page: number = 1,
   perPage: number = PAGE_SIZE
-): Promise<Paginated<DocumentoPendente>> {
-  const raw = await api.get<unknown>(`/v1/exportacao/pendentes/rcms${buildPageQuery(page, perPage)}`);
-  return mapPendentesPaginados(raw);
+): Promise<Paginated<PendingDocument>> {
+  const raw = await api.get<unknown>(`/v1/export/pending/reimbursements${buildPageQuery(page, perPage)}`);
+  return mapPendingDocuments(raw);
 }
 
-export async function obterStatsPendentesApi(): Promise<StatsPendentes> {
-  const raw = await api.get<unknown>("/v1/exportacao/pendentes/stats");
-  return mapStatsPendentes(raw);
+export async function obterPendingStatsApi(): Promise<PendingStats> {
+  const raw = await api.get<unknown>("/v1/export/pending/stats");
+  return mapPendingStats(raw);
 }
 
 export async function obterHistoricoApi(
   page: number = 1,
   perPage: number = PAGE_SIZE
-): Promise<Paginated<LoteHistorico>> {
-  const raw = await api.get<unknown>(`/v1/exportacao/historico${buildPageQuery(page, perPage)}`);
+): Promise<Paginated<BatchHistory>> {
+  const raw = await api.get<unknown>(`/v1/export/history${buildPageQuery(page, perPage)}`);
   return mapHistorico(raw);
 }

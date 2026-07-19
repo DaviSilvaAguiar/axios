@@ -2,55 +2,55 @@
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { listarConfigsApi } from "@/features/config/config.api";
-import type { Config } from "@/features/config/config.types";
+import { listSettingsApi } from "@/features/settings/settings.api";
+import type { Config } from "@/features/settings/settings.types";
 
-interface ConfigContextValue {
+interface SettingsContextValue {
   configs: Config[];
   loading: boolean;
-  recarregar: () => Promise<void>;
-  isHabilitada: (parametro: string) => boolean;
+  reload: () => Promise<void>;
+  isEnabled: (parametro: string) => boolean;
 }
 
-const ConfigContext = createContext<ConfigContextValue | null>(null);
+const ConfigContext = createContext<SettingsContextValue | null>(null);
 
-export function ConfigProvider({ children }: { children: ReactNode }) {
-  const { usuario } = useAuth();
-  const [configs, setConfigs] = useState<Config[]>([]);
+export function SettingsProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const [configs, setSettings] = useState<Config[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const recarregar = useCallback(async () => {
+  const reload = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await listarConfigsApi();
-      setConfigs(data);
+      const data = await listSettingsApi();
+      setSettings(data);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    if (!usuario) {
-      setConfigs([]);
+    if (!user) {
+      setSettings([]);
       return;
     }
-    recarregar().catch(() => {});
-  }, [usuario, recarregar]);
+    reload().catch(() => {});
+  }, [user, reload]);
 
-  const isHabilitada = useCallback(
-    (parametro: string) => configs.some((c) => c.parametro === parametro && c.valor === 1),
+  const isEnabled = useCallback(
+    (param: string) => configs.some((c) => c.parameter === param && c.value === 1),
     [configs],
   );
 
   return (
-    <ConfigContext.Provider value={{ configs, loading, recarregar, isHabilitada }}>
+    <ConfigContext.Provider value={{ configs, loading, reload, isEnabled }}>
       {children}
     </ConfigContext.Provider>
   );
 }
 
-export function useConfigs(): ConfigContextValue {
+export function useSettings(): SettingsContextValue {
   const ctx = useContext(ConfigContext);
-  if (!ctx) throw new Error("useConfigs precisa estar dentro de <ConfigProvider>");
+  if (!ctx) throw new Error("useSettings must be used within <SettingsProvider>");
   return ctx;
 }

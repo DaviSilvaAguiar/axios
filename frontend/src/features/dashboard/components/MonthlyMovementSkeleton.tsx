@@ -1,7 +1,6 @@
 import Card from "@/ui/Card";
 
-export default function MovimentacaoMensalSkeleton() {
-  // Mesma forma do chart real (12 barras no desktop, 6 no mobile).
+export default function MonthlyMovementSkeleton() {
   const bars = Array.from({ length: 12 });
 
   return (

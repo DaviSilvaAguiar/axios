@@ -1,20 +1,20 @@
 import { z } from "zod";
 
 export const leadFormSchema = z.object({
-  nome:                 z.string().min(1, "Informe seu nome"),
-  email:                z.string().min(1, "Informe seu e-mail").email("E-mail inválido"),
-  empresa:              z.string().min(1, "Informe o nome da empresa"),
-  volume_obras_mensais: z.string().min(1, "Informe o volume de obras mensais"),
+  name:                 z.string().min(1, "Enter your name"),
+  email:                z.string().min(1, "Enter your email").email("Invalid email"),
+  company:              z.string().min(1, "Enter the company name"),
+  monthly_project_volume: z.string().min(1, "Enter the monthly project volume"),
 });
 
 export const leadResponseSchema = z.object({
-  mensagem: z.string(),
+  message: z.string(),
   lead: z.object({
     id:                   z.number(),
-    nome:                 z.string(),
+    name:                 z.string(),
     email:                z.string(),
-    empresa:              z.string(),
-    volume_obras_mensais: z.string(),
+    company:              z.string(),
+    monthly_project_volume: z.string(),
     created_at:           z.string(),
     updated_at:           z.string(),
   }),

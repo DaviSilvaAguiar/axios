@@ -4,34 +4,34 @@ import { motion } from "framer-motion";
 import { PaperPlaneTilt, Plug } from "@phosphor-icons/react";
 import Button from "@/ui/Button";
 
-const fmtMoeda = (v: number) =>
+const fmtCurrency = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 interface Props {
-  quantidade: number;
-  valorTotal: number;
-  integracaoNome: string | null;
-  integracaoConfigurada: boolean;
+  quantity: number;
+  totalAmount: number;
+  integrationName: string | null;
+  integrationConfigured: boolean;
   loading: boolean;
-  onLimpar: () => void;
-  onEnviar: () => void;
+  onClear: () => void;
+  onSend: () => void;
 }
 
-export default function ActionBarEnviarIntegracao({
-  quantidade,
-  valorTotal,
-  integracaoNome,
-  integracaoConfigurada,
+export default function IntegrationSendActionBar({
+  quantity,
+  totalAmount,
+  integrationName,
+  integrationConfigured,
   loading,
-  onLimpar,
-  onEnviar,
+  onClear,
+  onSend,
 }: Props) {
-  const pode = integracaoConfigurada && !loading;
-  const hint = integracaoNome
-    ? integracaoConfigurada
-      ? `Pronto para enviar via ${integracaoNome}`
-      : `Configure o token de ${integracaoNome} antes de enviar`
-    : "Selecione uma integração";
+  const canSend = integrationConfigured && !loading;
+  const hint = integrationName
+    ? integrationConfigured
+      ? `Ready to send via ${integrationName}`
+      : `Configure the ${integrationName} token before sending`
+    : "Select an integration";
 
   return (
     <motion.div
@@ -48,20 +48,20 @@ export default function ActionBarEnviarIntegracao({
           </div>
           <div className="flex flex-col min-w-0">
             <span className="text-caption text-app-text">
-              {quantidade} {quantidade === 1 ? "documento selecionado" : "documentos selecionados"}
+              {quantity} {quantity === 1 ? "document selected" : "documents selected"}
             </span>
             <span className="text-small text-app-text-muted font-normal truncate">
-              Total {fmtMoeda(valorTotal)} • {hint}
+              Total {fmtCurrency(totalAmount)} • {hint}
             </span>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <Button variant="light" size="sm" onClick={onLimpar} disabled={loading}>
-            Limpar
+          <Button variant="light" size="sm" onClick={onClear} disabled={loading}>
+            Clear
           </Button>
-          <Button variant="brand" size="sm" disabled={!pode} onClick={onEnviar}>
+          <Button variant="brand" size="sm" disabled={!canSend} onClick={onSend}>
             <PaperPlaneTilt size={14} weight="bold" />
-            {loading ? "Enviando…" : "Enviar"}
+            {loading ? "Sending…" : "Send"}
           </Button>
         </div>
       </div>

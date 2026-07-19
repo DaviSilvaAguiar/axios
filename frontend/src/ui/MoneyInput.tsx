@@ -14,29 +14,29 @@ interface Props {
   className?: string;
 }
 
-function parseCentavos(raw: string): number {
+function parseCents(raw: string): number {
   const digits = raw.replace(/\D/g, "");
   return parseInt(digits || "0", 10);
 }
 
-function formatBRL(centavos: number): string {
-  return (centavos / 100).toLocaleString("pt-BR", {
+function formatCurrency(cents: number): string {
+  return (cents / 100).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
     minimumFractionDigits: 2,
   });
 }
 
-function centavosToDecimalString(centavos: number): string {
-  return (centavos / 100).toFixed(2);
+function centsToDecimalString(cents: number): string {
+  return (cents / 100).toFixed(2);
 }
 
-const InputMonetario = forwardRef<HTMLInputElement, Props>(
+const MoneyInput = forwardRef<HTMLInputElement, Props>(
   ({ label, value, onChange, onBlur, error, placeholder = "R$ 0,00", disabled, className = "" }, ref) => {
-    const centavos = Math.round(parseFloat(value || "0") * 100);
+    const cents = Math.round(parseFloat(value || "0") * 100);
     const [focused, setFocused] = useState(false);
 
-    const displayValue = centavos === 0 ? "" : formatBRL(centavos);
+    const displayValue = cents === 0 ? "" : formatCurrency(cents);
 
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -44,7 +44,7 @@ const InputMonetario = forwardRef<HTMLInputElement, Props>(
 
         if (e.key === "Backspace") {
           e.preventDefault();
-          onChange(centavosToDecimalString(Math.floor(current / 10)));
+          onChange(centsToDecimalString(Math.floor(current / 10)));
           return;
         }
 
@@ -52,7 +52,7 @@ const InputMonetario = forwardRef<HTMLInputElement, Props>(
           e.preventDefault();
           const next = current * 10 + parseInt(e.key, 10);
           if (next > 9_999_999_99) return;
-          onChange(centavosToDecimalString(next));
+          onChange(centsToDecimalString(next));
           return;
         }
       },
@@ -61,9 +61,8 @@ const InputMonetario = forwardRef<HTMLInputElement, Props>(
 
     const handleChange = useCallback(
       (e: React.ChangeEvent<HTMLInputElement>) => {
-        // Captura input de teclados móveis (onde onKeyDown pode não disparar)
-        const next = Math.min(parseCentavos(e.target.value), 9_999_999_99);
-        onChange(centavosToDecimalString(next));
+        const next = Math.min(parseCents(e.target.value), 9_999_999_99);
+        onChange(centsToDecimalString(next));
       },
       [onChange]
     );
@@ -112,6 +111,6 @@ const InputMonetario = forwardRef<HTMLInputElement, Props>(
   }
 );
 
-InputMonetario.displayName = "InputMonetario";
+MoneyInput.displayName = "MoneyInput";
 
-export default InputMonetario;
+export default MoneyInput;

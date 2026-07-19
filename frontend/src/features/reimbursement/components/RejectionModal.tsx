@@ -8,17 +8,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import Button from "@/ui/Button";
 
 const schema = z.object({
-  motivo_rejeicao: z.string().min(1, "Informe o motivo da rejeição"),
+  rejection_reason: z.string().min(1, "Enter the rejection reason"),
 });
 
 type FormData = z.infer<typeof schema>;
 
 interface Props {
-  onConfirmar: (motivo: string) => Promise<void> | void;
-  onCancelar: () => void;
+  onConfirm: (reason: string) => Promise<void> | void;
+  onCancel: () => void;
 }
 
-export default function ModalRejeicao({ onConfirmar, onCancelar }: Props) {
+export default function RejectionModal({ onConfirm, onCancel }: Props) {
   const {
     register,
     handleSubmit,
@@ -26,7 +26,7 @@ export default function ModalRejeicao({ onConfirmar, onCancelar }: Props) {
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
   async function onSubmit(data: FormData) {
-    await onConfirmar(data.motivo_rejeicao);
+    await onConfirm(data.rejection_reason);
   }
 
   return (
@@ -46,13 +46,13 @@ export default function ModalRejeicao({ onConfirmar, onCancelar }: Props) {
         >
           <div className="mb-4 flex items-start justify-between">
             <div>
-              <h2 className="text-feature-title text-app-text">Rejeitar Reembolso</h2>
+              <h2 className="text-feature-title text-app-text">Reject Reimbursement</h2>
               <p className="mt-1 text-body-sm text-app-text-muted">
-                Descreva o motivo da rejeição para o colaborador.
+                Describe the rejection reason for the employee.
               </p>
             </div>
             <button
-              onClick={onCancelar}
+              onClick={onCancel}
               className="ml-4 rounded-full p-1 text-app-text-muted hover:bg-app-hover"
             >
               <X size={20} />
@@ -62,27 +62,27 @@ export default function ModalRejeicao({ onConfirmar, onCancelar }: Props) {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <label className="text-caption text-app-text-muted block mb-1.5">
-                Motivo
+                Reason
               </label>
               <textarea
-                {...register("motivo_rejeicao")}
+                {...register("rejection_reason")}
                 rows={4}
-                placeholder="Ex: Nota fiscal ilegível, valor divergente…"
+                placeholder="e.g. Illegible invoice, mismatched amount…"
                 className="w-full resize-none rounded-2xl border border-app-border bg-app-surface-raised px-4 py-3 text-body-sm text-app-text placeholder:text-app-text-subtle focus:border-brand focus:outline-none"
               />
-              {errors.motivo_rejeicao && (
+              {errors.rejection_reason && (
                 <p className="mt-1 text-small text-red-600">
-                  {errors.motivo_rejeicao.message}
+                  {errors.rejection_reason.message}
                 </p>
               )}
             </div>
 
             <div className="flex gap-3 pt-2">
-              <Button type="button" variant="light" fullWidth onClick={onCancelar}>
-                Cancelar
+              <Button type="button" variant="light" fullWidth onClick={onCancel}>
+                Cancel
               </Button>
               <Button type="submit" variant="outlined" fullWidth disabled={isSubmitting}>
-                {isSubmitting ? "Rejeitando…" : "Rejeitar"}
+                {isSubmitting ? "Rejecting…" : "Reject"}
               </Button>
             </div>
           </form>

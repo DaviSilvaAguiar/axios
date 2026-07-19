@@ -30,7 +30,7 @@ export function maskAgencia(val: string) {
 }
 
 export function maskConta(val: string) {
-  const v = val.replace(/\D/g, "").slice(0, 15); // max 15 dígitos → cobre Caixa Federal
+  const v = val.replace(/\D/g, "").slice(0, 15);
   if (v.length > 1) {
     return v.replace(/(\d+)(\d)$/, "$1-$2");
   }

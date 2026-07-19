@@ -18,17 +18,17 @@ L.Marker.prototype.options.icon = defaultIcon;
 interface Props {
   latitude: number | null;
   longitude: number | null;
-  onSelecionar: (lat: number, lon: number) => void;
+  onSelect: (lat: number, lon: number) => void;
 }
 
-function ControleClique({ onSelecionar }: { onSelecionar: (lat: number, lon: number) => void }) {
+function ClickControl({ onSelect }: { onSelect: (lat: number, lon: number) => void }) {
   useMapEvents({
-    click: (e) => onSelecionar(e.latlng.lat, e.latlng.lng),
+    click: (e) => onSelect(e.latlng.lat, e.latlng.lng),
   });
   return null;
 }
 
-function ControleCentralizar({ latitude, longitude }: { latitude: number | null; longitude: number | null }) {
+function CenterControl({ latitude, longitude }: { latitude: number | null; longitude: number | null }) {
   const map = useMap();
   useEffect(() => {
     if (latitude !== null && longitude !== null) {
@@ -38,7 +38,7 @@ function ControleCentralizar({ latitude, longitude }: { latitude: number | null;
   return null;
 }
 
-function ControleInvalidateSize() {
+function InvalidateSizeControl() {
   const map = useMap();
   useEffect(() => {
     const ts = [50, 200, 400, 800].map((t) =>
@@ -54,11 +54,11 @@ function ControleInvalidateSize() {
   return null;
 }
 
-const CENTRO_PADRAO: [number, number] = [-15.7942, -47.8825]; // Brasília
+const DEFAULT_CENTER: [number, number] = [-15.7942, -47.8825];
 
-export default function MapaInterativo({ latitude, longitude, onSelecionar }: Props) {
+export default function InteractiveMap({ latitude, longitude, onSelect }: Props) {
   const center: [number, number] =
-    latitude !== null && longitude !== null ? [latitude, longitude] : CENTRO_PADRAO;
+    latitude !== null && longitude !== null ? [latitude, longitude] : DEFAULT_CENTER;
   const zoom = latitude !== null && longitude !== null ? 15 : 4;
 
   return (
@@ -72,9 +72,9 @@ export default function MapaInterativo({ latitude, longitude, onSelecionar }: Pr
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <ControleClique onSelecionar={onSelecionar} />
-      <ControleCentralizar latitude={latitude} longitude={longitude} />
-      <ControleInvalidateSize />
+      <ClickControl onSelect={onSelect} />
+      <CenterControl latitude={latitude} longitude={longitude} />
+      <InvalidateSizeControl />
       {latitude !== null && longitude !== null && (
         <Marker
           position={[latitude, longitude]}
@@ -82,7 +82,7 @@ export default function MapaInterativo({ latitude, longitude, onSelecionar }: Pr
           eventHandlers={{
             dragend: (e) => {
               const pos = (e.target as L.Marker).getLatLng();
-              onSelecionar(pos.lat, pos.lng);
+              onSelect(pos.lat, pos.lng);
             },
           }}
         />

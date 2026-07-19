@@ -5,15 +5,15 @@ import { motion } from "framer-motion";
 import { Prohibit, ArrowLeft } from "@phosphor-icons/react";
 import Button from "@/ui/Button";
 
-interface SemAcessoProps {
-  titulo?: string;
-  descricao?: string;
+interface NoAccessProps {
+  title?: string;
+  description?: string;
 }
 
-export default function SemAcesso({
-  titulo = "Sem acesso a este módulo",
-  descricao = "Você não tem permissão para acessar essa área. Fale com o administrador se precisar de acesso.",
-}: SemAcessoProps) {
+export default function NoAccess({
+  title = "No access to this module",
+  description = "You do not have permission to access this area. Contact your administrator if you need access.",
+}: NoAccessProps) {
   return (
     <div className="flex min-h-[70vh] items-center justify-center p-6">
       <motion.div
@@ -37,8 +37,8 @@ export default function SemAcesso({
           transition={{ delay: 0.2, duration: 0.28 }}
           className="space-y-2"
         >
-          <h1 className="text-section-heading text-app-text">{titulo}</h1>
-          <p className="text-body-sm text-app-text-muted">{descricao}</p>
+          <h1 className="text-section-heading text-app-text">{title}</h1>
+          <p className="text-body-sm text-app-text-muted">{description}</p>
         </motion.div>
 
         <motion.div
@@ -50,7 +50,7 @@ export default function SemAcesso({
           <Link href="/dashboard">
             <Button variant="dark">
               <ArrowLeft size={16} weight="bold" />
-              Voltar ao início
+              Back to home
             </Button>
           </Link>
         </motion.div>

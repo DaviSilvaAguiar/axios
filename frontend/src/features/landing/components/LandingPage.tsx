@@ -20,59 +20,58 @@ import {
 import Button from "@/ui/Button";
 import InputPill from "@/ui/InputPill";
 import { leadFormSchema, type LeadFormData } from "../landing.types";
-import { enviarLeadApi } from "../landing.api";
+import { sendLeadApi } from "../landing.api";
 
-/* ── Features ──────────────────────────────────────────────── */
 const FEATURES = [
   {
     icon: <Receipt size={22} weight="bold" />,
-    title: "Adiantamentos",
-    resumo: "Prestação de contas de caixa criada em campo pelo prestador e auditada pelo financeiro — com validação automática.",
+    title: "Advances",
+    summary: "Cash expense report created in the field by the provider and audited by Finance — with automatic validation.",
     bullets: [
-      "Chave da NFe (44 dígitos) validada direto na Sefaz",
-      "CNPJ e razão social conferidos na ReceitaWS",
-      "Auditoria lado a lado: dados, anexo e retorno das APIs",
-      "Ao aprovar, debita o caixa do prestador automaticamente",
+      "NFe key (44 digits) validated directly with Sefaz",
+      "CNPJ and legal name checked against ReceitaWS",
+      "Side-by-side audit: data, attachment, and API responses",
+      "On approval, automatically debits the provider's fund",
     ],
   },
   {
     icon: <Wallet size={22} weight="bold" />,
-    title: "Gestão de Caixas",
-    resumo: "Saldos pré-pagos dos prestadores com extrato bancável e rastro de cada centavo movimentado.",
+    title: "Fund Management",
+    summary: "Providers' prepaid balances with a bank-style ledger and a trace of every cent moved.",
     bullets: [
-      "Um caixa por usuário e centro de custo",
-      "Crédito por adiantamento, débito na aprovação do RDC",
-      "Extrato estilo banco com link para o RDC de origem",
-      "Só fecha com saldo zerado — sem ponta solta",
+      "One fund per user and cost center",
+      "Credit by advance, debit on expense report approval",
+      "Bank-style ledger with a link to the originating expense report",
+      "Only closes with a zero balance — no loose ends",
     ],
   },
   {
     icon: <CurrencyDollar size={22} weight="bold" />,
-    title: "Reembolsos",
-    resumo: "Fluxo pós-pago para quem gasta do próprio bolso, sem burocracia e sem tocar nos caixas.",
+    title: "Reimbursements",
+    summary: "Post-paid flow for those who pay out of pocket — no bureaucracy and no touching the funds.",
     bullets: [
-      "Kanban: Rascunho → Em análise → Aprovado → Agendado → Pago",
-      "Centro de custo definido por item de despesa",
-      "Data de pagamento obrigatória ao agendar",
-      "No arquivo do ERP, o fornecedor é o código do colaborador",
+      "Kanban: Draft → Under Review → Approved → Scheduled → Paid",
+      "Cost center defined per expense item",
+      "Payment date required when scheduling",
+      "In the ERP file, the supplier is the employee's code",
     ],
   },
   {
     icon: <FileArrowDown size={22} weight="bold" />,
-    title: "Exportação ERP",
-    resumo: "Lotes aprovados viram arquivo pronto para o seu ERP, sem reformatar nem copiar e colar.",
+    title: "ERP Export",
+    summary: "Approved batches become a file ready for your ERP — no reformatting, no copy and paste.",
     bullets: [
-      "Abas separadas para Prestações (RDC) e Reembolsos (RCM)",
-      "Templates por ERP via handlers (Sienge, Protheus e mais)",
-      "Selecione vários lotes e baixe em CSV ou Excel",
-      "Lote exportado nunca reverte — zero pagamento em dobro",
+      "Separate tabs for Expense Reports and Reimbursements",
+      "Per-ERP templates via handlers (Sienge, Protheus, and more)",
+      "Select multiple batches and download as CSV or Excel",
+      "An exported batch never reverts — zero double payments",
     ],
   },
 ];
 
-const HERO_TITLE = "Controle total\nsobre as despesas\nda sua equipe.";
+const HERO_TITLE = "Total control\nover your team's\nexpenses.";
 const HERO_SUBTITLE =
-  "Do lançamento ao ERP, sem fricção e sem erros. Adiantamentos, reembolsos e prestações em um único lugar.";
+  "From entry to ERP, frictionless and error-free. Advances, reimbursements, and expense reports in one place.";
 
 function useTypewriter(text: string, speedMs: number, active: boolean) {
   const [count, setCount] = useState(0);
@@ -95,7 +94,6 @@ function Caret() {
   );
 }
 
-/* Detecta quando o elemento entra na viewport (dispara uma única vez). */
 function useInView<T extends HTMLElement>() {
   const ref = useRef<T | null>(null);
   const [inView, setInView] = useState(false);
@@ -119,14 +117,12 @@ function useInView<T extends HTMLElement>() {
   return { ref, inView };
 }
 
-/* Estado inicial (escondido) por direção de entrada. */
 const REVEAL_HIDDEN = {
   left: "opacity-0 -translate-x-10",
   right: "opacity-0 translate-x-10",
   up: "opacity-0 translate-y-12",
 } as const;
 
-/* Revela o conteúdo ao entrar na viewport, deslizando da direção indicada. */
 function Reveal({
   direction = "up",
   delay = 0,
@@ -161,12 +157,12 @@ export default function LandingPage() {
     formState: { errors, isSubmitting },
   } = useForm<LeadFormData>({ resolver: zodResolver(leadFormSchema) });
 
-  async function onSubmit(dados: LeadFormData) {
+  async function onSubmit(data: LeadFormData) {
     try {
-      await enviarLeadApi(dados);
+      await sendLeadApi(data);
       setLeadSent(true);
     } catch {
-      setError("root", { message: "Erro ao enviar. Tente novamente." });
+      setError("root", { message: "Failed to send. Please try again." });
     }
   }
 
@@ -183,30 +179,26 @@ export default function LandingPage() {
   return (
     <div className="bg-white">
 
-      {/* ── Navbar ──────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-border">
         <div className="max-w-[1600px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <span className="font-ui text-[15px] font-semibold text-ink tracking-tight">Axios</span>
           <Link href="/login">
-            <Button variant="outlined" size="sm">Entrar</Button>
+            <Button variant="outlined" size="sm">Sign in</Button>
           </Link>
         </div>
       </header>
 
-      {/* ── Hero ────────────────────────────────────────────────── */}
       <section className="max-w-[1600px] mx-auto px-6 lg:px-10 py-20 lg:py-28 flex flex-col lg:flex-row items-center gap-14 lg:gap-10">
 
-        {/* Texto */}
         <div className="lg:flex-[0.8] flex flex-col gap-8 lg:max-w-[520px]">
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2 animate-fade-in">
               <span className="w-1.5 h-1.5 rounded-full bg-brand shrink-0" />
               <span className="font-ui text-[13px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
-                Gestão financeira para equipes
+                Financial management for teams
               </span>
             </div>
 
-            {/* Título — o "fantasma" invisível reserva o espaço; a sobreposição digita */}
             <h1 className="text-display-hero text-ink relative">
               <span aria-hidden="true" className="block invisible whitespace-pre-line">
                 {HERO_TITLE}
@@ -234,34 +226,31 @@ export default function LandingPage() {
           >
             <a href="#demo">
               <Button variant="brand">
-                Começar agora <ArrowRight size={16} weight="bold" className="inline ml-1" />
+                Get started now <ArrowRight size={16} weight="bold" className="inline ml-1" />
               </Button>
             </a>
             <Link href="/login">
-              <Button variant="light">Entrar na plataforma</Button>
+              <Button variant="light">Sign in to the platform</Button>
             </Link>
           </div>
 
-          {/* Linha de confiança — integrações */}
           <div
             className={`flex items-center gap-2 text-ink-muted transition-all duration-700 delay-150 ease-out ${revealed ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
               }`}
           >
             <PlugsConnected size={16} weight="bold" className="shrink-0" />
             <span className="font-ui text-[13px]">
-              Integra com os ERPs do mercado.
+              Integrates with the market's ERPs.
             </span>
           </div>
 
         </div>
 
-        {/* Mockup do app */}
         <div
           className={`lg:flex-[1.2] w-full transition-all duration-[900ms] ease-out ${revealed ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-6 scale-[0.97]"
             }`}
         >
           <div className="rounded-[20px] bg-[#0a0b0d] border border-white/[0.08] p-3 shadow-[0_32px_80px_rgba(0,0,0,0.28)]">
-            {/* Barra de janela — faz a imagem ler como o produto */}
             <div className="flex items-center gap-3 px-1.5 pt-0.5 pb-3">
               <div className="flex items-center gap-1.5 shrink-0">
                 <span className="w-2.5 h-2.5 rounded-full bg-white/15" />
@@ -277,7 +266,7 @@ export default function LandingPage() {
             </div>
             <Image
               src="/assets/images/imagem-dashboard-lp.png"
-              alt="Dashboard do Axios"
+              alt="Axios dashboard"
               width={915}
               height={843}
               priority
@@ -288,24 +277,22 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Divisor ─────────────────────────────────────────────── */}
       <div className="border-t border-border" />
 
-      {/* ── Features — fundo cinza ──────────────────────────────── */}
       <section className="bg-surface-muted py-24 px-6 overflow-hidden">
         <div className="max-w-[1600px] mx-auto">
           <Reveal direction="up" className="mb-16">
             <div className="flex items-center gap-2 mb-5">
               <span className="w-1.5 h-1.5 rounded-full bg-brand shrink-0" />
               <span className="font-ui text-[13px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
-                Os módulos
+                The modules
               </span>
             </div>
             <h2 className="text-display-secondary text-ink max-w-[520px]">
-              Quatro módulos.<br />Um fluxo.
+              Four modules.<br />One flow.
             </h2>
             <p className="text-body text-ink-muted mt-4 max-w-[460px]">
-              Cada módulo cobre uma etapa do ciclo financeiro. Juntos, trocam planilhas, e-mails e conferência manual por um fluxo auditável de ponta a ponta.
+              Each module covers a stage of the financial cycle. Together, they replace spreadsheets, emails, and manual reconciliation with an auditable end-to-end flow.
             </p>
           </Reveal>
 
@@ -314,7 +301,6 @@ export default function LandingPage() {
               const left = i % 2 === 0;
               return (
                 <div key={f.title} className="lg:grid lg:grid-cols-2 lg:gap-14 items-center">
-                  {/* Card enxuto — ícone, número, título e resumo */}
                   <Reveal direction={left ? "left" : "right"} className={left ? "" : "lg:order-2"}>
                     <div className="group flex items-start gap-5 bg-white rounded-[24px] border border-border p-7 sm:p-8 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-brand/30 hover:shadow-[0_16px_40px_rgba(10,11,13,0.10)]">
                       <div className="shrink-0 w-12 h-12 rounded-[16px] bg-brand/[0.07] flex items-center justify-center text-brand transition-colors duration-300 group-hover:bg-brand group-hover:text-white">
@@ -328,12 +314,11 @@ export default function LandingPage() {
                           <span className="h-px w-6 bg-brand/30" />
                         </div>
                         <h3 className="text-card-title text-ink">{f.title}</h3>
-                        <p className="text-body-sm text-ink-muted">{f.resumo}</p>
+                        <p className="text-body-sm text-ink-muted">{f.summary}</p>
                       </div>
                     </div>
                   </Reveal>
 
-                  {/* Vantagens — preenchem a lacuna do lado oposto */}
                   <Reveal
                     direction={left ? "right" : "left"}
                     className={`mt-7 lg:mt-0 ${left ? "" : "lg:order-1"}`}
@@ -354,48 +339,45 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Bloco dark — Exportação ─────────────────────────────── */}
       <section className="bg-[#0a0b0d] py-24 px-6">
         <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row items-center gap-14">
 
-          {/* Texto */}
           <div className="flex-1 flex flex-col gap-6 lg:max-w-[480px]">
             <h2 className="text-display-secondary text-white">
-              Do Axios para o seu ERP em segundos.
+              From Axios to your ERP in seconds.
             </h2>
             <p className="text-body text-white/60">
-              Selecione os lotes aprovados, escolha o template do seu ERP e baixe o arquivo pronto. Sem reformatação, sem copiar e colar.
+              Select the approved batches, choose your ERP template, and download the ready file. No reformatting, no copy and paste.
             </p>
             <a href="#demo">
-              <Button variant="brand">Solicitar demonstração</Button>
+              <Button variant="brand">Request a demo</Button>
             </a>
           </div>
 
-          {/* Visual de exportação */}
           <div className="flex-1 w-full lg:max-w-[480px]">
             <div className="rounded-[20px] border border-white/[0.08] bg-[#111318] p-5">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-caption text-white/70">Fila de exportação</span>
-                <span className="text-small text-white/30">4 lotes selecionados</span>
+                <span className="text-caption text-white/70">Export queue</span>
+                <span className="text-small text-white/30">4 batches selected</span>
               </div>
               <div className="flex flex-col gap-2 mb-5">
                 {[
-                  { id: "#RDC-0041", nome: "Projeto Alpha", erp: "Sienge", valor: "R$ 12.400" },
-                  { id: "#RDC-0042", nome: "Equipe Comercial", erp: "Protheus", valor: "R$ 8.200" },
-                  { id: "#RCM-0018", nome: "Centro de Custo 07", erp: "Sienge", valor: "R$ 3.600" },
+                  { id: "#EXP-0041", name: "Project Alpha", erp: "Sienge", amount: "R$ 12.400" },
+                  { id: "#EXP-0042", name: "Sales Team", erp: "Protheus", amount: "R$ 8.200" },
+                  { id: "#REI-0018", name: "Cost Center 07", erp: "Sienge", amount: "R$ 3.600" },
                 ].map((l) => (
                   <div key={l.id} className="flex items-center gap-3 bg-white/[0.04] rounded-[10px] px-3.5 py-2.5">
                     <div className="w-1.5 h-1.5 rounded-full bg-brand shrink-0" />
                     <span className="text-small text-white/40 w-20 shrink-0">{l.id}</span>
-                    <span className="text-small text-white/70 flex-1">{l.nome}</span>
+                    <span className="text-small text-white/70 flex-1">{l.name}</span>
                     <span className="text-small text-white/40 w-16 text-right">{l.erp}</span>
-                    <span className="text-small text-white/80 w-20 text-right">{l.valor}</span>
+                    <span className="text-small text-white/80 w-20 text-right">{l.amount}</span>
                   </div>
                 ))}
               </div>
               <Button variant="brand" fullWidth>
                 <FileArrowDown size={16} weight="bold" className="inline mr-2" />
-                Exportar selecionados
+                Export selected
               </Button>
             </div>
           </div>
@@ -403,23 +385,21 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Lead Capture ────────────────────────────────────────── */}
       <section id="demo" className="bg-white py-24 px-6">
         <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row gap-16 lg:gap-24 items-start">
 
-          {/* Copy */}
           <div className="flex-1 flex flex-col gap-5 lg:max-w-[460px] lg:sticky lg:top-24">
             <h2 className="text-display-secondary text-ink">
-              Veja o Axios em ação.
+              See Axios in action.
             </h2>
             <p className="text-body text-ink-muted">
-              Preencha o formulário. Nossa equipe entrará em contato para mostrar como o Axios se encaixa na gestão da sua empresa.
+              Fill out the form. Our team will get in touch to show how Axios fits your company's management.
             </p>
             <ul className="flex flex-col gap-3 mt-2">
               {[
-                "Demonstração personalizada para a sua operação",
-                "Sem contratos de longo prazo",
-                "Onboarding guiado pela nossa equipe",
+                "A demo tailored to your operation",
+                "No long-term contracts",
+                "Onboarding guided by our team",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2.5 text-body-sm text-ink-muted">
                   <CheckCircle size={18} weight="fill" className="text-brand mt-0.5 shrink-0" />
@@ -429,46 +409,45 @@ export default function LandingPage() {
             </ul>
           </div>
 
-          {/* Formulário */}
           <div className="flex-1 w-full">
             {leadSent ? (
               <div className="flex flex-col items-center gap-5 py-16 text-center">
                 <div className="w-16 h-16 rounded-full bg-brand/[0.07] flex items-center justify-center text-brand">
                   <CheckCircle size={36} weight="bold" />
                 </div>
-                <h3 className="text-section-heading text-ink">Solicitação enviada!</h3>
-                <p className="text-body-sm text-ink-muted">Nossa equipe entrará em contato em breve.</p>
+                <h3 className="text-section-heading text-ink">Request sent!</h3>
+                <p className="text-body-sm text-ink-muted">Our team will get in touch soon.</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <InputPill
-                    label="Nome completo"
+                    label="Full name"
                     icon={<User size={17} weight="bold" />}
-                    placeholder="Seu nome"
-                    error={errors.nome?.message}
-                    {...register("nome")}
+                    placeholder="Your name"
+                    error={errors.name?.message}
+                    {...register("name")}
                   />
                   <InputPill
-                    label="E-mail corporativo"
+                    label="Work email"
                     icon={<Envelope size={17} weight="bold" />}
-                    placeholder="email@empresa.com.br"
+                    placeholder="email@company.com"
                     type="email"
                     error={errors.email?.message}
                     {...register("email")}
                   />
                   <InputPill
-                    label="Empresa"
+                    label="Company"
                     icon={<Buildings size={17} weight="bold" />}
-                    placeholder="Nome da empresa"
-                    error={errors.empresa?.message}
-                    {...register("empresa")}
+                    placeholder="Company name"
+                    error={errors.company?.message}
+                    {...register("company")}
                   />
                   <InputPill
-                    label="Volume de operações mensais"
-                    placeholder="Ex: 10 operações/mês"
-                    error={errors.volume_obras_mensais?.message}
-                    {...register("volume_obras_mensais")}
+                    label="Monthly operations volume"
+                    placeholder="e.g. 10 operations/month"
+                    error={errors.monthly_project_volume?.message}
+                    {...register("monthly_project_volume")}
                   />
                 </div>
 
@@ -483,7 +462,7 @@ export default function LandingPage() {
                     size="sm"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? "Enviando..." : "Solicitar demonstração"}
+                    {isSubmitting ? "Sending..." : "Request a demo"}
                   </Button>
                 </div>
               </form>
@@ -493,11 +472,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Footer ──────────────────────────────────────────────── */}
       <footer className="bg-[#0a0b0d] border-t border-white/[0.06] py-10 px-6">
         <div className="max-w-[1600px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <span className="font-ui text-[15px] font-semibold text-white/60 tracking-tight">Axios</span>
-          <p className="text-body-sm text-white/25">© 2025 Axios. Todos os direitos reservados.</p>
+          <p className="text-body-sm text-white/25">© 2025 Axios. All rights reserved.</p>
         </div>
       </footer>
 

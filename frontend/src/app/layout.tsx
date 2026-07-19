@@ -4,7 +4,7 @@ import "./globals.css";
 import "leaflet/dist/leaflet.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { ConfigProvider } from "@/contexts/ConfigContext";
+import { SettingsProvider } from "@/contexts/SettingContext";
 import Toaster from "@/ui/Toaster";
 
 const inter = Inter({
@@ -15,7 +15,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Axios",
-  description: "Axios — gestão financeira e prestação de contas",
+  description: "Axios — financial management and expense accountability",
 };
 
 export default function RootLayout({
@@ -24,13 +24,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} h-full`}>
+    <html lang="en" className={`${inter.variable} h-full`}>
       <body className="min-h-full flex flex-col bg-surface-white text-text-primary">
         <ThemeProvider>
           <AuthProvider>
-            <ConfigProvider>
+            <SettingsProvider>
               {children}
-            </ConfigProvider>
+            </SettingsProvider>
           </AuthProvider>
           <Toaster />
         </ThemeProvider>

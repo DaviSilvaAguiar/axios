@@ -5,71 +5,71 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Plus } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 import MobileScreen from "@/ui/MobileScreen";
-import LancamentoCard from "@/ui/LancamentoCard";
+import TransactionCard from "@/ui/TransactionCard";
 import Button from "@/ui/Button";
 import Loading from "@/ui/Loading";
 import FabActionSheet from "@/ui/FabActionSheet";
-import { listarLancamentosApi } from "@/features/prestador/prestador.api";
-import type { Lancamento, FiltroTipo } from "@/features/prestador/prestador.types";
+import { listSubmissionsApi } from "@/features/provider/provider.api";
+import type { Submission, SubmissionFilter } from "@/features/provider/provider.types";
 
-const CHIPS: { label: string; value: FiltroTipo }[] = [
-  { label: "Todos", value: "todos" },
-  { label: "Caixa", value: "rdc" },
-  { label: "Reembolso", value: "rcm" },
+const CHIPS: { label: string; value: SubmissionFilter }[] = [
+  { label: "All", value: "all" },
+  { label: "Report", value: "expense_report" },
+  { label: "Reimbursement", value: "reimbursement" },
 ];
 
-const EMPTY: Record<FiltroTipo, string> = {
-  todos: "Nenhum lançamento ainda.",
-  rdc: "Nenhum lançamento de Caixa ainda.",
-  rcm: "Nenhum reembolso ainda.",
+const EMPTY: Record<SubmissionFilter, string> = {
+  all: "No submissions yet.",
+  expense_report: "No expense report submissions yet.",
+  reimbursement: "No reimbursements yet.",
 };
 
 const PER_PAGE = 15;
 
-function parseFiltro(value: string | null): FiltroTipo {
-  if (value === "rdc" || value === "rcm") return value;
-  return "todos";
+function parseFilter(value: string | null): SubmissionFilter {
+  if (value === "expense_report" || value === "reimbursement") return value;
+  return "all";
 }
 
-export default function MeusLancamentosPage() {
+export default function MySubmissionsPage() {
   return (
     <Suspense fallback={<MobileScreen><Loading size="sm" /></MobileScreen>}>
-      <MeusLancamentosContent />
+      <MySubmissionsContent />
     </Suspense>
   );
 }
 
-function MeusLancamentosContent() {
+function MySubmissionsContent() {
   const params = useSearchParams();
   const router = useRouter();
-  const filtro = parseFiltro(params.get("tipo"));
+  const filter = parseFilter(params.get("type"));
 
-  const [items, setItems] = useState<Lancamento[]>([]);
+  const [items, setItems] = useState<Submission[]>([]);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  const carregar = useCallback(async (pagina: number, append: boolean) => {
+  const load = useCallback(async (pageArg: number, append: boolean) => {
     if (append) setLoadingMore(true); else setLoading(true);
     try {
-      const res = await listarLancamentosApi(filtro, pagina, PER_PAGE);
+      const res = await listSubmissionsApi(filter, pageArg, PER_PAGE);
       setItems((prev) => (append ? [...prev, ...res.data] : res.data));
-      setPage(pagina);
+      setPage(pageArg);
       setLastPage(res.meta.last_page);
     } finally {
       if (append) setLoadingMore(false); else setLoading(false);
     }
-  }, [filtro]);
+  }, [filter]);
 
   useEffect(() => {
-    void carregar(1, false);
-  }, [carregar]);
+    void load(1, false);
+  }, [load]);
 
-  function trocarFiltro(novo: FiltroTipo): void {
-    const qs = novo === "todos" ? "" : `?tipo=${novo}`;
-    router.replace(`/meus-lancamentos${qs}`);
+  function changeFilter(next: SubmissionFilter): void {
+    const qs = next === "all" ? "" : `?type=${next}`;
+    router.replace(`/my-submissions${qs}`);
   }
 
   const hasMore = page < lastPage;
@@ -81,7 +81,7 @@ function MeusLancamentosContent() {
           className="text-app-text font-semibold tracking-tight"
           style={{ fontSize: "28px", lineHeight: "1.1" }}
         >
-          Meus lançamentos
+          My submissions
         </h1>
         <motion.button
           onClick={() => setSheetOpen(true)}
@@ -98,17 +98,17 @@ function MeusLancamentosContent() {
           >
             <Plus size={16} weight="bold" />
           </motion.span>
-          Novo lançamento
+          New submission
         </motion.button>
       </div>
 
       <div className="flex gap-2 mb-4">
         {CHIPS.map((c) => {
-          const active = filtro === c.value;
+          const active = filter === c.value;
           return (
             <button
               key={c.value}
-              onClick={() => trocarFiltro(c.value)}
+              onClick={() => changeFilter(c.value)}
               className={`px-3.5 py-2 rounded-full text-caption font-medium min-h-11 ${
                 active
                   ? "bg-app-text text-app-surface"
@@ -125,21 +125,21 @@ function MeusLancamentosContent() {
         <Loading size="sm" />
       ) : items.length === 0 ? (
         <p className="text-body-sm text-app-text-muted py-10 text-center">
-          {EMPTY[filtro]}
+          {EMPTY[filter]}
         </p>
       ) : (
         <div className="flex flex-col gap-3">
           {items.map((l) => (
-            <LancamentoCard key={`${l.tipo}-${l.id}`} lancamento={l} />
+            <TransactionCard key={`${l.type}-${l.id}`} submission={l} />
           ))}
           {hasMore && (
             <Button
               variant="outlined"
               fullWidth
               disabled={loadingMore}
-              onClick={() => { void carregar(page + 1, true); }}
+              onClick={() => { void load(page + 1, true); }}
             >
-              {loadingMore ? "Carregando…" : "Carregar mais"}
+              {loadingMore ? "Loading…" : "Load more"}
             </Button>
           )}
         </div>

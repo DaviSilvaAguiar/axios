@@ -4,43 +4,43 @@ import { Tray } from "@phosphor-icons/react";
 import EmptyState from "@/ui/EmptyState";
 import DataTable, { type DataTableColumn } from "@/ui/DataTable";
 import StatusTag from "./StatusTag";
-import { type Rdc } from "../rdc.types";
+import { type ExpenseReport } from "../expense-report.types";
 import { formatarData } from "@/lib/formatters";
 
-interface ListaViewProps {
-  rdcs: Rdc[];
-  onSelecionarRdc: (rdc: Rdc) => void;
+interface ListViewProps {
+  rdcs: ExpenseReport[];
+  onSelectExpenseReport: (expenseReport: ExpenseReport) => void;
 }
 
-const columns: DataTableColumn<Rdc>[] = [
+const columns: DataTableColumn<ExpenseReport>[] = [
   {
     key: "id",
     header: "#",
     render: (r) => <span className="text-small text-app-text-subtle">{r.id}</span>,
   },
   {
-    key: "descricao",
-    header: "Descrição",
+    key: "description",
+    header: "Description",
     render: (r) => (
-      <span className="text-app-text font-medium max-w-xs truncate block">{r.descricao}</span>
+      <span className="text-app-text font-medium max-w-xs truncate block">{r.description}</span>
     ),
   },
   {
-    key: "requisitante",
-    header: "Requisitante",
-    render: (r) => <span className="text-app-text">{r.descricao_requisitante}</span>,
+    key: "requester",
+    header: "Requester",
+    render: (r) => <span className="text-app-text">{r.requester_description}</span>,
   },
   {
-    key: "setor",
-    header: "Setor",
-    render: (r) => <span className="text-app-text-muted">{r.setor_requisitante}</span>,
+    key: "department",
+    header: "Department",
+    render: (r) => <span className="text-app-text-muted">{r.requester_department}</span>,
   },
   {
-    key: "necessidade",
-    header: "Necessidade",
+    key: "needed",
+    header: "Needed",
     render: (r) => (
       <span className="text-small text-app-text-muted whitespace-nowrap">
-        {formatarData(r.data_inicio_periodo ?? r.data_necessidade)}
+        {formatarData(r.period_start_date ?? r.needed_at)}
       </span>
     ),
   },
@@ -51,7 +51,7 @@ const columns: DataTableColumn<Rdc>[] = [
   },
   {
     key: "created_at",
-    header: "Criado em",
+    header: "Created",
     render: (r) => (
       <span className="text-small text-app-text-muted whitespace-nowrap">
         {formatarData(r.created_at)}
@@ -60,13 +60,13 @@ const columns: DataTableColumn<Rdc>[] = [
   },
 ];
 
-export default function ListaView({ rdcs, onSelecionarRdc }: ListaViewProps) {
+export default function ListView({ rdcs, onSelectExpenseReport }: ListViewProps) {
   if (rdcs.length === 0) {
     return (
       <EmptyState
         icon={Tray}
-        title="Nenhum RDC encontrado"
-        description="Crie um novo RDC ou ajuste os filtros."
+        title="No reports found"
+        description="Create a new report or adjust the filters."
       />
     );
   }
@@ -75,7 +75,7 @@ export default function ListaView({ rdcs, onSelecionarRdc }: ListaViewProps) {
     <DataTable
       columns={columns}
       rows={rdcs}
-      onRowClick={onSelecionarRdc}
+      onRowClick={onSelectExpenseReport}
       keyExtractor={(r) => r.id}
     />
   );

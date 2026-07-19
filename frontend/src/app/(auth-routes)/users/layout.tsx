@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
-import ModuloGuard from "@/features/modulo/components/ModuloGuard";
+import ModuleGuard from "@/features/module/components/ModuleGuard";
 
 export default function Layout({ children }: { children: ReactNode }) {
-  return <ModuloGuard slug="usuarios">{children}</ModuloGuard>;
+  return <ModuleGuard slug="users">{children}</ModuleGuard>;
 }

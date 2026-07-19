@@ -1,42 +1,42 @@
 import { api } from "@/lib/api";
 import { buildPageQuery, type Paginated, PAGE_SIZE } from "@/lib/pagination";
-import { mapListarUsuarios, mapUsuarioResponse } from "./usuario.mapper";
+import { mapListarUsers, mapUserResponse } from "./user.mapper";
 import type {
-  CriarUsuarioFormData,
-  EditarUsuarioFormData,
-  Usuario,
-  UsuarioResponse,
-} from "./usuario.types";
+  CriarUserFormData,
+  EditarUserFormData,
+  User,
+  UserResponse,
+} from "./user.types";
 
-export async function listarUsuariosApi(
+export async function listUsersApi(
   page: number = 1,
   perPage: number = PAGE_SIZE
-): Promise<Paginated<Usuario>> {
-  const raw = await api.get<unknown>(`/v1/usuarios${buildPageQuery(page, perPage)}`);
-  return mapListarUsuarios(raw);
+): Promise<Paginated<User>> {
+  const raw = await api.get<unknown>(`/v1/users${buildPageQuery(page, perPage)}`);
+  return mapListarUsers(raw);
 }
 
-export async function buscarUsuarioApi(id: number): Promise<Usuario> {
-  const raw = await api.get<unknown>(`/v1/usuarios/${id}`);
-  return mapUsuarioResponse(raw).usuario;
+export async function getUserApi(id: number): Promise<User> {
+  const raw = await api.get<unknown>(`/v1/users/${id}`);
+  return mapUserResponse(raw).user;
 }
 
-export async function criarUsuarioApi(dados: CriarUsuarioFormData): Promise<UsuarioResponse> {
-  const raw = await api.post<unknown>("/v1/usuarios", dados);
-  return mapUsuarioResponse(raw);
+export async function createUserApi(data: CriarUserFormData): Promise<UserResponse> {
+  const raw = await api.post<unknown>("/v1/users", data);
+  return mapUserResponse(raw);
 }
 
-export async function atualizarUsuarioApi(
+export async function updateUserApi(
   id: number,
-  dados: EditarUsuarioFormData
-): Promise<UsuarioResponse> {
-  const payload: Partial<EditarUsuarioFormData> = { ...dados };
-  if (!payload.senha) delete payload.senha;
+  data: EditarUserFormData
+): Promise<UserResponse> {
+  const payload: Partial<EditarUserFormData> = { ...data };
+  if (!payload.password) delete payload.password;
 
-  const raw = await api.put<unknown>(`/v1/usuarios/${id}`, payload);
-  return mapUsuarioResponse(raw);
+  const raw = await api.put<unknown>(`/v1/users/${id}`, payload);
+  return mapUserResponse(raw);
 }
 
-export async function deletarUsuarioApi(id: number): Promise<void> {
-  await api.delete(`/v1/usuarios/${id}`);
+export async function deleteUserApi(id: number): Promise<void> {
+  await api.delete(`/v1/users/${id}`);
 }

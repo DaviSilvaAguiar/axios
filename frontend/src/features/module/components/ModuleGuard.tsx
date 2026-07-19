@@ -3,15 +3,15 @@
 import { type ReactNode } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Loading from "@/ui/Loading";
-import SemAcesso from "@/ui/SemAcesso";
+import NoAccess from "@/ui/NoAccess";
 
-interface ModuloGuardProps {
+interface ModuleGuardProps {
   slug: string;
   children: ReactNode;
 }
 
-export default function ModuloGuard({ slug, children }: ModuloGuardProps) {
-  const { isLoading, isAuthenticated, temModulo } = useAuth();
+export default function ModuleGuard({ slug, children }: ModuleGuardProps) {
+  const { isLoading, isAuthenticated, hasModule } = useAuth();
 
   if (isLoading) {
     return (
@@ -25,8 +25,8 @@ export default function ModuloGuard({ slug, children }: ModuloGuardProps) {
     return null;
   }
 
-  if (!temModulo(slug)) {
-    return <SemAcesso />;
+  if (!hasModule(slug)) {
+    return <NoAccess />;
   }
 
   return <>{children}</>;

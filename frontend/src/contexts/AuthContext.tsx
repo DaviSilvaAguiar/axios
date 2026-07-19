@@ -4,20 +4,20 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { useRouter } from 'next/navigation';
 import { cookieClient } from '@/lib/cookies';
 import { loginApi, logoutApi, getMeApi } from '@/features/auth/auth.api';
-import type { Usuario, TenantInfo } from '@/features/auth/auth.types';
+import type { User, TenantInfo } from '@/features/auth/auth.types';
 
 interface AuthState {
-  usuario: Usuario | null;
+  user: User | null;
   tenant: TenantInfo | null;
-  modulosHabilitados: string[];
+  enabledModules: string[];
   isAuthenticated: boolean;
   isLoading: boolean;
 }
 
 interface AuthContextValue extends AuthState {
-  login: (tenant: string, email: string, senha: string, rememberMe: boolean) => Promise<void>;
+  login: (tenant: string, email: string, password: string, rememberMe: boolean) => Promise<void>;
   logout: () => Promise<void>;
-  temModulo: (slug: string) => boolean;
+  hasModule: (slug: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -25,9 +25,9 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [state, setState] = useState<AuthState>({
-    usuario: null,
+    user: null,
     tenant: null,
-    modulosHabilitados: [],
+    enabledModules: [],
     isAuthenticated: false,
     isLoading: true,
   });
@@ -41,28 +41,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     getMeApi()
-      .then(({ usuario, tenant, modulos }) => {
-        setState({ usuario, tenant, modulosHabilitados: modulos, isAuthenticated: true, isLoading: false });
+      .then(({ user, tenant, modules }) => {
+        setState({ user: user, tenant, enabledModules: modules, isAuthenticated: true, isLoading: false });
       })
       .catch(() => {
         cookieClient.clear();
-        setState({ usuario: null, tenant: null, modulosHabilitados: [], isAuthenticated: false, isLoading: false });
+        setState({ user: null, tenant: null, enabledModules: [], isAuthenticated: false, isLoading: false });
       });
   }, []);
 
-  async function login(tenantSlug: string, email: string, senha: string, rememberMe: boolean): Promise<void> {
+  async function login(tenantSlug: string, email: string, password: string, rememberMe: boolean): Promise<void> {
     cookieClient.setTenant(tenantSlug);
 
-    const { token, expires_at, usuario, tenant } = await loginApi(tenantSlug, email, senha, rememberMe);
+    const { token, expires_at, user, tenant } = await loginApi(tenantSlug, email, password, rememberMe);
 
-    const diasParaExpirar = Math.ceil(
+    const daysToExpire = Math.ceil(
       (new Date(expires_at).getTime() - Date.now()) / 86_400_000
     );
-    cookieClient.setToken(token, diasParaExpirar);
+    cookieClient.setToken(token, daysToExpire);
 
-    const { modulos } = await getMeApi();
+    const { modules } = await getMeApi();
 
-    setState({ usuario, tenant, modulosHabilitados: modulos, isAuthenticated: true, isLoading: false });
+    setState({ user: user, tenant, enabledModules: modules, isAuthenticated: true, isLoading: false });
   }
 
   async function logout(): Promise<void> {
@@ -70,17 +70,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await logoutApi();
     } finally {
       cookieClient.clear();
-      setState({ usuario: null, tenant: null, modulosHabilitados: [], isAuthenticated: false, isLoading: false });
+      setState({ user: null, tenant: null, enabledModules: [], isAuthenticated: false, isLoading: false });
       router.push('/login');
     }
   }
 
-  function temModulo(slug: string): boolean {
-    return state.modulosHabilitados.includes(slug);
+  function hasModule(slug: string): boolean {
+    return state.enabledModules.includes(slug);
   }
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, temModulo }}>
+    <AuthContext.Provider value={{ ...state, login, logout, hasModule }}>
       {children}
     </AuthContext.Provider>
   );
@@ -88,6 +88,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth deve ser usado dentro de AuthProvider');
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 }

@@ -19,24 +19,24 @@ import {
   isTipoChavePix,
 } from "@/lib/pix";
 import {
-  storeCaixaContaFormSchema,
-  CAIXA_CONTA_TIPO_LABEL,
-  type StoreCaixaContaFormData,
-} from "../caixa-conta.types";
-import { listarUsuariosApi } from "@/features/usuario/usuario.api";
-import { listarCentrosDeCustoApi } from "@/features/centro-de-custo/centro-de-custo.api";
-import type { Usuario } from "@/features/auth/auth.types";
-import type { CentroDeCusto } from "@/features/centro-de-custo/centro-de-custo.types";
+  storeFundFormSchema,
+  FUND_TIPO_LABEL,
+  type StoreFundFormData,
+} from "../fund.types";
+import { listUsersApi } from "@/features/user/user.api";
+import { listCentrosDeCustoApi } from "@/features/cost-center/cost-center.api";
+import type { User } from "@/features/auth/auth.types";
+import type { CostCenter } from "@/features/cost-center/cost-center.types";
 
 interface Props {
-  onSalvar: (dados: StoreCaixaContaFormData) => Promise<void>;
-  onFechar: () => void;
+  onSave: (data: StoreFundFormData) => Promise<void>;
+  onClose: () => void;
 }
 
-export default function FormCaixaConta({ onSalvar, onFechar }: Props) {
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [centros, setCentros] = useState<CentroDeCusto[]>([]);
-  const [tipoChavePix, setTipoChavePix] = useState<TipoChavePix | null>(null);
+export default function FundForm({ onSave, onClose }: Props) {
+  const [users, setUsers] = useState<User[]>([]);
+  const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
+  const [pixKeyType, setPixKeyType] = useState<TipoChavePix | null>(null);
 
   const {
     control,
@@ -47,54 +47,54 @@ export default function FormCaixaConta({ onSalvar, onFechar }: Props) {
     setError,
     clearErrors,
     formState: { errors, isSubmitting },
-  } = useForm<StoreCaixaContaFormData>({
-    resolver: zodResolver(storeCaixaContaFormSchema),
+  } = useForm<StoreFundFormData>({
+    resolver: zodResolver(storeFundFormSchema),
     defaultValues: {
-      id_usuario: "",
-      id_centro_custo: "",
-      descricao: "",
-      tipo: "1",
-      banco: "",
-      agencia: "",
-      numero_banco: "",
-      chave_pix: "",
+      user_id: "",
+      cost_center_id: "",
+      description: "",
+      type: "1",
+      bank: "",
+      branch: "",
+      account_number: "",
+      pix_key: "",
     },
   });
 
   useEffect(() => {
-    listarUsuariosApi(1, 200)
-      .then((r) => setUsuarios(r.data.filter((u) => u.ativo)))
-      .catch(() => toast.error("Não foi possível carregar usuários."));
-    listarCentrosDeCustoApi(1, 200)
-      .then((r) => setCentros(r.data.filter((c) => c.ativo)))
-      .catch(() => toast.error("Não foi possível carregar centros de custo."));
+    listUsersApi(1, 200)
+      .then((r) => setUsers(r.data.filter((u) => u.active)))
+      .catch(() => toast.error("Could not load users."));
+    listCentrosDeCustoApi(1, 200)
+      .then((r) => setCostCenters(r.data.filter((c) => c.active)))
+      .catch(() => toast.error("Could not load cost centers."));
   }, []);
 
-  const idUsuario = watch("id_usuario");
-  const idCentro = watch("id_centro_custo");
-  const tipo = watch("tipo");
-  const descricao = watch("descricao");
+  const userId = watch("user_id");
+  const costCenterId = watch("cost_center_id");
+  const type = watch("type");
+  const description = watch("description");
 
-  async function onSubmit(dados: StoreCaixaContaFormData) {
-    if (tipoChavePix === "email" && dados.chave_pix && !EMAIL_REGEX.test(dados.chave_pix ?? "")) {
-      setError("chave_pix", { message: "Informe um e-mail válido" });
+  async function onSubmit(data: StoreFundFormData) {
+    if (pixKeyType === "email" && data.pix_key && !EMAIL_REGEX.test(data.pix_key ?? "")) {
+      setError("pix_key", { message: "Enter a valid email" });
       return;
     }
     try {
-      await onSalvar(dados);
+      await onSave(data);
     } catch {
-      toast.error("Não foi possível criar o caixa.");
+      toast.error("Could not create the fund.");
     }
   }
 
   return (
-    <Modal open onClose={onFechar}>
+    <Modal open onClose={onClose}>
       <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-5">
         <div className="mb-5 flex items-start justify-between">
-          <h1 className="text-feature-title text-app-text">Novo Caixa</h1>
+          <h1 className="text-feature-title text-app-text">New Fund</h1>
           <button
             type="button"
-            onClick={onFechar}
+            onClick={onClose}
             className="rounded-full p-2 text-app-text-muted hover:bg-app-hover"
           >
             <X size={20} />
@@ -103,144 +103,143 @@ export default function FormCaixaConta({ onSalvar, onFechar }: Props) {
 
         <div className="space-y-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-caption font-semibold text-app-text-muted">Responsável</label>
+            <label className="text-caption font-semibold text-app-text-muted">In Charge</label>
             <Combobox
-              options={usuarios.map((u) => ({ value: String(u.id), label: u.nome }))}
-              value={idUsuario}
-              onChange={(v) => setValue("id_usuario", v, { shouldValidate: true })}
-              placeholder="Selecione o responsável"
+              options={users.map((u) => ({ value: String(u.id), label: u.name }))}
+              value={userId}
+              onChange={(v) => setValue("user_id", v, { shouldValidate: true })}
+              placeholder="Select the person in charge"
             />
-            {errors.id_usuario && (
-              <p className="text-small text-red-600">{errors.id_usuario.message}</p>
+            {errors.user_id && (
+              <p className="text-small text-red-600">{errors.user_id.message}</p>
             )}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-caption font-semibold text-app-text-muted">Centro de Custo</label>
+            <label className="text-caption font-semibold text-app-text-muted">Cost Center</label>
             <Combobox
-              options={centros.map((c) => ({ value: String(c.id), label: c.descricao }))}
-              value={idCentro}
-              onChange={(v) => setValue("id_centro_custo", v, { shouldValidate: true })}
-              placeholder="Selecione o centro de custo"
+              options={costCenters.map((c) => ({ value: String(c.id), label: c.description }))}
+              value={costCenterId}
+              onChange={(v) => setValue("cost_center_id", v, { shouldValidate: true })}
+              placeholder="Select the cost center"
             />
-            {errors.id_centro_custo && (
-              <p className="text-small text-red-600">{errors.id_centro_custo.message}</p>
+            {errors.cost_center_id && (
+              <p className="text-small text-red-600">{errors.cost_center_id.message}</p>
             )}
           </div>
 
           <div className="flex flex-col gap-1.5">
             <Input
-              label="Descrição"
-              placeholder='Ex.: "Caixa Obra DPW - Nov/2026"'
+              label="Description"
+              placeholder='e.g. "DPW Site Fund - Nov/2026"'
               maxLength={100}
-              error={errors.descricao?.message}
-              {...register("descricao")}
+              error={errors.description?.message}
+              {...register("description")}
             />
-            <p className={`text-small text-right ${(descricao?.length ?? 0) >= 100 ? "text-red-500" : "text-app-text-muted"}`}>
-              {descricao?.length ?? 0}/100
+            <p className={`text-small text-right ${(description?.length ?? 0) >= 100 ? "text-red-500" : "text-app-text-muted"}`}>
+              {description?.length ?? 0}/100
             </p>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-caption font-semibold text-app-text-muted">Tipo</label>
+            <label className="text-caption font-semibold text-app-text-muted">Type</label>
             <Combobox
-              options={Object.entries(CAIXA_CONTA_TIPO_LABEL).map(([value, label]) => ({
+              options={Object.entries(FUND_TIPO_LABEL).map(([value, label]) => ({
                 value,
                 label,
               }))}
-              value={tipo}
-              onChange={(v) => setValue("tipo", v, { shouldValidate: true })}
-              placeholder="Selecione o tipo"
+              value={type}
+              onChange={(v) => setValue("type", v, { shouldValidate: true })}
+              placeholder="Select the type"
             />
-            {errors.tipo && <p className="text-small text-red-600">{errors.tipo.message}</p>}
+            {errors.type && <p className="text-small text-red-600">{errors.type.message}</p>}
           </div>
 
           <details className="rounded-2xl border border-app-border bg-app-surface-raised/40 p-4">
             <summary className="cursor-pointer text-caption font-semibold text-app-text-muted">
-              Dados bancários (opcional)
+              Bank details (optional)
             </summary>
             <div className="mt-3 space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Controller
-                  name="banco"
+                  name="bank"
                   control={control}
                   render={({ field }) => (
                     <Input
-                      label="Banco"
-                      placeholder="Ex: 341"
+                      label="Bank"
+                      placeholder="e.g. 341"
                       value={field.value ?? ""}
                       onChange={(e) => field.onChange(maskBanco(e.target.value))}
                       onBlur={field.onBlur}
-                      error={errors.banco?.message}
+                      error={errors.bank?.message}
                     />
                   )}
                 />
                 <Controller
-                  name="agencia"
+                  name="branch"
                   control={control}
                   render={({ field }) => (
                     <Input
-                      label="Agência"
-                      placeholder="Ex: 0001-0"
+                      label="Branch"
+                      placeholder="e.g. 0001-0"
                       value={field.value ?? ""}
                       onChange={(e) => field.onChange(maskAgencia(e.target.value))}
                       onBlur={field.onBlur}
-                      error={errors.agencia?.message}
+                      error={errors.branch?.message}
                     />
                   )}
                 />
                 <Controller
-                  name="numero_banco"
+                  name="account_number"
                   control={control}
                   render={({ field }) => (
                     <Input
-                      label="Conta"
-                      placeholder="Ex: 12345-6"
+                      label="Account"
+                      placeholder="e.g. 12345-6"
                       value={field.value ?? ""}
                       onChange={(e) => field.onChange(maskConta(e.target.value))}
                       onBlur={field.onBlur}
-                      error={errors.numero_banco?.message}
+                      error={errors.account_number?.message}
                     />
                   )}
                 />
               </div>
 
-              {/* Chave PIX — tipo + valor */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-caption font-semibold text-app-text-muted">Chave Pix</label>
+                <label className="text-caption font-semibold text-app-text-muted">Pix Key</label>
                 <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] gap-2">
                   <Combobox
                     options={TIPO_CHAVE_PIX_OPTIONS}
-                    value={tipoChavePix ?? ""}
+                    value={pixKeyType ?? ""}
                     onChange={(v) => {
-                      setTipoChavePix(isTipoChavePix(v) ? v : null);
-                      setValue("chave_pix", "", { shouldValidate: false });
-                      clearErrors("chave_pix");
+                      setPixKeyType(isTipoChavePix(v) ? v : null);
+                      setValue("pix_key", "", { shouldValidate: false });
+                      clearErrors("pix_key");
                     }}
-                    placeholder="Selecione o tipo"
+                    placeholder="Select the type"
                   />
                   <Controller
-                    name="chave_pix"
+                    name="pix_key"
                     control={control}
                     render={({ field }) => (
                       <div className="relative flex-1">
                         <input
                           className={`h-10 w-full rounded-xl px-3 text-body-sm border text-app-text placeholder:text-app-text-subtle outline-none transition-colors duration-200 ${
-                            tipoChavePix
+                            pixKeyType
                               ? "bg-app-surface border-app-border focus:border-brand"
                               : "bg-app-surface/50 border-app-border cursor-not-allowed text-app-text-muted"
                           } ${field.value ? "pr-8" : ""}`}
-                          placeholder={tipoChavePix ? TIPO_CHAVE_PIX_PLACEHOLDER[tipoChavePix] : "Selecione o tipo primeiro"}
-                          disabled={!tipoChavePix}
+                          placeholder={pixKeyType ? TIPO_CHAVE_PIX_PLACEHOLDER[pixKeyType] : "Select the type first"}
+                          disabled={!pixKeyType}
                           value={field.value ?? ""}
-                          onChange={(e) => tipoChavePix && field.onChange(aplicarMascaraChavePix(e.target.value, tipoChavePix))}
+                          onChange={(e) => pixKeyType && field.onChange(aplicarMascaraChavePix(e.target.value, pixKeyType))}
                           onBlur={() => {
                             field.onBlur();
-                            if (tipoChavePix === "email" && field.value) {
+                            if (pixKeyType === "email" && field.value) {
                               if (!EMAIL_REGEX.test(field.value)) {
-                                setError("chave_pix", { message: "Informe um e-mail válido" });
+                                setError("pix_key", { message: "Enter a valid email" });
                               } else {
-                                clearErrors("chave_pix");
+                                clearErrors("pix_key");
                               }
                             }
                           }}
@@ -250,8 +249,8 @@ export default function FormCaixaConta({ onSalvar, onFechar }: Props) {
                             type="button"
                             onClick={() => {
                               field.onChange("");
-                              setTipoChavePix(null);
-                              clearErrors("chave_pix");
+                              setPixKeyType(null);
+                              clearErrors("pix_key");
                             }}
                             className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-app-text-muted hover:bg-app-hover hover:text-app-text"
                           >
@@ -262,8 +261,8 @@ export default function FormCaixaConta({ onSalvar, onFechar }: Props) {
                     )}
                   />
                 </div>
-                {errors.chave_pix && (
-                  <p className="text-small text-red-500">{errors.chave_pix.message}</p>
+                {errors.pix_key && (
+                  <p className="text-small text-red-500">{errors.pix_key.message}</p>
                 )}
               </div>
             </div>
@@ -271,11 +270,11 @@ export default function FormCaixaConta({ onSalvar, onFechar }: Props) {
         </div>
 
         <div className="mt-6 flex gap-3">
-          <Button type="button" variant="light" fullWidth onClick={onFechar}>
-            Cancelar
+          <Button type="button" variant="light" fullWidth onClick={onClose}>
+            Cancel
           </Button>
           <Button type="submit" variant="dark" fullWidth disabled={isSubmitting}>
-            {isSubmitting ? "Salvando…" : "Criar Caixa"}
+            {isSubmitting ? "Saving…" : "Create Fund"}
           </Button>
         </div>
       </form>

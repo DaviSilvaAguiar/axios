@@ -43,10 +43,10 @@ async function apiFetch<T>(path: string, options: ApiOptions = {}): Promise<T> {
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Erro inesperado.' }));
+    const error = await response.json().catch(() => ({ message: 'Unexpected error.' }));
     const body = error as { message?: string; errors?: Record<string, string[]> };
     const firstError = body.errors ? Object.values(body.errors)[0]?.[0] : undefined;
-    throw new Error(firstError ?? body.message ?? 'Erro inesperado.');
+    throw new Error(firstError ?? body.message ?? 'Unexpected error.');
   }
 
   if (response.status === 204 || response.headers.get('content-length') === '0') {
@@ -66,10 +66,10 @@ async function apiFetchUpload<T>(path: string, body: FormData): Promise<T> {
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Erro inesperado.' }));
+    const error = await response.json().catch(() => ({ message: 'Unexpected error.' }));
     const body = error as { message?: string; errors?: Record<string, string[]> };
     const firstError = body.errors ? Object.values(body.errors)[0]?.[0] : undefined;
-    throw new Error(firstError ?? body.message ?? 'Erro inesperado.');
+    throw new Error(firstError ?? body.message ?? 'Unexpected error.');
   }
 
   return response.json() as Promise<T>;
@@ -82,7 +82,7 @@ async function apiFetchBlob(path: string): Promise<Blob> {
     headers: { Accept: 'application/octet-stream', ...auth },
   });
 
-  if (!response.ok) throw new Error('Falha ao baixar arquivo.');
+  if (!response.ok) throw new Error('Failed to download file.');
   return response.blob();
 }
 

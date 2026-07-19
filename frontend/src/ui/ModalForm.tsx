@@ -18,7 +18,7 @@ export default function ModalForm({
   onCancelar,
   onSubmit,
   submitting = false,
-  submitLabel = "Salvar",
+  submitLabel = "Save",
   children,
 }: Props) {
   const formId = useId();
@@ -31,7 +31,7 @@ export default function ModalForm({
           type="button"
           onClick={onCancelar}
           className="text-app-text-muted hover:text-app-text transition-colors cursor-pointer"
-          aria-label="Fechar"
+          aria-label="Close"
         >
           <X size={20} />
         </button>
@@ -53,7 +53,7 @@ export default function ModalForm({
           onClick={onCancelar}
           className="flex-1 md:flex-initial"
         >
-          Cancelar
+          Cancel
         </Button>
         <Button
           type="submit"
@@ -63,7 +63,7 @@ export default function ModalForm({
           disabled={submitting}
           className="flex-1 md:flex-initial"
         >
-          {submitting ? "Salvando…" : submitLabel}
+          {submitting ? "Saving…" : submitLabel}
         </Button>
       </div>
     </div>

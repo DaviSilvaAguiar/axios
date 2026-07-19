@@ -1,13 +1,13 @@
 import { api } from "@/lib/api";
-import { mapConfig, mapListarConfigs } from "./config.mapper";
-import type { Config, ListarConfigsResponse } from "./config.types";
+import { mapConfig, mapListarSettings } from "./settings.mapper";
+import type { Config, ListSettingsResponse } from "./settings.types";
 
-export async function listarConfigsApi(): Promise<ListarConfigsResponse> {
-  const raw = await api.get<unknown>("/v1/configs");
-  return mapListarConfigs(raw);
+export async function listSettingsApi(): Promise<ListSettingsResponse> {
+  const raw = await api.get<unknown>("/v1/settings");
+  return mapListarSettings(raw);
 }
 
-export async function atualizarConfigApi(id: number, valor: number): Promise<Config> {
-  const raw = await api.patch<unknown>(`/v1/configs/${id}`, { valor });
+export async function updateConfigApi(id: number, value: number): Promise<Config> {
+  const raw = await api.patch<unknown>(`/v1/settings/${id}`, { value });
   return mapConfig(raw);
 }

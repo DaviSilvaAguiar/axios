@@ -1,20 +1,20 @@
 import {
-  listarIntegracoesResponseSchema,
-  salvarChaveResponseSchema,
-  enviarIntegracaoResponseSchema,
+  listIntegracoesResponseSchema,
+  saveKeyResponseSchema,
+  sendIntegrationResponseSchema,
   type ListarIntegracoesResponse,
-  type SalvarChaveResponse,
-  type EnviarIntegracaoResponse,
-} from "./integracao.types";
+  type SaveKeyResponse,
+  type SendIntegrationResponse,
+} from "./integration.types";
 
 export function mapListarIntegracoes(raw: unknown): ListarIntegracoesResponse {
-  return listarIntegracoesResponseSchema.parse(raw);
+  return listIntegracoesResponseSchema.parse(raw);
 }
 
-export function mapSalvarChave(raw: unknown): SalvarChaveResponse {
-  return salvarChaveResponseSchema.parse(raw);
+export function mapSaveKey(raw: unknown): SaveKeyResponse {
+  return saveKeyResponseSchema.parse(raw);
 }
 
-export function mapEnviarIntegracao(raw: unknown): EnviarIntegracaoResponse {
-  return enviarIntegracaoResponseSchema.parse(raw);
+export function mapSendIntegration(raw: unknown): SendIntegrationResponse {
+  return sendIntegrationResponseSchema.parse(raw);
 }

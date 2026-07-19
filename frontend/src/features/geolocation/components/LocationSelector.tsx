@@ -7,10 +7,10 @@ import Modal from "@/ui/Modal";
 import Button from "@/ui/Button";
 import Input from "@/ui/Input";
 import { toast } from "@/lib/toast";
-import { buscarEnderecosApi, reverseGeocodeApi } from "../geolocalizacao.api";
-import type { Localizacao, NominatimResult } from "../geolocalizacao.types";
+import { getEnderecosApi, reverseGeocodeApi } from "../geolocation.api";
+import type { Localizacao, NominatimResult } from "../geolocation.types";
 
-const MapaInterativo = dynamic(() => import("./MapaInterativo"), {
+const InteractiveMap = dynamic(() => import("./InteractiveMap"), {
   ssr: false,
   loading: () => (
     <div className="h-full w-full flex items-center justify-center bg-app-surface-raised text-app-text-muted">
@@ -22,100 +22,100 @@ const MapaInterativo = dynamic(() => import("./MapaInterativo"), {
 interface Props {
   open: boolean;
   onClose: () => void;
-  onConfirmar: (loc: Localizacao) => void;
-  valorInicial?: Localizacao | null;
+  onConfirm: (loc: Localizacao) => void;
+  initialValue?: Localizacao | null;
 }
 
-export default function SeletorLocalizacao({ open, onClose, onConfirmar, valorInicial }: Props) {
+export default function LocationSelector({ open, onClose, onConfirm, initialValue }: Props) {
   const [latitude,  setLatitude]  = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
-  const [endereco,  setEndereco]  = useState<string>("");
-  const [busca, setBusca] = useState("");
-  const [buscando, setBuscando] = useState(false);
-  const [resultados, setResultados] = useState<NominatimResult[]>([]);
-  const [capturando, setCapturando] = useState(false);
+  const [address,   setAddress]   = useState<string>("");
+  const [search, setSearch] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [results, setResults] = useState<NominatimResult[]>([]);
+  const [capturing, setCapturing] = useState(false);
 
   useEffect(() => {
     if (!open) return;
-    setLatitude(valorInicial?.latitude ?? null);
-    setLongitude(valorInicial?.longitude ?? null);
-    setEndereco(valorInicial?.endereco ?? "");
-    setBusca("");
-    setResultados([]);
-  }, [open, valorInicial]);
+    setLatitude(initialValue?.latitude ?? null);
+    setLongitude(initialValue?.longitude ?? null);
+    setAddress(initialValue?.address ?? "");
+    setSearch("");
+    setResults([]);
+  }, [open, initialValue]);
 
-  async function handleBuscar() {
-    if (!busca.trim()) return;
-    setBuscando(true);
+  async function handleSearch() {
+    if (!search.trim()) return;
+    setSearching(true);
     try {
-      const res = await buscarEnderecosApi(busca);
-      setResultados(res);
-      if (res.length === 0) toast.info("Nenhum endereço encontrado.");
+      const res = await getEnderecosApi(search);
+      setResults(res);
+      if (res.length === 0) toast.info("No address found.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha na busca.");
+      toast.error(err instanceof Error ? err.message : "Search failed.");
     } finally {
-      setBuscando(false);
+      setSearching(false);
     }
   }
 
-  function selecionarResultado(r: NominatimResult) {
+  function selectResult(r: NominatimResult) {
     setLatitude(parseFloat(r.lat));
     setLongitude(parseFloat(r.lon));
-    setEndereco(r.display_name);
-    setResultados([]);
-    setBusca("");
+    setAddress(r.display_name);
+    setResults([]);
+    setSearch("");
   }
 
-  async function handleSelecionarNoMapa(lat: number, lon: number) {
+  async function handleSelectOnMap(lat: number, lon: number) {
     setLatitude(lat);
     setLongitude(lon);
-    const enderecoResolvido = await reverseGeocodeApi(lat, lon).catch(() => null);
-    if (enderecoResolvido) setEndereco(enderecoResolvido);
+    const resolvedAddress = await reverseGeocodeApi(lat, lon).catch(() => null);
+    if (resolvedAddress) setAddress(resolvedAddress);
   }
 
-  function handleUsarMinhaLocalizacao() {
+  function handleUseMyLocation() {
     if (!navigator.geolocation) {
-      toast.error("Seu navegador não suporta geolocalização.");
+      toast.error("Your browser does not support geolocation.");
       return;
     }
-    setCapturando(true);
+    setCapturing(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude: lat, longitude: lon } = pos.coords;
-        await handleSelecionarNoMapa(lat, lon);
-        setCapturando(false);
+        await handleSelectOnMap(lat, lon);
+        setCapturing(false);
       },
       (err) => {
-        setCapturando(false);
+        setCapturing(false);
         const msg = err.code === err.PERMISSION_DENIED
-          ? "Permissão de localização negada."
-          : "Não foi possível obter sua localização.";
+          ? "Location permission denied."
+          : "Unable to get your location.";
         toast.error(msg);
       },
       { enableHighAccuracy: true, timeout: 10000 },
     );
   }
 
-  function handleConfirmar() {
+  function handleConfirm() {
     if (latitude === null || longitude === null) {
-      toast.error("Selecione um ponto no mapa.");
+      toast.error("Select a point on the map.");
       return;
     }
-    onConfirmar({ latitude, longitude, endereco: endereco || null });
+    onConfirm({ latitude, longitude, address: address || null });
     onClose();
   }
 
-  const podeConfirmar = latitude !== null && longitude !== null;
+  const canConfirm = latitude !== null && longitude !== null;
 
   return (
     <Modal open={open} onClose={onClose} className="!max-w-4xl">
       <div className="flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-app-border">
-          <h2 className="text-feature-title text-app-text">Selecionar localização</h2>
+          <h2 className="text-feature-title text-app-text">Select location</h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Fechar"
+            aria-label="Close"
             className="text-app-text-muted hover:text-app-text transition-colors cursor-pointer"
           >
             <X size={20} />
@@ -127,40 +127,40 @@ export default function SeletorLocalizacao({ open, onClose, onConfirmar, valorIn
             <div className="flex-1">
               <Input
                 label=""
-                placeholder="Buscar por endereço, estabelecimento, cidade..."
+                placeholder="Search by address, place, city..."
                 icon={<MagnifyingGlass size={16} />}
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    handleBuscar();
+                    handleSearch();
                   }
                 }}
               />
             </div>
-            <Button type="button" variant="dark" onClick={handleBuscar} disabled={buscando || !busca.trim()}>
-              {buscando ? "Buscando..." : "Buscar"}
+            <Button type="button" variant="dark" onClick={handleSearch} disabled={searching || !search.trim()}>
+              {searching ? "Searching..." : "Search"}
             </Button>
             <Button
               type="button"
               variant="outlined"
-              onClick={handleUsarMinhaLocalizacao}
-              disabled={capturando}
-              title="Usar minha localização atual"
+              onClick={handleUseMyLocation}
+              disabled={capturing}
+              title="Use my current location"
             >
               <Crosshair size={16} />
-              {capturando ? "Capturando..." : "Minha localização"}
+              {capturing ? "Capturing..." : "My location"}
             </Button>
           </div>
 
-          {resultados.length > 0 && (
+          {results.length > 0 && (
             <ul className="max-h-40 overflow-y-auto rounded-xl border border-app-border bg-app-surface-raised divide-y divide-app-border-subtle">
-              {resultados.map((r, idx) => (
+              {results.map((r, idx) => (
                 <li key={`${r.lat}-${r.lon}-${idx}`}>
                   <button
                     type="button"
-                    onClick={() => selecionarResultado(r)}
+                    onClick={() => selectResult(r)}
                     className="w-full text-left px-4 py-2.5 text-body-sm text-app-text hover:bg-app-hover cursor-pointer"
                   >
                     {r.display_name}
@@ -172,23 +172,23 @@ export default function SeletorLocalizacao({ open, onClose, onConfirmar, valorIn
         </div>
 
         <div className="h-[400px] w-full">
-          <MapaInterativo
+          <InteractiveMap
             latitude={latitude}
             longitude={longitude}
-            onSelecionar={handleSelecionarNoMapa}
+            onSelect={handleSelectOnMap}
           />
         </div>
 
         <div className="px-6 py-4 border-t border-app-border space-y-1">
-          <p className="text-caption text-app-text-muted">Endereço selecionado</p>
+          <p className="text-caption text-app-text-muted">Selected address</p>
           <p className="text-body-sm text-app-text">
-            {endereco || (latitude !== null ? `${latitude.toFixed(6)}, ${longitude?.toFixed(6)}` : "Nenhum ponto selecionado — clique no mapa, busque um endereço ou use sua localização.")}
+            {address || (latitude !== null ? `${latitude.toFixed(6)}, ${longitude?.toFixed(6)}` : "No point selected — click the map, search an address or use your location.")}
           </p>
         </div>
 
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-app-border">
-          <Button type="button" variant="light" onClick={onClose}>Cancelar</Button>
-          <Button type="button" onClick={handleConfirmar} disabled={!podeConfirmar}>Confirmar</Button>
+          <Button type="button" variant="light" onClick={onClose}>Cancel</Button>
+          <Button type="button" onClick={handleConfirm} disabled={!canConfirm}>Confirm</Button>
         </div>
       </div>
     </Modal>

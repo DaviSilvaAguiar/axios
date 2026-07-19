@@ -8,7 +8,7 @@ import {
   Wallet,
   XCircle,
 } from "@phosphor-icons/react";
-import { RDC_STATUS_LABEL, type RdcStatus } from "../rdc.types";
+import { EXPENSE_REPORT_STATUS_LABEL, type ExpenseReportStatus } from "../expense-report.types";
 
 const STATUS_CONFIG: Record<number, { classes: string; ringClass: string; StatusIcon: Icon }> = {
   1: { classes: "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300", ringClass: "ring-blue-200 dark:ring-blue-800", StatusIcon: ClockCountdown },
@@ -27,7 +27,7 @@ const FALLBACK_CONFIG = {
 };
 
 interface Props {
-  status: RdcStatus;
+  status: ExpenseReportStatus;
 }
 
 export default function StatusTag({ status }: Props) {
@@ -37,7 +37,7 @@ export default function StatusTag({ status }: Props) {
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-small ring-1 ${classes} ${ringClass}`}
     >
       <StatusIcon size={11} weight="bold" />
-      {RDC_STATUS_LABEL[status]}
+      {EXPENSE_REPORT_STATUS_LABEL[status]}
     </span>
   );
 }

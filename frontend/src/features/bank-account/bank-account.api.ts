@@ -1,43 +1,43 @@
 import { api } from "@/lib/api";
 import { buildPageQuery, type Paginated, PAGE_SIZE } from "@/lib/pagination";
 import {
-  mapContaBancariaResponse,
+  mapBankAccountResponse,
   mapListarContasBancarias,
-} from "./conta-bancaria.mapper";
+} from "./bank-account.mapper";
 import type {
-  ContaBancaria,
-  ContaBancariaFormData,
-  ContaBancariaResponse,
-} from "./conta-bancaria.types";
+  BankAccount,
+  BankAccountFormData,
+  BankAccountResponse,
+} from "./bank-account.types";
 
-export async function listarContasBancariasApi(
+export async function listContasBancariasApi(
   page: number = 1,
   perPage: number = PAGE_SIZE
-): Promise<Paginated<ContaBancaria>> {
-  const raw = await api.get<unknown>(`/v1/conta-bancaria${buildPageQuery(page, perPage)}`);
+): Promise<Paginated<BankAccount>> {
+  const raw = await api.get<unknown>(`/v1/bank-accounts${buildPageQuery(page, perPage)}`);
   return mapListarContasBancarias(raw);
 }
 
-export async function buscarContaBancariaApi(id: number): Promise<ContaBancaria> {
-  const raw = await api.get<unknown>(`/v1/conta-bancaria/${id}`);
-  return mapContaBancariaResponse(raw).conta_bancaria;
+export async function getBankAccountApi(id: number): Promise<BankAccount> {
+  const raw = await api.get<unknown>(`/v1/bank-accounts/${id}`);
+  return mapBankAccountResponse(raw).bank_account;
 }
 
-export async function criarContaBancariaApi(
-  dados: ContaBancariaFormData
-): Promise<ContaBancariaResponse> {
-  const raw = await api.post<unknown>("/v1/conta-bancaria", dados);
-  return mapContaBancariaResponse(raw);
+export async function createBankAccountApi(
+  data: BankAccountFormData
+): Promise<BankAccountResponse> {
+  const raw = await api.post<unknown>("/v1/bank-accounts", data);
+  return mapBankAccountResponse(raw);
 }
 
-export async function atualizarContaBancariaApi(
+export async function updateBankAccountApi(
   id: number,
-  dados: Partial<ContaBancariaFormData>
-): Promise<ContaBancariaResponse> {
-  const raw = await api.put<unknown>(`/v1/conta-bancaria/${id}`, dados);
-  return mapContaBancariaResponse(raw);
+  data: Partial<BankAccountFormData>
+): Promise<BankAccountResponse> {
+  const raw = await api.put<unknown>(`/v1/bank-accounts/${id}`, data);
+  return mapBankAccountResponse(raw);
 }
 
-export async function deletarContaBancariaApi(id: number): Promise<void> {
-  await api.delete(`/v1/conta-bancaria/${id}`);
+export async function deleteBankAccountApi(id: number): Promise<void> {
+  await api.delete(`/v1/bank-accounts/${id}`);
 }

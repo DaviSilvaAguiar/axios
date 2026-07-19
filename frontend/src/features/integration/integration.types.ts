@@ -1,38 +1,38 @@
 import { z } from "zod";
 
-export const integracaoSchema = z.object({
+export const integrationSchema = z.object({
   id:          z.number(),
-  nome:        z.string(),
+  name:        z.string(),
   configurada: z.boolean(),
 });
-export type Integracao = z.infer<typeof integracaoSchema>;
+export type Integration = z.infer<typeof integrationSchema>;
 
-export const listarIntegracoesResponseSchema = z.object({
-  data: z.array(integracaoSchema),
+export const listIntegracoesResponseSchema = z.object({
+  data: z.array(integrationSchema),
 });
-export type ListarIntegracoesResponse = z.infer<typeof listarIntegracoesResponseSchema>;
+export type ListarIntegracoesResponse = z.infer<typeof listIntegracoesResponseSchema>;
 
-export const salvarChaveResponseSchema = z.object({
+export const saveKeyResponseSchema = z.object({
   message: z.string(),
 });
-export type SalvarChaveResponse = z.infer<typeof salvarChaveResponseSchema>;
+export type SaveKeyResponse = z.infer<typeof saveKeyResponseSchema>;
 
-export const salvarChaveFormSchema = z.object({
-  chave: z.string().trim().min(1, "Informe o token da integração."),
+export const saveKeyFormSchema = z.object({
+  key: z.string().trim().min(1, "Enter the integration token."),
 });
-export type SalvarChaveForm = z.infer<typeof salvarChaveFormSchema>;
+export type SaveKeyForm = z.infer<typeof saveKeyFormSchema>;
 
-export const enviarIntegracaoFalhaSchema = z.object({
+export const sendIntegrationFalhaSchema = z.object({
   id: z.number(),
-  erro: z.string(),
+  error: z.string(),
 });
 
-export const enviarIntegracaoResponseSchema = z.object({
+export const sendIntegrationResponseSchema = z.object({
   message: z.string(),
   data: z.object({
     lote_id:  z.number().nullable(),
-    sucessos: z.number(),
-    falhas:   z.array(enviarIntegracaoFalhaSchema),
+    successes: z.number(),
+    failures:   z.array(sendIntegrationFalhaSchema),
   }),
 });
-export type EnviarIntegracaoResponse = z.infer<typeof enviarIntegracaoResponseSchema>;
+export type SendIntegrationResponse = z.infer<typeof sendIntegrationResponseSchema>;

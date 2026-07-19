@@ -1,14 +1,14 @@
 import {
-  categoriaDespesaResponseSchema,
-  listarCategoriasDespesaResponseSchema,
-  type CategoriaDespesaResponse,
+  expenseCategoryResponseSchema,
+  listCategoriasDespesaResponseSchema,
+  type ExpenseCategoryResponse,
   type ListarCategoriasDespesaResponse,
-} from "./categoria-despesa.types";
+} from "./expense-category.types";
 
 export function mapListarCategoriasDespesa(raw: unknown): ListarCategoriasDespesaResponse {
-  return listarCategoriasDespesaResponseSchema.parse(raw);
+  return listCategoriasDespesaResponseSchema.parse(raw);
 }
 
-export function mapCategoriaDespesaResponse(raw: unknown): CategoriaDespesaResponse {
-  return categoriaDespesaResponseSchema.parse(raw);
+export function mapExpenseCategoryResponse(raw: unknown): ExpenseCategoryResponse {
+  return expenseCategoryResponseSchema.parse(raw);
 }

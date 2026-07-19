@@ -1,169 +1,169 @@
 import { api } from "@/lib/api";
 import { buildPageQuery, PAGE_SIZE } from "@/lib/pagination";
-import { mapListarRcmsResponse, mapRcmResponse } from "./rcm.mapper";
-import { despesaRcmSchema } from "./rcm.types";
+import { mapListarReimbursementsResponse, mapReimbursementResponse } from "./reimbursement.mapper";
+import { itemReimbursementSchema } from "./reimbursement.types";
 import type {
-  DespesaRcm,
-  ListarRcmsResponse,
-  Rcm,
-  RcmResponse,
-  StoreRcmFormData,
-  UpdateRcmStatusFormData,
-} from "./rcm.types";
+  ReimbursementItem,
+  ListarReimbursementsResponse,
+  Reimbursement,
+  ReimbursementResponse,
+  StoreReimbursementFormData,
+  UpdateReimbursementStatusFormData,
+} from "./reimbursement.types";
 
-export async function listarRcmsApi(
+export async function listReimbursementsApi(
   page: number = 1,
   perPage: number = PAGE_SIZE,
-  filtros?: { colaborador?: string; status?: string; dataInicio?: string; dataFim?: string }
-): Promise<ListarRcmsResponse> {
+  filters?: { employee?: string; status?: string; startDate?: string; endDate?: string }
+): Promise<ListarReimbursementsResponse> {
   const params = new URLSearchParams({ page: String(page), per_page: String(perPage) });
-  if (filtros?.colaborador) params.append("colaborador", filtros.colaborador);
-  if (filtros?.status) params.append("status", filtros.status);
-  if (filtros?.dataInicio) params.append("dataInicio", filtros.dataInicio);
-  if (filtros?.dataFim) params.append("dataFim", filtros.dataFim);
+  if (filters?.employee) params.append("employee", filters.employee);
+  if (filters?.status) params.append("status", filters.status);
+  if (filters?.startDate) params.append("startDate", filters.startDate);
+  if (filters?.endDate) params.append("endDate", filters.endDate);
 
-  const raw = await api.get<unknown>(`/v1/rcms?${params.toString()}`);
-  return mapListarRcmsResponse(raw);
+  const raw = await api.get<unknown>(`/v1/reimbursements?${params.toString()}`);
+  return mapListarReimbursementsResponse(raw);
 }
 
-export async function buscarRcmApi(id: number): Promise<Rcm> {
-  const raw = await api.get<unknown>(`/v1/rcms/${id}`);
-  return mapRcmResponse(raw).rcm;
+export async function getReimbursementApi(id: number): Promise<Reimbursement> {
+  const raw = await api.get<unknown>(`/v1/reimbursements/${id}`);
+  return mapReimbursementResponse(raw).reimbursement;
 }
 
-function normalizarHeaderRcm<T extends Partial<StoreRcmFormData>>(dados: T) {
+function normalizeReimbursementHeader<T extends Partial<StoreReimbursementFormData>>(data: T) {
   return {
-    ...dados,
-    id_centro_custo: dados.id_centro_custo ? Number(dados.id_centro_custo) : null,
-    id_usuario_requisitante: dados.id_usuario_requisitante
-      ? Number(dados.id_usuario_requisitante)
+    ...data,
+    cost_center_id: data.cost_center_id ? Number(data.cost_center_id) : null,
+    requester_user_id: data.requester_user_id
+      ? Number(data.requester_user_id)
       : null,
   };
 }
 
-export async function criarRcmApi(dados: StoreRcmFormData): Promise<RcmResponse> {
-  const raw = await api.post<unknown>("/v1/rcms", normalizarHeaderRcm(dados));
-  return mapRcmResponse(raw);
+export async function createReimbursementApi(data: StoreReimbursementFormData): Promise<ReimbursementResponse> {
+  const raw = await api.post<unknown>("/v1/reimbursements", normalizeReimbursementHeader(data));
+  return mapReimbursementResponse(raw);
 }
 
-export async function atualizarRcmApi(
+export async function updateReimbursementApi(
   id: number,
-  dados: Partial<StoreRcmFormData>
-): Promise<RcmResponse> {
-  const raw = await api.put<unknown>(`/v1/rcms/${id}`, normalizarHeaderRcm(dados));
-  return mapRcmResponse(raw);
+  data: Partial<StoreReimbursementFormData>
+): Promise<ReimbursementResponse> {
+  const raw = await api.put<unknown>(`/v1/reimbursements/${id}`, normalizeReimbursementHeader(data));
+  return mapReimbursementResponse(raw);
 }
 
-export async function atualizarStatusRcmApi(
+export async function updateStatusReimbursementApi(
   id: number,
-  dados: UpdateRcmStatusFormData
-): Promise<RcmResponse> {
-  const raw = await api.patch<unknown>(`/v1/rcms/${id}/status`, dados);
-  return mapRcmResponse(raw);
+  data: UpdateReimbursementStatusFormData
+): Promise<ReimbursementResponse> {
+  const raw = await api.patch<unknown>(`/v1/reimbursements/${id}/status`, data);
+  return mapReimbursementResponse(raw);
 }
 
-export async function deletarRcmApi(id: number): Promise<void> {
-  await api.delete(`/v1/rcms/${id}`);
+export async function deleteReimbursementApi(id: number): Promise<void> {
+  await api.delete(`/v1/reimbursements/${id}`);
 }
 
-export { listarCentrosDeCustoApi as listarCentrosCustoApi } from "@/features/centro-de-custo/centro-de-custo.api";
-export { listarCategoriasDespesaApi } from "@/features/categoria-despesa/categoria-despesa.api";
+export { listCentrosDeCustoApi as listCentrosCustoApi } from "@/features/cost-center/cost-center.api";
+export { listCategoriasDespesaApi } from "@/features/expense-category/expense-category.api";
 
-export async function criarDespesaRcmApi(
-  idRcm: number,
-  dados: FormData
-): Promise<DespesaRcm> {
-  const raw = await api.upload<unknown>(`/v1/rcms/${idRcm}/despesas`, dados);
-  return despesaRcmSchema.parse((raw as { despesa?: unknown })?.despesa ?? raw);
+export async function createReimbursementItemApi(
+  reimbursementId: number,
+  data: FormData
+): Promise<ReimbursementItem> {
+  const raw = await api.upload<unknown>(`/v1/reimbursements/${reimbursementId}/items`, data);
+  return itemReimbursementSchema.parse((raw as { item?: unknown })?.item ?? raw);
 }
 
-export async function atualizarDespesaRcmApi(
-  idRcm: number,
-  idDespesa: number,
-  dados: {
-    data_despesa: string;
-    valor: string;
-    id_centro_custo: string;
-    descricao: string;
-    id_categoria_despesa?: string;
+export async function updateReimbursementItemApi(
+  reimbursementId: number,
+  itemId: number,
+  data: {
+    expense_date: string;
+    amount: string;
+    cost_center_id: string;
+    description: string;
+    expense_category_id?: string;
     latitude?: number | null;
     longitude?: number | null;
-    endereco?: string | null;
-    descricao_fornecedor?: string;
-    cpf_cnpj_fornecedor?: string;
-    id_fornecedor?: string;
+    address?: string | null;
+    description_supplier?: string;
+    supplier_tax_id?: string;
+    supplier_id?: string;
   }
-): Promise<DespesaRcm> {
-  const raw = await api.put<unknown>(`/v1/rcms/${idRcm}/despesas/${idDespesa}`, {
-    data_despesa:         dados.data_despesa,
-    valor:                dados.valor,
-    id_centro_custo:      parseInt(dados.id_centro_custo),
-    descricao:            dados.descricao,
-    id_categoria_despesa: dados.id_categoria_despesa ? parseInt(dados.id_categoria_despesa) : null,
-    latitude:             dados.latitude  ?? null,
-    longitude:            dados.longitude ?? null,
-    endereco:             dados.endereco  ?? null,
-    descricao_fornecedor: dados.descricao_fornecedor || null,
-    cpf_cnpj_fornecedor:  dados.cpf_cnpj_fornecedor ? dados.cpf_cnpj_fornecedor.replace(/\D/g, "") : null,
-    id_fornecedor:        dados.id_fornecedor ? Number(dados.id_fornecedor) : null,
+): Promise<ReimbursementItem> {
+  const raw = await api.put<unknown>(`/v1/reimbursements/${reimbursementId}/items/${itemId}`, {
+    expense_date: data.expense_date,
+    amount: data.amount,
+    cost_center_id: parseInt(data.cost_center_id),
+    description: data.description,
+    expense_category_id: data.expense_category_id ? parseInt(data.expense_category_id) : null,
+    latitude: data.latitude ?? null,
+    longitude: data.longitude ?? null,
+    address: data.address ?? null,
+    description_supplier: data.description_supplier || null,
+    supplier_tax_id: data.supplier_tax_id ? data.supplier_tax_id.replace(/\D/g, "") : null,
+    supplier_id: data.supplier_id ? Number(data.supplier_id) : null,
   });
-  return despesaRcmSchema.parse((raw as { despesa?: unknown })?.despesa ?? raw);
+  return itemReimbursementSchema.parse((raw as { item?: unknown })?.item ?? raw);
 }
 
-export async function deletarDespesaRcmApi(
-  idRcm: number,
-  idDespesa: number
+export async function deleteReimbursementItemApi(
+  reimbursementId: number,
+  itemId: number
 ): Promise<void> {
-  await api.delete(`/v1/rcms/${idRcm}/despesas/${idDespesa}`);
+  await api.delete(`/v1/reimbursements/${reimbursementId}/items/${itemId}`);
 }
 
-export async function deletarAnexoRcmApi(
-  idRcm: number,
-  idDespesa: number
+export async function deleteAnexoReimbursementApi(
+  reimbursementId: number,
+  itemId: number
 ): Promise<void> {
-  await api.delete(`/v1/rcms/${idRcm}/despesas/${idDespesa}/anexo`);
+  await api.delete(`/v1/reimbursements/${reimbursementId}/items/${itemId}/attachment`);
 }
 
-export async function substituirAnexoRcmApi(
-  idRcm: number,
-  idDespesa: number,
-  arquivo: File
-): Promise<void> {
-  const fd = new FormData();
-  fd.append("anexo", arquivo);
-  await api.upload(`/v1/rcms/${idRcm}/despesas/${idDespesa}/anexo`, fd);
-}
-
-export async function baixarPdfRcmApi(id: number): Promise<Blob> {
-  return api.blob(`/v1/rcms/${id}/pdf`);
-}
-
-export async function buscarAnexoRcmApi(idRcm: number, idDespesa: number): Promise<Blob> {
-  return api.blob(`/v1/rcms/${idRcm}/despesas/${idDespesa}/anexo`);
-}
-
-export async function adicionarAnexoRcmApi(
-  idRcm: number,
-  idDespesa: number,
-  arquivo: File
+export async function substituirAnexoReimbursementApi(
+  reimbursementId: number,
+  itemId: number,
+  file: File
 ): Promise<void> {
   const fd = new FormData();
-  fd.append("anexo", arquivo);
-  await api.upload(`/v1/rcms/${idRcm}/despesas/${idDespesa}/anexos`, fd);
+  fd.append("anexo", file);
+  await api.upload(`/v1/reimbursements/${reimbursementId}/items/${itemId}/attachment`, fd);
 }
 
-export async function deletarAnexoEspecificoRcmApi(
-  idRcm: number,
-  idDespesa: number,
-  idAnexo: number
+export async function downloadPdfReimbursementApi(id: number): Promise<Blob> {
+  return api.blob(`/v1/reimbursements/${id}/pdf`);
+}
+
+export async function getAnexoReimbursementApi(reimbursementId: number, itemId: number): Promise<Blob> {
+  return api.blob(`/v1/reimbursements/${reimbursementId}/items/${itemId}/attachment`);
+}
+
+export async function adicionarAnexoReimbursementApi(
+  reimbursementId: number,
+  itemId: number,
+  file: File
 ): Promise<void> {
-  await api.delete(`/v1/rcms/${idRcm}/despesas/${idDespesa}/anexos/${idAnexo}`);
+  const fd = new FormData();
+  fd.append("anexo", file);
+  await api.upload(`/v1/reimbursements/${reimbursementId}/items/${itemId}/attachments`, fd);
 }
 
-export async function buscarAnexoEspecificoRcmApi(
-  idRcm: number,
-  idDespesa: number,
-  idAnexo: number
+export async function deleteAnexoEspecificoReimbursementApi(
+  reimbursementId: number,
+  itemId: number,
+  attachmentId: number
+): Promise<void> {
+  await api.delete(`/v1/reimbursements/${reimbursementId}/items/${itemId}/attachments/${attachmentId}`);
+}
+
+export async function getAnexoEspecificoReimbursementApi(
+  reimbursementId: number,
+  itemId: number,
+  attachmentId: number
 ): Promise<Blob> {
-  return api.blob(`/v1/rcms/${idRcm}/despesas/${idDespesa}/anexos/${idAnexo}`);
+  return api.blob(`/v1/reimbursements/${reimbursementId}/items/${itemId}/attachments/${attachmentId}`);
 }

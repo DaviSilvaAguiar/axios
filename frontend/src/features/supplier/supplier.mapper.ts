@@ -1,18 +1,18 @@
 import {
   consultaCnpjSchema,
-  fornecedorResponseSchema,
-  listarFornecedoresResponseSchema,
+  supplierResponseSchema,
+  listSupplieresResponseSchema,
   type ConsultaCnpjResponse,
-  type FornecedorResponse,
-  type ListarFornecedoresResponse,
-} from "./fornecedor.types";
+  type SupplierResponse,
+  type ListarSupplieresResponse,
+} from "./supplier.types";
 
-export function mapListarFornecedores(raw: unknown): ListarFornecedoresResponse {
-  return listarFornecedoresResponseSchema.parse(raw);
+export function mapListarSupplieres(raw: unknown): ListarSupplieresResponse {
+  return listSupplieresResponseSchema.parse(raw);
 }
 
-export function mapFornecedorResponse(raw: unknown): FornecedorResponse {
-  return fornecedorResponseSchema.parse(raw);
+export function mapSupplierResponse(raw: unknown): SupplierResponse {
+  return supplierResponseSchema.parse(raw);
 }
 
 export function mapConsultaCnpj(raw: unknown): ConsultaCnpjResponse {

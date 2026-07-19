@@ -4,27 +4,27 @@ import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Input from "@/ui/Input";
-import BadgeAtivo from "@/ui/BadgeAtivo";
+import ActiveBadge from "@/ui/ActiveBadge";
 import ModalForm from "@/ui/ModalForm";
-import { useConfigs } from "@/contexts/ConfigContext";
+import { useSettings } from "@/contexts/SettingContext";
 import {
-  buildContaBancariaFormSchema,
-  type ContaBancaria,
-  type ContaBancariaFormData,
-} from "../conta-bancaria.types";
+  buildBankAccountFormSchema,
+  type BankAccount,
+  type BankAccountFormData,
+} from "../bank-account.types";
 
 interface Props {
-  contaBancaria?: ContaBancaria;
-  onSalvar: (dados: ContaBancariaFormData) => Promise<void>;
-  onCancelar: () => void;
+  bankAccount?: BankAccount;
+  onSave: (data: BankAccountFormData) => Promise<void>;
+  onCancel: () => void;
 }
 
-export default function FormContaBancaria({ contaBancaria, onSalvar, onCancelar }: Props) {
-  const { isHabilitada } = useConfigs();
-  const codigoErpObrigatorio = isHabilitada("obrigatorio_codigo_erp");
+export default function BankAccountForm({ bankAccount, onSave, onCancel }: Props) {
+  const { isEnabled } = useSettings();
+  const erpCodeRequired = isEnabled("require_erp_code");
   const schema = useMemo(
-    () => buildContaBancariaFormSchema(codigoErpObrigatorio),
-    [codigoErpObrigatorio],
+    () => buildBankAccountFormSchema(erpCodeRequired),
+    [erpCodeRequired],
   );
 
   const {
@@ -34,54 +34,54 @@ export default function FormContaBancaria({ contaBancaria, onSalvar, onCancelar 
     watch,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<ContaBancariaFormData>({
+  } = useForm<BankAccountFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      descricao:   contaBancaria?.descricao ?? "",
-      codigo_erp:  contaBancaria?.codigo_erp ?? "",
-      ativo:       contaBancaria?.ativo ?? true,
+      description: bankAccount?.description ?? "",
+      erp_code:    bankAccount?.erp_code ?? "",
+      active:      bankAccount?.active ?? true,
     },
   });
 
   useEffect(() => {
     reset({
-      descricao:   contaBancaria?.descricao ?? "",
-      codigo_erp:  contaBancaria?.codigo_erp ?? "",
-      ativo:       contaBancaria?.ativo ?? true,
+      description: bankAccount?.description ?? "",
+      erp_code:    bankAccount?.erp_code ?? "",
+      active:      bankAccount?.active ?? true,
     });
-  }, [contaBancaria, reset]);
+  }, [bankAccount, reset]);
 
-  const ativo = watch("ativo");
+  const active = watch("active");
 
   return (
     <ModalForm
-      titulo={contaBancaria ? "Editar Conta Bancária" : "Nova Conta Bancária"}
-      onCancelar={onCancelar}
-      onSubmit={handleSubmit(onSalvar)}
+      titulo={bankAccount ? "Edit Bank Account" : "New Bank Account"}
+      onCancelar={onCancel}
+      onSubmit={handleSubmit(onSave)}
       submitting={isSubmitting}
     >
       <Input
-        label="Descrição"
-        placeholder="Ex: Banco do Brasil — Conta Corrente"
-        error={errors.descricao?.message}
-        {...register("descricao")}
+        label="Description"
+        placeholder="e.g. Bank of America — Checking"
+        error={errors.description?.message}
+        {...register("description")}
       />
 
       <Input
-        label="Código no ERP"
-        placeholder="ID da conta no ERP de destino"
-        error={errors.codigo_erp?.message}
-        {...register("codigo_erp")}
+        label="ERP Code"
+        placeholder="Account ID in the target ERP"
+        error={errors.erp_code?.message}
+        {...register("erp_code")}
       />
 
       <div className="flex flex-col gap-1.5">
         <span className="text-caption font-semibold text-app-text-muted">Status</span>
         <button
           type="button"
-          onClick={() => setValue("ativo", !ativo)}
+          onClick={() => setValue("active", !active)}
           className="w-fit cursor-pointer transition-opacity hover:opacity-80"
         >
-          <BadgeAtivo ativo={ativo} />
+          <ActiveBadge ativo={active} />
         </button>
       </div>
     </ModalForm>

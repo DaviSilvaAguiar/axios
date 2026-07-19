@@ -4,29 +4,29 @@ import { ReceiptX } from "@phosphor-icons/react";
 import EmptyState from "@/ui/EmptyState";
 import DataTable, { type DataTableColumn } from "@/ui/DataTable";
 import StatusTag from "./StatusTag";
-import { type Rcm } from "../rcm.types";
+import { type Reimbursement } from "../reimbursement.types";
 import { formatarData } from "@/lib/formatters";
 
-function calcularTotal(rcm: Rcm): number {
-  if (!rcm.despesas || rcm.despesas.length === 0) return 0;
-  return rcm.despesas.reduce((acc, d) => acc + parseFloat(d.valor), 0);
+function calculateTotal(reimbursement: Reimbursement): number {
+  if (!reimbursement.items || reimbursement.items.length === 0) return 0;
+  return reimbursement.items.reduce((acc, d) => acc + parseFloat(d.amount), 0);
 }
 
-function formatarValor(rcm: Rcm): string {
-  if (!rcm.despesas || rcm.despesas.length === 0) return "—";
-  return calcularTotal(rcm).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+function formatAmount(reimbursement: Reimbursement): string {
+  if (!reimbursement.items || reimbursement.items.length === 0) return "—";
+  return calculateTotal(reimbursement).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-interface ListaViewProps {
-  rcms: Rcm[];
-  onSelecionarRcm: (rcm: Rcm) => void;
+interface ListViewProps {
+  reimbursements: Reimbursement[];
+  onSelectReimbursement: (reimbursement: Reimbursement) => void;
   loading?: boolean;
   onLoadMore?: () => void;
   hasMore?: boolean;
   loadingMore?: boolean;
 }
 
-const columns: DataTableColumn<Rcm>[] = [
+const columns: DataTableColumn<Reimbursement>[] = [
   {
     key: "id",
     header: "ID",
@@ -35,29 +35,29 @@ const columns: DataTableColumn<Rcm>[] = [
     render: (r) => <span className="text-small text-app-text-subtle">{r.id}</span>,
   },
   {
-    key: "colaborador",
-    header: "Colaborador",
+    key: "employee",
+    header: "Employee",
     sortable: true,
-    sortAccessor: (r) => r.usuario?.nome ?? null,
-    render: (r) => <span className="text-app-text">{r.usuario?.nome ?? "—"}</span>,
+    sortAccessor: (r) => r.user?.name ?? null,
+    render: (r) => <span className="text-app-text">{r.user?.name ?? "—"}</span>,
   },
   {
-    key: "titulo",
-    header: "Título",
+    key: "title",
+    header: "Title",
     sortable: true,
-    sortAccessor: (r) => r.titulo,
+    sortAccessor: (r) => r.title,
     render: (r) => (
-      <span className="text-app-text font-medium max-w-xs truncate block">{r.titulo}</span>
+      <span className="text-app-text font-medium max-w-xs truncate block">{r.title}</span>
     ),
   },
   {
-    key: "valor",
-    header: "Valor Total",
+    key: "amount",
+    header: "Total Amount",
     align: "right",
     sortable: true,
-    sortAccessor: (r) => calcularTotal(r),
+    sortAccessor: (r) => calculateTotal(r),
     render: (r) => (
-      <span className="text-app-text font-semibold tabular-nums">{formatarValor(r)}</span>
+      <span className="text-app-text font-semibold tabular-nums">{formatAmount(r)}</span>
     ),
   },
   {
@@ -68,8 +68,8 @@ const columns: DataTableColumn<Rcm>[] = [
     render: (r) => <StatusTag status={r.status} />,
   },
   {
-    key: "data",
-    header: "Data",
+    key: "date",
+    header: "Date",
     sortable: true,
     sortAccessor: (r) => new Date(r.created_at),
     render: (r) => (
@@ -80,14 +80,14 @@ const columns: DataTableColumn<Rcm>[] = [
   },
 ];
 
-export default function ListaView({ rcms, onSelecionarRcm, loading, onLoadMore, hasMore, loadingMore }: ListaViewProps) {
+export default function ListView({ reimbursements, onSelectReimbursement, loading, onLoadMore, hasMore, loadingMore }: ListViewProps) {
   return (
     <DataTable
       columns={columns}
-      rows={rcms}
-      onRowClick={onSelecionarRcm}
+      rows={reimbursements}
+      onRowClick={onSelectReimbursement}
       keyExtractor={(r) => r.id}
-      defaultSort={{ columnKey: "data", direction: "desc" }}
+      defaultSort={{ columnKey: "date", direction: "desc" }}
       loading={loading}
       onLoadMore={onLoadMore}
       hasMore={hasMore}
@@ -95,8 +95,8 @@ export default function ListaView({ rcms, onSelecionarRcm, loading, onLoadMore, 
       empty={
         <EmptyState
           icon={ReceiptX}
-          title="Nenhum reembolso encontrado"
-          description="Crie uma nova solicitação ou ajuste os filtros."
+          title="No reimbursements found"
+          description="Create a new request or adjust the filters."
         />
       }
     />

@@ -1,14 +1,14 @@
 import {
-  listarUsuariosResponseSchema,
-  usuarioResponseSchema,
-  type ListarUsuariosResponse,
-  type UsuarioResponse,
-} from "./usuario.types";
+  listUsersResponseSchema,
+  userResponseSchema,
+  type ListarUsersResponse,
+  type UserResponse,
+} from "./user.types";
 
-export function mapListarUsuarios(raw: unknown): ListarUsuariosResponse {
-  return listarUsuariosResponseSchema.parse(raw);
+export function mapListarUsers(raw: unknown): ListarUsersResponse {
+  return listUsersResponseSchema.parse(raw);
 }
 
-export function mapUsuarioResponse(raw: unknown): UsuarioResponse {
-  return usuarioResponseSchema.parse(raw);
+export function mapUserResponse(raw: unknown): UserResponse {
+  return userResponseSchema.parse(raw);
 }

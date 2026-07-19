@@ -10,61 +10,59 @@ import { overviewDashboardApi } from "../dashboard.api";
 import type { Overview } from "../dashboard.types";
 import KpiCard from "./KpiCard";
 import KpiCardSkeleton from "./KpiCardSkeleton";
-import MovimentacaoMensalSkeleton from "./MovimentacaoMensalSkeleton";
+import MonthlyMovementSkeleton from "./MonthlyMovementSkeleton";
 
-// Gráfico usa recharts (lib pesada) — carregado sob demanda para não bloquear
-// a pintura inicial do painel. Mostra o skeleton enquanto o chunk chega.
-const MovimentacaoMensalChart = dynamic(() => import("./MovimentacaoMensalChart"), {
+const MonthlyMovementChart = dynamic(() => import("./MonthlyMovementChart"), {
   ssr: false,
-  loading: () => <MovimentacaoMensalSkeleton />,
+  loading: () => <MonthlyMovementSkeleton />,
 });
 import MonthYearFilter from "./MonthYearFilter";
-import ProximosPagamentosList from "./ProximosPagamentosList";
-import TopCentrosCustoList from "./TopCentrosCustoList";
-import ListaSkeleton from "./ListaSkeleton";
-import PendentesAprovacaoList from "./PendentesAprovacaoList";
+import UpcomingPaymentsList from "./UpcomingPaymentsList";
+import TopCostCentersList from "./TopCostCentersList";
+import ListSkeleton from "./ListSkeleton";
+import PendingApprovalList from "./PendingApprovalList";
 
 export default function AdminDashboard() {
-  const hoje = new Date();
-  const [ano, setAno] = useState(hoje.getFullYear());
-  const [mes, setMes] = useState(hoje.getMonth() + 1);
+  const today = new Date();
+  const [year, setYear] = useState(today.getFullYear());
+  const [month, setMonth] = useState(today.getMonth() + 1);
   const [data, setData] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState(false);
+  const [error, setError] = useState(false);
 
-  const carregar = useCallback(async () => {
+  const load = useCallback(async () => {
     setLoading(true);
-    setErro(false);
+    setError(false);
     try {
-      const overview = await overviewDashboardApi(ano, mes);
+      const overview = await overviewDashboardApi(year, month);
       setData(overview);
     } catch {
-      setErro(true);
+      setError(true);
     } finally {
       setLoading(false);
     }
-  }, [ano, mes]);
+  }, [year, month]);
 
   useEffect(() => {
-    carregar();
-  }, [carregar]);
+    load();
+  }, [load]);
 
-  function handleMudarPeriodo(novoAno: number, novoMes: number) {
-    setAno(novoAno);
-    setMes(novoMes);
+  function handleChangePeriod(newYear: number, newMonth: number) {
+    setYear(newYear);
+    setMonth(newMonth);
   }
 
-  if (erro) {
+  if (error) {
     return (
       <div className="p-6 md:p-8 max-w-7xl mx-auto">
         <Card className="p-8 flex flex-col items-center gap-4 text-center">
-          <p className="text-feature-title text-app-text">Não foi possível carregar o dashboard</p>
+          <p className="text-feature-title text-app-text">Unable to load the dashboard</p>
           <p className="text-body-sm text-app-text-muted">
-            Verifique sua conexão e tente novamente.
+            Check your connection and try again.
           </p>
-          <Button variant="dark" onClick={carregar}>
+          <Button variant="dark" onClick={load}>
             <ArrowClockwise size={16} />
-            Tentar novamente
+            Try again
           </Button>
         </Card>
       </div>
@@ -75,7 +73,7 @@ export default function AdminDashboard() {
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h1 className="text-card-title text-app-text">Dashboard</h1>
-        <MonthYearFilter ano={ano} mes={mes} onChange={handleMudarPeriodo} />
+        <MonthYearFilter year={year} month={month} onChange={handleChangePeriod} />
       </header>
 
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -89,24 +87,24 @@ export default function AdminDashboard() {
         ) : (
           <>
             <KpiCard
-              label="Caixas ativos"
-              value={String(data.kpis.caixas_ativos)}
-              href="/caixas"
+              label="Active funds"
+              value={String(data.kpis.active_funds)}
+              href="/funds"
             />
             <KpiCard
-              label="Saldo total"
-              value={formatarMoeda(parseFloat(data.kpis.saldo_total))}
-              href="/caixas"
+              label="Total balance"
+              value={formatarMoeda(parseFloat(data.kpis.total_balance))}
+              href="/funds"
             />
             <KpiCard
-              label="Pendentes de auditoria"
-              value={String(data.kpis.rdcs_pendentes)}
-              href="/rdc"
+              label="Pending audit"
+              value={String(data.kpis.pending_expense_reports)}
+              href="/expense-reports"
             />
             <KpiCard
-              label="Lotes exportados"
-              value={String(data.kpis.lotes_exportados_mes)}
-              href="/exportacao"
+              label="Exported batches"
+              value={String(data.kpis.exported_batches_month)}
+              href="/export"
             />
           </>
         )}
@@ -114,12 +112,12 @@ export default function AdminDashboard() {
 
       <section>
         {loading || !data ? (
-          <MovimentacaoMensalSkeleton />
+          <MonthlyMovementSkeleton />
         ) : (
-          <MovimentacaoMensalChart
-            movimentacao={data.movimentacao_mensal}
-            anoAtivo={ano}
-            mesAtivo={mes}
+          <MonthlyMovementChart
+            movements={data.monthly_movement}
+            activeYear={year}
+            activeMonth={month}
           />
         )}
       </section>
@@ -127,19 +125,19 @@ export default function AdminDashboard() {
       <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {loading || !data ? (
           <>
-            <ListaSkeleton />
-            <ListaSkeleton />
+            <ListSkeleton />
+            <ListSkeleton />
           </>
         ) : (
           <>
-            <ProximosPagamentosList itens={data.proximos_pagamentos} />
-            <TopCentrosCustoList itens={data.top_centros_custo_mes} />
+            <UpcomingPaymentsList items={data.upcoming_payments} />
+            <TopCostCentersList items={data.top_cost_centers_month} />
           </>
         )}
       </section>
 
       <section>
-        <PendentesAprovacaoList />
+        <PendingApprovalList />
       </section>
     </div>
   );

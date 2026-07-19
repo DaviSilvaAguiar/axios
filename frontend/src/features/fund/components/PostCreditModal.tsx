@@ -6,20 +6,20 @@ import { X } from "@phosphor-icons/react";
 import Modal from "@/ui/Modal";
 import Button from "@/ui/Button";
 import Input from "@/ui/Input";
-import InputMonetario from "@/ui/InputMonetario";
+import InputMonetario from "@/ui/MoneyInput";
 import DatePicker from "@/ui/DatePicker";
 import { toast } from "@/lib/toast";
 import {
   lancarCreditoFormSchema,
   type LancarCreditoFormData,
-} from "../caixa-conta.types";
+} from "../fund.types";
 
 interface Props {
-  onSalvar: (dados: LancarCreditoFormData) => Promise<void>;
-  onFechar: () => void;
+  onSave: (data: LancarCreditoFormData) => Promise<void>;
+  onClose: () => void;
 }
 
-export default function ModalLancarCredito({ onSalvar, onFechar }: Props) {
+export default function PostCreditModal({ onSave, onClose }: Props) {
   const {
     register,
     handleSubmit,
@@ -29,31 +29,31 @@ export default function ModalLancarCredito({ onSalvar, onFechar }: Props) {
   } = useForm<LancarCreditoFormData>({
     resolver: zodResolver(lancarCreditoFormSchema),
     defaultValues: {
-      valor: "",
-      data_transacao: new Date().toISOString().slice(0, 10),
-      observacao: "",
+      amount: "",
+      transaction_date: new Date().toISOString().slice(0, 10),
+      notes: "",
     },
   });
 
-  const valor = watch("valor");
-  const data = watch("data_transacao");
+  const amount = watch("amount");
+  const date = watch("transaction_date");
 
-  async function onSubmit(dados: LancarCreditoFormData) {
+  async function onSubmit(data: LancarCreditoFormData) {
     try {
-      await onSalvar(dados);
+      await onSave(data);
     } catch {
-      toast.error("Não foi possível lançar o adiantamento.");
+      toast.error("Could not post the advance.");
     }
   }
 
   return (
-    <Modal open onClose={onFechar} className="max-w-md" isDirty={isDirty}>
+    <Modal open onClose={onClose} className="max-w-md" isDirty={isDirty}>
       <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-5">
         <div className="mb-5 flex items-start justify-between">
-          <h1 className="text-feature-title text-app-text">Lançar Adiantamento</h1>
+          <h1 className="text-feature-title text-app-text">Post Advance</h1>
           <button
             type="button"
-            onClick={onFechar}
+            onClick={onClose}
             className="rounded-full p-2 text-app-text-muted hover:bg-app-hover"
           >
             <X size={20} />
@@ -62,33 +62,33 @@ export default function ModalLancarCredito({ onSalvar, onFechar }: Props) {
 
         <div className="space-y-4">
           <InputMonetario
-            label="Valor"
-            value={valor}
-            onChange={(v) => setValue("valor", v, { shouldValidate: true, shouldDirty: true })}
-            error={errors.valor?.message}
+            label="Amount"
+            value={amount}
+            onChange={(v) => setValue("amount", v, { shouldValidate: true, shouldDirty: true })}
+            error={errors.amount?.message}
           />
 
           <DatePicker
-            label="Data"
-            value={data}
-            onChange={(v) => setValue("data_transacao", v, { shouldValidate: true, shouldDirty: true })}
-            error={errors.data_transacao?.message}
+            label="Date"
+            value={date}
+            onChange={(v) => setValue("transaction_date", v, { shouldValidate: true, shouldDirty: true })}
+            error={errors.transaction_date?.message}
           />
 
           <Input
-            label="Observação (opcional)"
-            placeholder='Ex.: "PIX Ref. Semana 1"'
-            error={errors.observacao?.message}
-            {...register("observacao")}
+            label="Notes (optional)"
+            placeholder='e.g. "PIX Ref. Week 1"'
+            error={errors.notes?.message}
+            {...register("notes")}
           />
         </div>
 
         <div className="mt-6 flex gap-3">
-          <Button type="button" variant="light" fullWidth onClick={onFechar}>
-            Cancelar
+          <Button type="button" variant="light" fullWidth onClick={onClose}>
+            Cancel
           </Button>
           <Button type="submit" variant="dark" fullWidth disabled={isSubmitting}>
-            {isSubmitting ? "Salvando…" : "Confirmar"}
+            {isSubmitting ? "Saving…" : "Confirm"}
           </Button>
         </div>
       </form>

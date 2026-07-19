@@ -1,124 +1,124 @@
 import { api } from "@/lib/api";
-import { mapListarRdcsResponse, mapRdcResponse } from "./rdc.mapper";
-import { despesaRdcSchema } from "./rdc.types";
-import type { DespesaRdc, DespesaRdcFormItem, Rdc, StoreRdcFormData } from "./rdc.types";
+import { mapListarExpenseReportsResponse, mapExpenseReportResponse } from "./expense-report.mapper";
+import { expenseReportItemSchema } from "./expense-report.types";
+import type { ExpenseReportItem, ExpenseReportItemFormItem, ExpenseReport, StoreExpenseReportFormData } from "./expense-report.types";
 
-export async function listarRdcsApi(): Promise<Rdc[]> {
-  const raw = await api.get<unknown>("/v1/caixas");
-  return mapListarRdcsResponse(raw);
+export async function listExpenseReportsApi(): Promise<ExpenseReport[]> {
+  const raw = await api.get<unknown>("/v1/expense-reports");
+  return mapListarExpenseReportsResponse(raw);
 }
 
-export async function buscarRdcApi(id: number): Promise<Rdc> {
-  const raw = await api.get<unknown>(`/v1/caixas/${id}`);
-  return mapRdcResponse(raw);
+export async function getExpenseReportApi(id: number): Promise<ExpenseReport> {
+  const raw = await api.get<unknown>(`/v1/expense-reports/${id}`);
+  return mapExpenseReportResponse(raw);
 }
 
-export async function criarRdcApi(dados: StoreRdcFormData): Promise<Rdc> {
-  const raw = await api.post<unknown>("/v1/caixas", {
+export async function createExpenseReportApi(dados: StoreExpenseReportFormData): Promise<ExpenseReport> {
+  const raw = await api.post<unknown>("/v1/expense-reports", {
     ...dados,
-    id_centro_custo: Number(dados.id_centro_custo),
-    id_usuario_requisitante: dados.id_usuario_requisitante
-      ? Number(dados.id_usuario_requisitante)
+    cost_center_id: Number(dados.cost_center_id),
+    requester_user_id: dados.requester_user_id
+      ? Number(dados.requester_user_id)
       : null,
   });
-  return mapRdcResponse(raw);
+  return mapExpenseReportResponse(raw);
 }
 
-export async function atualizarRdcApi(
+export async function updateExpenseReportApi(
   id: number,
-  dados: Partial<StoreRdcFormData>
-): Promise<Rdc> {
+  dados: Partial<StoreExpenseReportFormData>
+): Promise<ExpenseReport> {
   const payload: Record<string, unknown> = {
     ...dados,
-    ...(dados.id_centro_custo !== undefined && {
-      id_centro_custo: Number(dados.id_centro_custo),
+    ...(dados.cost_center_id !== undefined && {
+      cost_center_id: Number(dados.cost_center_id),
     }),
   };
-  if (dados.id_usuario_requisitante !== undefined) {
-    payload.id_usuario_requisitante = dados.id_usuario_requisitante
-      ? Number(dados.id_usuario_requisitante)
+  if (dados.requester_user_id !== undefined) {
+    payload.requester_user_id = dados.requester_user_id
+      ? Number(dados.requester_user_id)
       : null;
   }
-  const raw = await api.put<unknown>(`/v1/caixas/${id}`, payload);
-  return mapRdcResponse(raw);
+  const raw = await api.put<unknown>(`/v1/expense-reports/${id}`, payload);
+  return mapExpenseReportResponse(raw);
 }
 
-export async function atualizarStatusRdcApi(
+export async function updateStatusExpenseReportApi(
   id: number,
   status: number,
-  motivoRejeicao?: string,
+  reasonRejeicao?: string,
   dataPagamento?: string,
-): Promise<Rdc> {
-  const raw = await api.put<unknown>(`/v1/caixas/${id}`, {
+): Promise<ExpenseReport> {
+  const raw = await api.put<unknown>(`/v1/expense-reports/${id}`, {
     status,
-    ...(motivoRejeicao ? { motivo_rejeicao: motivoRejeicao } : {}),
-    ...(dataPagamento ? { data_pagamento: dataPagamento } : {}),
+    ...(reasonRejeicao ? { rejection_reason: reasonRejeicao } : {}),
+    ...(dataPagamento ? { paid_at: dataPagamento } : {}),
   });
-  return mapRdcResponse(raw);
+  return mapExpenseReportResponse(raw);
 }
 
-export async function deletarRdcApi(id: number): Promise<void> {
-  await api.delete(`/v1/caixas/${id}`);
+export async function deleteExpenseReportApi(id: number): Promise<void> {
+  await api.delete(`/v1/expense-reports/${id}`);
 }
 
-export async function baixarPdfRdcApi(id: number): Promise<Blob> {
-  return api.blob(`/v1/caixas/${id}/pdf`);
+export async function downloadPdfExpenseReportApi(id: number): Promise<Blob> {
+  return api.blob(`/v1/expense-reports/${id}/pdf`);
 }
 
-export async function criarDespesaRdcApi(
-  idRdc: number,
+export async function createExpenseReportItemApi(
+  idExpenseReport: number,
   dados: FormData
-): Promise<DespesaRdc> {
-  const raw = await api.upload<unknown>(`/v1/caixas/${idRdc}/despesas`, dados);
-  return despesaRdcSchema.parse((raw as { despesa?: unknown })?.despesa ?? raw);
+): Promise<ExpenseReportItem> {
+  const raw = await api.upload<unknown>(`/v1/expense-reports/${idExpenseReport}/items`, dados);
+  return expenseReportItemSchema.parse((raw as { item?: unknown })?.item ?? raw);
 }
 
-export async function atualizarDespesaRdcApi(
-  idRdc: number,
+export async function updateExpenseReportItemApi(
+  idExpenseReport: number,
   idDespesa: number,
-  dados: DespesaRdcFormItem
-): Promise<DespesaRdc> {
+  dados: ExpenseReportItemFormItem
+): Promise<ExpenseReportItem> {
   const payload = {
-    data_despesa:         dados.data_despesa,
-    valor:                dados.valor,
-    id_centro_custo:      Number(dados.id_centro_custo),
-    descricao:            dados.descricao,
-    id_categoria_despesa: dados.id_categoria_despesa ? Number(dados.id_categoria_despesa) : null,
+    expense_date:         dados.expense_date,
+    amount:                dados.amount,
+    cost_center_id:      Number(dados.cost_center_id),
+    description:            dados.description,
+    expense_category_id: dados.expense_category_id ? Number(dados.expense_category_id) : null,
     latitude:             dados.latitude  ?? null,
     longitude:            dados.longitude ?? null,
-    endereco:             dados.endereco  ?? null,
-    descricao_fornecedor: dados.descricao_fornecedor || null,
-    cpf_cnpj_fornecedor:  dados.cpf_cnpj_fornecedor ? dados.cpf_cnpj_fornecedor.replace(/\D/g, "") : null,
-    id_fornecedor:        dados.id_fornecedor ? Number(dados.id_fornecedor) : null,
+    address:             dados.address  ?? null,
+    description_supplier: dados.description_supplier || null,
+    supplier_tax_id:  dados.supplier_tax_id ? dados.supplier_tax_id.replace(/\D/g, "") : null,
+    supplier_id:        dados.supplier_id ? Number(dados.supplier_id) : null,
   };
-  const raw = await api.put<unknown>(`/v1/caixas/${idRdc}/despesas/${idDespesa}`, payload);
-  return despesaRdcSchema.parse((raw as { despesa?: unknown })?.despesa ?? raw);
+  const raw = await api.put<unknown>(`/v1/expense-reports/${idExpenseReport}/items/${idDespesa}`, payload);
+  return expenseReportItemSchema.parse((raw as { item?: unknown })?.item ?? raw);
 }
 
-export async function deletarDespesaRdcApi(
-  idRdc: number,
+export async function deleteExpenseReportItemApi(
+  idExpenseReport: number,
   idDespesa: number
 ): Promise<void> {
-  await api.delete(`/v1/caixas/${idRdc}/despesas/${idDespesa}`);
+  await api.delete(`/v1/expense-reports/${idExpenseReport}/items/${idDespesa}`);
 }
 
-export async function adicionarAnexoDespesaRdcApi(
-  idRdc: number,
+export async function adicionarAnexoExpenseReportItemApi(
+  idExpenseReport: number,
   idDespesa: number,
   arquivo: File
 ): Promise<void> {
   const fd = new FormData();
   fd.append("anexo", arquivo);
-  await api.upload<unknown>(`/v1/caixas/${idRdc}/despesas/${idDespesa}/anexos`, fd);
+  await api.upload<unknown>(`/v1/expense-reports/${idExpenseReport}/items/${idDespesa}/attachments`, fd);
 }
 
-export async function buscarAnexoRdcApi(
-  idRdc: number,
+export async function getAnexoExpenseReportApi(
+  idExpenseReport: number,
   idDespesa: number,
   idAnexo: number,
 ): Promise<Blob> {
-  return api.blob(`/v1/caixas/${idRdc}/despesas/${idDespesa}/anexos/${idAnexo}`);
+  return api.blob(`/v1/expense-reports/${idExpenseReport}/items/${idDespesa}/attachments/${idAnexo}`);
 }
 
-export { listarCentrosDeCustoApi } from "@/features/centro-de-custo/centro-de-custo.api";
-export { listarCategoriasDespesaApi } from "@/features/categoria-despesa/categoria-despesa.api";
+export { listCentrosDeCustoApi } from "@/features/cost-center/cost-center.api";
+export { listCategoriasDespesaApi } from "@/features/expense-category/expense-category.api";

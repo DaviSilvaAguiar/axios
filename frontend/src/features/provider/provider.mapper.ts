@@ -1,5 +1,5 @@
-import { listaLancamentosSchema, type ListaLancamentos } from "./prestador.types";
+import { submissionListSchema, type SubmissionList } from "./provider.types";
 
-export function mapListarLancamentos(raw: unknown): ListaLancamentos {
-  return listaLancamentosSchema.parse(raw);
+export function mapSubmissionList(raw: unknown): SubmissionList {
+  return submissionListSchema.parse(raw);
 }

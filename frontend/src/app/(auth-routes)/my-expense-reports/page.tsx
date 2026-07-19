@@ -9,34 +9,34 @@ import Card from "@/ui/Card";
 import Loading from "@/ui/Loading";
 import EmptyState from "@/ui/EmptyState";
 import Button from "@/ui/Button";
-import FormRdc from "@/features/rdc/components/FormRdc";
-import StatusTag from "@/features/rdc/components/StatusTag";
+import ExpenseReportForm from "@/features/expense-report/components/ExpenseReportForm";
+import StatusTag from "@/features/expense-report/components/StatusTag";
 import { toast } from "@/lib/toast";
 import {
-  listarRdcsApi,
-  criarRdcApi,
-  criarDespesaRdcApi,
-  buscarRdcApi,
-} from "@/features/rdc/rdc.api";
+  listExpenseReportsApi,
+  createExpenseReportApi,
+  createExpenseReportItemApi,
+  getExpenseReportApi,
+} from "@/features/expense-report/expense-report.api";
 import {
-  RDC_STATUS_LABEL,
-  type DespesaRdcFormItem,
-  type Rdc,
-  type RdcStatus,
-  type StoreRdcWithDespesasFormData,
-} from "@/features/rdc/rdc.types";
+  EXPENSE_REPORT_STATUS_LABEL,
+  type ExpenseReportItemFormItem,
+  type ExpenseReport,
+  type ExpenseReportStatus,
+  type StoreExpenseReportWithDespesasFormData,
+} from "@/features/expense-report/expense-report.types";
 
-type FiltroStatus = "" | RdcStatus;
+type StatusFilter = "" | ExpenseReportStatus;
 
-const STATUS_CHIPS: { label: string; value: FiltroStatus }[] = [
-  { label: "Todos",                     value: "" },
-  { label: RDC_STATUS_LABEL[1],         value: 1 },
-  { label: RDC_STATUS_LABEL[2],         value: 2 },
-  { label: RDC_STATUS_LABEL[3],         value: 3 },
-  { label: RDC_STATUS_LABEL[4],         value: 4 },
-  { label: RDC_STATUS_LABEL[5],         value: 5 },
-  { label: RDC_STATUS_LABEL[6],         value: 6 },
-  { label: RDC_STATUS_LABEL[7],         value: 7 },
+const STATUS_CHIPS: { label: string; value: StatusFilter }[] = [
+  { label: "All",                       value: "" },
+  { label: EXPENSE_REPORT_STATUS_LABEL[1],         value: 1 },
+  { label: EXPENSE_REPORT_STATUS_LABEL[2],         value: 2 },
+  { label: EXPENSE_REPORT_STATUS_LABEL[3],         value: 3 },
+  { label: EXPENSE_REPORT_STATUS_LABEL[4],         value: 4 },
+  { label: EXPENSE_REPORT_STATUS_LABEL[5],         value: 5 },
+  { label: EXPENSE_REPORT_STATUS_LABEL[6],         value: 6 },
+  { label: EXPENSE_REPORT_STATUS_LABEL[7],         value: 7 },
 ];
 
 const STATUS_BORDER: Record<number, string> = {
@@ -49,69 +49,69 @@ const STATUS_BORDER: Record<number, string> = {
   7: "border-l-red-400",
 };
 
-function fmtValor(v: number) {
+function fmtAmount(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function fmtData(iso: string) {
+function fmtDate(iso: string) {
   const [y, m, d] = iso.split("T")[0].split("-");
   return `${d}/${m}/${y}`;
 }
 
-function calcTotal(rdc: Rdc) {
-  return (rdc.despesas ?? []).reduce((acc, d) => acc + Number(d.valor ?? 0), 0);
+function calcTotal(expenseReport: ExpenseReport) {
+  return (expenseReport.items ?? []).reduce((acc, d) => acc + Number(d.amount ?? 0), 0);
 }
 
-function buildDespesaFormData(despesa: DespesaRdcFormItem, arquivos: File[]): FormData {
+function buildItemFormData(item: ExpenseReportItemFormItem, files: File[]): FormData {
   const fd = new FormData();
-  fd.append("data_despesa", despesa.data_despesa);
-  fd.append("valor", despesa.valor);
-  fd.append("id_centro_custo", despesa.id_centro_custo);
-  fd.append("descricao", despesa.descricao);
-  if (despesa.id_categoria_despesa) fd.append("id_categoria_despesa", despesa.id_categoria_despesa);
-  if (despesa.latitude != null) fd.append("latitude", String(despesa.latitude));
-  if (despesa.longitude != null) fd.append("longitude", String(despesa.longitude));
-  if (despesa.endereco) fd.append("endereco", despesa.endereco);
-  for (const file of arquivos) fd.append("anexos[]", file);
+  fd.append("expense_date", item.expense_date);
+  fd.append("amount", item.amount);
+  fd.append("cost_center_id", item.cost_center_id);
+  fd.append("description", item.description);
+  if (item.expense_category_id) fd.append("expense_category_id", item.expense_category_id);
+  if (item.latitude != null) fd.append("latitude", String(item.latitude));
+  if (item.longitude != null) fd.append("longitude", String(item.longitude));
+  if (item.address) fd.append("address", item.address);
+  for (const file of files) fd.append("attachments[]", file);
   return fd;
 }
 
-interface RdcCardProps {
-  rdc: Rdc;
+interface ExpenseReportCardProps {
+  expenseReport: ExpenseReport;
 }
 
-function RdcCard({ rdc }: RdcCardProps) {
-  const total = calcTotal(rdc);
-  const count = (rdc.despesas ?? []).length;
-  const border = STATUS_BORDER[rdc.status] ?? "border-l-app-border";
+function ExpenseReportCard({ expenseReport }: ExpenseReportCardProps) {
+  const total = calcTotal(expenseReport);
+  const count = (expenseReport.items ?? []).length;
+  const border = STATUS_BORDER[expenseReport.status] ?? "border-l-app-border";
 
   return (
-    <Link href={`/minha-caixa-de-obra/${rdc.id}`}>
+    <Link href={`/my-expense-reports/${expenseReport.id}`}>
       <motion.div whileTap={{ scale: 0.98 }} transition={{ duration: 0.12 }}>
         <Card className={`p-0 border-l-4 ${border} overflow-hidden hover:shadow-md transition-all cursor-pointer`}>
           <div className="p-4 space-y-2.5">
             <p className="text-body font-semibold text-app-text leading-snug line-clamp-2">
-              {rdc.descricao}
+              {expenseReport.description}
             </p>
             <div className="flex items-center justify-between gap-2">
-              <StatusTag status={rdc.status} />
+              <StatusTag status={expenseReport.status} />
               <span className="text-caption text-app-text-subtle shrink-0">
-                {fmtData(rdc.created_at)}
+                {fmtDate(expenseReport.created_at)}
               </span>
             </div>
-            {rdc.data_inicio_periodo && rdc.data_fim_periodo && (
+            {expenseReport.period_start_date && expenseReport.period_end_date && (
               <div className="flex items-center gap-1.5 text-small text-app-text-muted">
                 <CalendarDots size={13} weight="bold" className="shrink-0" />
                 <span>
-                  {fmtData(rdc.data_inicio_periodo)} → {fmtData(rdc.data_fim_periodo)}
+                  {fmtDate(expenseReport.period_start_date)} → {fmtDate(expenseReport.period_end_date)}
                 </span>
               </div>
             )}
           </div>
           <div className="border-t border-app-border-subtle px-4 py-2.5 flex items-center justify-between bg-app-surface-raised/40">
-            <p className="text-body font-bold text-app-text">{fmtValor(total)}</p>
+            <p className="text-body font-bold text-app-text">{fmtAmount(total)}</p>
             <span className="text-caption text-app-text-subtle">
-              {count} {count === 1 ? "despesa" : "despesas"}
+              {count} {count === 1 ? "item" : "items"}
             </span>
           </div>
         </Card>
@@ -120,99 +120,96 @@ function RdcCard({ rdc }: RdcCardProps) {
   );
 }
 
-export default function MinhaCaixaDeObraPage() {
+export default function MyExpenseReportsPage() {
   return (
     <Suspense fallback={<Loading size="sm" />}>
-      <MinhaCaixaDeObraContent />
+      <MyExpenseReportsContent />
     </Suspense>
   );
 }
 
-function MinhaCaixaDeObraContent() {
+function MyExpenseReportsContent() {
   const params = useSearchParams();
-  const [rdcs, setRdcs] = useState<Rdc[]>([]);
+  const [rdcs, setExpenseReports] = useState<ExpenseReport[]>([]);
   const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
-  const [statusFiltro, setStatusFiltro] = useState<FiltroStatus>("");
+  const [error, setError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("");
   const [showForm, setShowForm] = useState(false);
 
-  const carregar = useCallback(async () => {
+  const load = useCallback(async () => {
     setLoading(true);
-    setErro(null);
+    setError(null);
     try {
-      const data = await listarRdcsApi();
-      setRdcs(data);
+      const data = await listExpenseReportsApi();
+      setExpenseReports(data);
     } catch {
-      setErro("Não foi possível carregar as caixas de obra.");
+      setError("Could not load the reports.");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { carregar(); }, [carregar]);
+  useEffect(() => { load(); }, [load]);
 
-  // Abre o form automaticamente quando vier de /minha-caixa-de-obra?novo=1 (FAB do Prestador)
   useEffect(() => {
     if (params.get("novo") === "1") setShowForm(true);
   }, [params]);
 
-  const rdcsFiltrados = statusFiltro
-    ? rdcs.filter((r) => r.status === statusFiltro)
+  const filteredExpenseReports = statusFilter
+    ? rdcs.filter((r) => r.status === statusFilter)
     : rdcs;
 
-  async function handleCriar(dados: StoreRdcWithDespesasFormData, arquivosPorItem: File[][]) {
-    let novoId: number | null = null;
+  async function handleCreate(data: StoreExpenseReportWithDespesasFormData, filesByItem: File[][]) {
+    let newId: number | null = null;
     try {
-      const { despesas, ...rdcDados } = dados;
-      const novo = await criarRdcApi(rdcDados);
-      novoId = novo.id;
+      const { items, ...rdcData } = data;
+      const created = await createExpenseReportApi(rdcData);
+      newId = created.id;
 
-      for (const [idx, despesa] of (despesas ?? []).entries()) {
-        await criarDespesaRdcApi(novo.id, buildDespesaFormData(despesa, arquivosPorItem[idx] ?? []));
+      for (const [idx, item] of (items ?? []).entries()) {
+        await createExpenseReportItemApi(created.id, buildItemFormData(item, filesByItem[idx] ?? []));
       }
 
-      const rdcCompleto = await buscarRdcApi(novo.id);
-      setRdcs((prev) => [rdcCompleto, ...prev]);
+      const fullExpenseReport = await getExpenseReportApi(created.id);
+      setExpenseReports((prev) => [fullExpenseReport, ...prev]);
       setShowForm(false);
-      toast.success("Caixa de Obra criada com sucesso!");
+      toast.success("Report created successfully!");
     } catch (err) {
-      if (novoId !== null) {
+      if (newId !== null) {
         setShowForm(false);
-        toast.success("Caixa criada. Atualize se o item não aparecer.");
-        carregar();
+        toast.success("Report created. Refresh if the item does not appear.");
+        load();
         return;
       }
-      toast.error(err instanceof Error ? err.message : "Não foi possível salvar.");
+      toast.error(err instanceof Error ? err.message : "Could not save.");
     }
   }
 
   return (
     <>
       <div className="flex flex-col min-h-full pb-24">
-        {/* Header */}
         <div className="sticky top-0 z-10 bg-app-bg/95 backdrop-blur-sm border-b border-app-border-subtle">
           <div className="flex items-center justify-between px-4 py-4 sm:px-6">
-            <h1 className="text-feature-title text-app-text">Caixa de Obra</h1>
+            <h1 className="text-feature-title text-app-text">My Expense Reports</h1>
             <button
               onClick={() => setShowForm(true)}
               className="hidden sm:block"
             >
               <Button variant="dark" size="sm">
                 <Plus size={14} weight="bold" />
-                Nova Caixa
+                New Report
               </Button>
             </button>
           </div>
 
-          {/* Chips de status */}
           <div className="flex gap-2 px-4 sm:px-6 pb-3 overflow-x-auto scrollbar-none">
             {STATUS_CHIPS.map((chip) => (
               <button
                 key={chip.value}
-                onClick={() => setStatusFiltro(chip.value)}
+                onClick={() => setStatusFilter(chip.value)}
                 className={[
                   "shrink-0 rounded-full px-3.5 py-1.5 text-small font-semibold transition-colors whitespace-nowrap",
-                  statusFiltro === chip.value
+                  statusFilter === chip.value
                     ? "bg-brand text-white"
                     : "bg-app-surface border border-app-border text-app-text-muted hover:border-brand/40 hover:text-app-text",
                 ].join(" ")}
@@ -223,47 +220,46 @@ function MinhaCaixaDeObraContent() {
           </div>
         </div>
 
-        {/* Conteúdo */}
         <div className="flex-1 px-4 sm:px-6 pt-4">
           {loading ? (
             <Loading />
-          ) : erro ? (
+          ) : error ? (
             <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-center">
-              <p className="text-small text-red-700">{erro}</p>
+              <p className="text-small text-red-700">{error}</p>
               <button
-                onClick={carregar}
+                onClick={load}
                 className="mt-2 text-caption font-semibold text-brand hover:underline"
               >
-                Tentar novamente
+                Try again
               </button>
             </div>
-          ) : rdcsFiltrados.length === 0 ? (
+          ) : filteredExpenseReports.length === 0 ? (
             <EmptyState
               icon={Receipt}
-              title="Nenhuma caixa de obra encontrada"
+              title="No reports found"
               description={
-                statusFiltro
-                  ? "Não há registros com esse status."
-                  : "Abra sua primeira caixa de obra para registrar despesas."
+                statusFilter
+                  ? "There are no records with this status."
+                  : "Open your first report to record expenses."
               }
               action={
-                statusFiltro
-                  ? { label: "Ver todas", onClick: () => setStatusFiltro("") }
-                  : { label: "Nova Caixa", onClick: () => setShowForm(true) }
+                statusFilter
+                  ? { label: "View all", onClick: () => setStatusFilter("") }
+                  : { label: "New Report", onClick: () => setShowForm(true) }
               }
             />
           ) : (
             <AnimatePresence mode="wait">
               <motion.div
-                key={statusFiltro}
+                key={statusFilter}
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.18 }}
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
               >
-                {rdcsFiltrados.map((rdc) => (
-                  <RdcCard key={rdc.id} rdc={rdc} />
+                {filteredExpenseReports.map((expenseReport) => (
+                  <ExpenseReportCard key={expenseReport.id} expenseReport={expenseReport} />
                 ))}
               </motion.div>
             </AnimatePresence>
@@ -273,9 +269,9 @@ function MinhaCaixaDeObraContent() {
 
       <AnimatePresence>
         {showForm && (
-          <FormRdc
-            onSalvar={handleCriar}
-            onFechar={() => setShowForm(false)}
+          <ExpenseReportForm
+            onSave={handleCreate}
+            onClose={() => setShowForm(false)}
           />
         )}
       </AnimatePresence>

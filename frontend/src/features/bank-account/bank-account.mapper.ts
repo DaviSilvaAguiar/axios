@@ -1,14 +1,14 @@
 import {
-  contaBancariaResponseSchema,
-  listarContasBancariasResponseSchema,
-  type ContaBancariaResponse,
+  bankAccountResponseSchema,
+  listContasBancariasResponseSchema,
+  type BankAccountResponse,
   type ListarContasBancariasResponse,
-} from "./conta-bancaria.types";
+} from "./bank-account.types";
 
 export function mapListarContasBancarias(raw: unknown): ListarContasBancariasResponse {
-  return listarContasBancariasResponseSchema.parse(raw);
+  return listContasBancariasResponseSchema.parse(raw);
 }
 
-export function mapContaBancariaResponse(raw: unknown): ContaBancariaResponse {
-  return contaBancariaResponseSchema.parse(raw);
+export function mapBankAccountResponse(raw: unknown): BankAccountResponse {
+  return bankAccountResponseSchema.parse(raw);
 }

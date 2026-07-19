@@ -1,33 +1,33 @@
 import { z } from "zod";
 import { paginatedSchema } from "@/lib/pagination";
 
-export const contaBancariaSchema = z.object({
+export const bankAccountSchema = z.object({
   id:          z.number(),
-  descricao:   z.string(),
-  codigo_erp:  z.string().nullable(),
-  ativo:       z.boolean(),
+  description:   z.string(),
+  erp_code:  z.string().nullable(),
+  active:       z.boolean(),
 });
 
-export const listarContasBancariasResponseSchema = paginatedSchema(contaBancariaSchema);
+export const listContasBancariasResponseSchema = paginatedSchema(bankAccountSchema);
 
-export const contaBancariaResponseSchema = z.object({
-  mensagem:        z.string(),
-  conta_bancaria:  contaBancariaSchema,
+export const bankAccountResponseSchema = z.object({
+  message:        z.string(),
+  bank_account:  bankAccountSchema,
 });
 
-export function buildContaBancariaFormSchema(codigoErpObrigatorio: boolean) {
+export function buildBankAccountFormSchema(erpCodeRequired: boolean) {
   return z.object({
-    descricao:   z.string().min(1, "Informe a descrição"),
-    codigo_erp:  codigoErpObrigatorio
-      ? z.string().min(1, "Informe o código no ERP")
+    description:   z.string().min(1, "Enter a description"),
+    erp_code:  erpCodeRequired
+      ? z.string().min(1, "Enter the ERP code")
       : z.string().optional(),
-    ativo:       z.boolean(),
+    active:       z.boolean(),
   });
 }
 
-export const contaBancariaFormSchema = buildContaBancariaFormSchema(false);
+export const bankAccountFormSchema = buildBankAccountFormSchema(false);
 
-export type ContaBancaria                 = z.infer<typeof contaBancariaSchema>;
-export type ListarContasBancariasResponse = z.infer<typeof listarContasBancariasResponseSchema>;
-export type ContaBancariaResponse         = z.infer<typeof contaBancariaResponseSchema>;
-export type ContaBancariaFormData         = z.infer<typeof contaBancariaFormSchema>;
+export type BankAccount                 = z.infer<typeof bankAccountSchema>;
+export type ListarContasBancariasResponse = z.infer<typeof listContasBancariasResponseSchema>;
+export type BankAccountResponse         = z.infer<typeof bankAccountResponseSchema>;
+export type BankAccountFormData         = z.infer<typeof bankAccountFormSchema>;

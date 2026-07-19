@@ -1,11 +1,11 @@
 import { useAuth } from "@/contexts/AuthContext";
 
-export function useModulo() {
-  const { modulosHabilitados } = useAuth();
+export function useModule() {
+  const { enabledModules } = useAuth();
 
-  function temAcesso(slug: string): boolean {
-    return modulosHabilitados.includes(slug);
+  function hasAccess(slug: string): boolean {
+    return enabledModules.includes(slug);
   }
 
-  return { temAcesso };
+  return { hasAccess };
 }

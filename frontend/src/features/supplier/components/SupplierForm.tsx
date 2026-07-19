@@ -4,32 +4,32 @@ import { useEffect, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Input from "@/ui/Input";
-import BadgeAtivo from "@/ui/BadgeAtivo";
-import InputCpfCnpj from "@/ui/InputCpfCnpj";
+import ActiveBadge from "@/ui/ActiveBadge";
+import TaxIdInput from "@/ui/TaxIdInput";
 import ModalForm from "@/ui/ModalForm";
 import { apenasDigitos, maskCpfCnpj } from "@/lib/masks";
 import { toast } from "@/lib/toast";
-import { useConfigs } from "@/contexts/ConfigContext";
+import { useSettings } from "@/contexts/SettingContext";
 import {
-  buildFornecedorFormSchema,
-  type Fornecedor,
-  type FornecedorFormData,
+  buildSupplierFormSchema,
+  type Supplier,
+  type SupplierFormData,
   type TipoPessoa,
-} from "../fornecedor.types";
-import { consultarCnpjApi } from "../fornecedor.api";
+} from "../supplier.types";
+import { consultarCnpjApi } from "../supplier.api";
 
 interface Props {
-  fornecedor?: Fornecedor;
-  onSalvar: (dados: FornecedorFormData) => Promise<void>;
-  onCancelar: () => void;
+  supplier?: Supplier;
+  onSave: (data: SupplierFormData) => Promise<void>;
+  onCancel: () => void;
 }
 
-export default function FormFornecedor({ fornecedor, onSalvar, onCancelar }: Props) {
-  const { isHabilitada } = useConfigs();
-  const codigoErpObrigatorio = isHabilitada("obrigatorio_codigo_erp");
+export default function SupplierForm({ supplier, onSave, onCancel }: Props) {
+  const { isEnabled } = useSettings();
+  const erpCodeRequired = isEnabled("require_erp_code");
   const schema = useMemo(
-    () => buildFornecedorFormSchema(codigoErpObrigatorio),
-    [codigoErpObrigatorio],
+    () => buildSupplierFormSchema(erpCodeRequired),
+    [erpCodeRequired],
   );
 
   const {
@@ -40,206 +40,206 @@ export default function FormFornecedor({ fornecedor, onSalvar, onCancelar }: Pro
     setValue,
     getValues,
     formState: { errors, isSubmitting },
-  } = useForm<FornecedorFormData>({
+  } = useForm<SupplierFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      descricao:    fornecedor?.descricao ?? "",
-      cpf_cnpj:     fornecedor ? maskCpfCnpj(fornecedor.cpf_cnpj) : "",
-      tipo_pessoa:  fornecedor?.tipo_pessoa ?? "J",
-      email:        fornecedor?.email ?? "",
-      telefone:     fornecedor?.telefone ?? "",
-      cep:          fornecedor?.cep ?? "",
-      logradouro:   fornecedor?.logradouro ?? "",
-      numero:       fornecedor?.numero ?? "",
-      complemento:  fornecedor?.complemento ?? "",
-      bairro:       fornecedor?.bairro ?? "",
-      cidade:       fornecedor?.cidade ?? "",
-      uf:           fornecedor?.uf ?? "",
-      codigo_erp:   fornecedor?.codigo_erp ?? "",
-      ativo:        fornecedor?.ativo ?? true,
+      description: supplier?.description ?? "",
+      tax_id:      supplier ? maskCpfCnpj(supplier.tax_id) : "",
+      person_type: supplier?.person_type ?? "J",
+      email:       supplier?.email ?? "",
+      phone:       supplier?.phone ?? "",
+      postal_code: supplier?.postal_code ?? "",
+      street:      supplier?.street ?? "",
+      number:      supplier?.number ?? "",
+      complement:  supplier?.complement ?? "",
+      district:    supplier?.district ?? "",
+      city:        supplier?.city ?? "",
+      uf:          supplier?.uf ?? "",
+      erp_code:    supplier?.erp_code ?? "",
+      active:      supplier?.active ?? true,
     },
   });
 
-  const ultimoCnpjConsultado = useRef<string>(fornecedor?.cpf_cnpj ?? "");
+  const lastLookedUpCnpj = useRef<string>(supplier?.tax_id ?? "");
 
   useEffect(() => {
-    ultimoCnpjConsultado.current = fornecedor?.cpf_cnpj ?? "";
+    lastLookedUpCnpj.current = supplier?.tax_id ?? "";
     reset({
-      descricao:    fornecedor?.descricao ?? "",
-      cpf_cnpj:     fornecedor ? maskCpfCnpj(fornecedor.cpf_cnpj) : "",
-      tipo_pessoa:  fornecedor?.tipo_pessoa ?? "J",
-      email:        fornecedor?.email ?? "",
-      telefone:     fornecedor?.telefone ?? "",
-      cep:          fornecedor?.cep ?? "",
-      logradouro:   fornecedor?.logradouro ?? "",
-      numero:       fornecedor?.numero ?? "",
-      complemento:  fornecedor?.complemento ?? "",
-      bairro:       fornecedor?.bairro ?? "",
-      cidade:       fornecedor?.cidade ?? "",
-      uf:           fornecedor?.uf ?? "",
-      codigo_erp:   fornecedor?.codigo_erp ?? "",
-      ativo:        fornecedor?.ativo ?? true,
+      description: supplier?.description ?? "",
+      tax_id:      supplier ? maskCpfCnpj(supplier.tax_id) : "",
+      person_type: supplier?.person_type ?? "J",
+      email:       supplier?.email ?? "",
+      phone:       supplier?.phone ?? "",
+      postal_code: supplier?.postal_code ?? "",
+      street:      supplier?.street ?? "",
+      number:      supplier?.number ?? "",
+      complement:  supplier?.complement ?? "",
+      district:    supplier?.district ?? "",
+      city:        supplier?.city ?? "",
+      uf:          supplier?.uf ?? "",
+      erp_code:    supplier?.erp_code ?? "",
+      active:      supplier?.active ?? true,
     });
-  }, [fornecedor, reset]);
+  }, [supplier, reset]);
 
-  const tipoPessoa = watch("tipo_pessoa");
-  const cpfCnpj    = watch("cpf_cnpj");
-  const ativo      = watch("ativo");
+  const personType = watch("person_type");
+  const taxId      = watch("tax_id");
+  const active     = watch("active");
 
   useEffect(() => {
-    if (tipoPessoa !== "J") return;
+    if (personType !== "J") return;
 
-    const digits = apenasDigitos(cpfCnpj);
+    const digits = apenasDigitos(taxId);
     if (digits.length !== 14) return;
-    if (ultimoCnpjConsultado.current === digits) return;
+    if (lastLookedUpCnpj.current === digits) return;
 
-    ultimoCnpjConsultado.current = digits;
-    const toastId = toast.loading("Buscando dados de fornecedor…");
+    lastLookedUpCnpj.current = digits;
+    const toastId = toast.loading("Fetching supplier data…");
 
     consultarCnpjApi(digits)
-      .then((resultado) => {
-        if (!resultado) {
-          toast.error("Dados de fornecedor não foram encontrados na receita.", { id: toastId });
+      .then((result) => {
+        if (!result) {
+          toast.error("Supplier data not found.", { id: toastId });
           return;
         }
-        const atual = getValues();
-        const preencherSeVazio = (campo: keyof FornecedorFormData, valor: string | null) => {
-          if (valor && !atual[campo]) {
-            setValue(campo, valor, { shouldValidate: true });
+        const current = getValues();
+        const fillIfEmpty = (field: keyof SupplierFormData, value: string | null) => {
+          if (value && !current[field]) {
+            setValue(field, value, { shouldValidate: true });
           }
         };
-        preencherSeVazio("descricao",   resultado.descricao);
-        preencherSeVazio("email",       resultado.email);
-        preencherSeVazio("telefone",    resultado.telefone);
-        preencherSeVazio("cep",         resultado.cep);
-        preencherSeVazio("logradouro",  resultado.logradouro);
-        preencherSeVazio("numero",      resultado.numero);
-        preencherSeVazio("complemento", resultado.complemento);
-        preencherSeVazio("bairro",      resultado.bairro);
-        preencherSeVazio("cidade",      resultado.cidade);
-        preencherSeVazio("uf",          resultado.uf);
-        toast.success("Dados recebidos com sucesso.", { id: toastId });
+        fillIfEmpty("description", result.description);
+        fillIfEmpty("email",       result.email);
+        fillIfEmpty("phone",       result.phone);
+        fillIfEmpty("postal_code", result.postal_code);
+        fillIfEmpty("street",      result.street);
+        fillIfEmpty("number",      result.number);
+        fillIfEmpty("complement",  result.complement);
+        fillIfEmpty("district",    result.district);
+        fillIfEmpty("city",        result.city);
+        fillIfEmpty("uf",          result.uf);
+        toast.success("Data received successfully.", { id: toastId });
       });
-  }, [cpfCnpj, tipoPessoa, getValues, setValue]);
+  }, [taxId, personType, getValues, setValue]);
 
-  function trocarTipo(novo: TipoPessoa) {
-    if (novo === tipoPessoa) return;
-    setValue("tipo_pessoa", novo, { shouldValidate: false });
-    setValue("cpf_cnpj", "", { shouldValidate: false });
-    ultimoCnpjConsultado.current = "";
+  function changeType(next: TipoPessoa) {
+    if (next === personType) return;
+    setValue("person_type", next, { shouldValidate: false });
+    setValue("tax_id", "", { shouldValidate: false });
+    lastLookedUpCnpj.current = "";
   }
 
-  function onChangeCpfCnpj(valor: string) {
-    const maxDigits = tipoPessoa === "F" ? 11 : 14;
-    const digits = apenasDigitos(valor).slice(0, maxDigits);
-    setValue("cpf_cnpj", maskCpfCnpj(digits), { shouldValidate: true });
+  function onChangeTaxId(value: string) {
+    const maxDigits = personType === "F" ? 11 : 14;
+    const digits = apenasDigitos(value).slice(0, maxDigits);
+    setValue("tax_id", maskCpfCnpj(digits), { shouldValidate: true });
   }
 
   return (
     <ModalForm
-      titulo={fornecedor ? "Editar Fornecedor" : "Novo Fornecedor"}
-      onCancelar={onCancelar}
-      onSubmit={handleSubmit(onSalvar)}
+      titulo={supplier ? "Edit Supplier" : "New Supplier"}
+      onCancelar={onCancel}
+      onSubmit={handleSubmit(onSave)}
       submitting={isSubmitting}
     >
       <div className="flex flex-col md:flex-row md:items-start gap-4">
           <div className="flex flex-col gap-1.5">
-            <span className="text-caption font-semibold text-app-text-muted">Tipo de pessoa</span>
+            <span className="text-caption font-semibold text-app-text-muted">Entity type</span>
             <div className="inline-flex rounded-xl border border-app-border bg-app-surface p-0.5 w-fit">
               {(["J", "F"] as const).map((t) => (
                 <button
                   key={t}
                   type="button"
-                  onClick={() => trocarTipo(t)}
+                  onClick={() => changeType(t)}
                   className={[
                     "rounded-lg px-4 py-[7px] text-body-sm font-medium transition-colors cursor-pointer",
-                    tipoPessoa === t
+                    personType === t
                       ? "bg-brand text-white"
                       : "text-app-text-muted hover:text-app-text",
                   ].join(" ")}
                 >
-                  {t === "J" ? "Jurídica" : "Física"}
+                  {t === "J" ? "Company" : "Individual"}
                 </button>
               ))}
             </div>
           </div>
 
           <div className="flex-1">
-            <InputCpfCnpj
-              label={tipoPessoa === "J" ? "CNPJ" : "CPF"}
-              value={cpfCnpj}
-              onChange={onChangeCpfCnpj}
-              error={errors.cpf_cnpj?.message}
-              placeholder={tipoPessoa === "J" ? "00.000.000/0000-00" : "000.000.000-00"}
+            <TaxIdInput
+              label={personType === "J" ? "CNPJ" : "CPF"}
+              value={taxId}
+              onChange={onChangeTaxId}
+              error={errors.tax_id?.message}
+              placeholder={personType === "J" ? "00.000.000/0000-00" : "000.000.000-00"}
             />
           </div>
         </div>
 
         <Input
-          label={tipoPessoa === "J" ? "Razão Social" : "Nome"}
-          placeholder="Descrição do fornecedor"
-          error={errors.descricao?.message}
-          {...register("descricao")}
+          label={personType === "J" ? "Legal Name" : "Name"}
+          placeholder="Supplier description"
+          error={errors.description?.message}
+          {...register("description")}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
-            label="E-mail"
+            label="Email"
             type="email"
-            placeholder="contato@empresa.com.br"
+            placeholder="contact@company.com"
             error={errors.email?.message}
             {...register("email")}
           />
           <Input
-            label="Telefone"
+            label="Phone"
             placeholder="(00) 00000-0000"
-            error={errors.telefone?.message}
-            {...register("telefone")}
+            error={errors.phone?.message}
+            {...register("phone")}
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-[120px_1fr_120px] gap-4">
           <Input
-            label="CEP"
+            label="Postal Code"
             placeholder="00000000"
-            error={errors.cep?.message}
-            {...register("cep")}
+            error={errors.postal_code?.message}
+            {...register("postal_code")}
           />
           <Input
-            label="Logradouro"
-            placeholder="Rua, avenida…"
-            error={errors.logradouro?.message}
-            {...register("logradouro")}
+            label="Street"
+            placeholder="Street, avenue…"
+            error={errors.street?.message}
+            {...register("street")}
           />
           <Input
-            label="Número"
+            label="Number"
             placeholder="123"
-            error={errors.numero?.message}
-            {...register("numero")}
+            error={errors.number?.message}
+            {...register("number")}
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_80px] gap-4">
           <Input
-            label="Complemento"
-            placeholder="Sala, andar…"
-            error={errors.complemento?.message}
-            {...register("complemento")}
+            label="Complement"
+            placeholder="Suite, floor…"
+            error={errors.complement?.message}
+            {...register("complement")}
           />
           <Input
-            label="Bairro"
-            placeholder="Bairro"
-            error={errors.bairro?.message}
-            {...register("bairro")}
+            label="District"
+            placeholder="District"
+            error={errors.district?.message}
+            {...register("district")}
           />
           <Input
-            label="Cidade"
-            placeholder="Cidade"
-            error={errors.cidade?.message}
-            {...register("cidade")}
+            label="City"
+            placeholder="City"
+            error={errors.city?.message}
+            {...register("city")}
           />
           <Input
-            label="UF"
+            label="State"
             placeholder="SP"
             maxLength={2}
             error={errors.uf?.message}
@@ -248,20 +248,20 @@ export default function FormFornecedor({ fornecedor, onSalvar, onCancelar }: Pro
         </div>
 
         <Input
-          label="Código no ERP"
-          placeholder="ID do contato no ERP de destino"
-          error={errors.codigo_erp?.message}
-          {...register("codigo_erp")}
+          label="ERP Code"
+          placeholder="Contact ID in the target ERP"
+          error={errors.erp_code?.message}
+          {...register("erp_code")}
         />
 
         <div className="flex flex-col gap-1.5">
           <span className="text-caption font-semibold text-app-text-muted">Status</span>
           <button
             type="button"
-            onClick={() => setValue("ativo", !ativo)}
+            onClick={() => setValue("active", !active)}
             className="w-fit cursor-pointer transition-opacity hover:opacity-80"
           >
-            <BadgeAtivo ativo={ativo} />
+            <ActiveBadge ativo={active} />
           </button>
         </div>
 

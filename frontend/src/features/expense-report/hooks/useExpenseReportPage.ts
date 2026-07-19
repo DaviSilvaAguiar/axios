@@ -1,362 +1,323 @@
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "@/lib/toast";
-import { aprovarRdcComCaixaApi } from "@/features/caixa-conta/caixa-conta.api";
+import { aprovarExpenseReportComCaixaApi } from "@/features/fund/fund.api";
 import {
-  listarRdcsApi,
-  buscarRdcApi,
-  criarRdcApi,
-  criarDespesaRdcApi,
-  atualizarDespesaRdcApi,
-  adicionarAnexoDespesaRdcApi,
-  atualizarRdcApi,
-  atualizarStatusRdcApi,
-  deletarRdcApi,
-} from "../rdc.api";
+  listExpenseReportsApi,
+  getExpenseReportApi,
+  createExpenseReportApi,
+  createExpenseReportItemApi,
+  updateExpenseReportItemApi,
+  adicionarAnexoExpenseReportItemApi,
+  updateExpenseReportApi,
+  updateStatusExpenseReportApi,
+  deleteExpenseReportApi,
+} from "../expense-report.api";
 import {
-  type DespesaRdcFormItem,
-  type Rdc,
-  type RdcStatus,
-  type StoreRdcWithDespesasFormData,
-} from "../rdc.types";
+  type ExpenseReportItemFormItem,
+  type ExpenseReport,
+  type ExpenseReportStatus,
+  type StoreExpenseReportWithDespesasFormData,
+} from "../expense-report.types";
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
-
-function buildDespesaFormData(despesa: DespesaRdcFormItem, arquivos: File[]): FormData {
+function buildItemFormData(item: ExpenseReportItemFormItem, files: File[]): FormData {
   const fd = new FormData();
-  fd.append("data_despesa", despesa.data_despesa);
-  fd.append("valor", despesa.valor);
-  fd.append("id_centro_custo", despesa.id_centro_custo);
-  fd.append("descricao", despesa.descricao);
-  if (despesa.id_categoria_despesa) fd.append("id_categoria_despesa", despesa.id_categoria_despesa);
-  if (despesa.latitude != null) fd.append("latitude", String(despesa.latitude));
-  if (despesa.longitude != null) fd.append("longitude", String(despesa.longitude));
-  if (despesa.endereco) fd.append("endereco", despesa.endereco);
-  if (despesa.descricao_fornecedor) fd.append("descricao_fornecedor", despesa.descricao_fornecedor);
-  if (despesa.cpf_cnpj_fornecedor) fd.append("cpf_cnpj_fornecedor", despesa.cpf_cnpj_fornecedor.replace(/\D/g, ""));
-  if (despesa.id_fornecedor) fd.append("id_fornecedor", despesa.id_fornecedor);
-  for (const file of arquivos) fd.append("anexos[]", file);
+  fd.append("expense_date", item.expense_date);
+  fd.append("amount", item.amount);
+  fd.append("cost_center_id", item.cost_center_id);
+  fd.append("description", item.description);
+  if (item.expense_category_id) fd.append("expense_category_id", item.expense_category_id);
+  if (item.latitude != null) fd.append("latitude", String(item.latitude));
+  if (item.longitude != null) fd.append("longitude", String(item.longitude));
+  if (item.address) fd.append("address", item.address);
+  if (item.description_supplier) fd.append("description_supplier", item.description_supplier);
+  if (item.supplier_tax_id) fd.append("supplier_tax_id", item.supplier_tax_id.replace(/\D/g, ""));
+  if (item.supplier_id) fd.append("supplier_id", item.supplier_id);
+  for (const file of files) fd.append("attachments[]", file);
   return fd;
 }
 
-// ── Tipos de filtro ──────────────────────────────────────────────────────────
-
-export interface RdcFiltros {
-  requisitante: string;
+export interface ExpenseReportFilters {
+  requester: string;
   status: string;
-  dataInicio: string;
-  dataFim: string;
+  startDate: string;
+  endDate: string;
 }
 
-// ── Hook ─────────────────────────────────────────────────────────────────────
-
-export function useRdcPage() {
-  // Lista e carregamento
-  const [rdcs, setRdcs] = useState<Rdc[]>([]);
+export function useExpenseReportPage() {
+  const [rdcs, setExpenseReports] = useState<ExpenseReport[]>([]);
   const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // UI
   const [showForm, setShowForm] = useState(false);
-  const [viewMode, setViewMode] = useState<"kanban" | "lista">("kanban");
-  const [filtros, setFiltros] = useState<RdcFiltros>({
-    requisitante: "",
+  const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
+  const [filters, setFilters] = useState<ExpenseReportFilters>({
+    requester: "",
     status: "",
-    dataInicio: "",
-    dataFim: "",
+    startDate: "",
+    endDate: "",
   });
 
-  // RDC selecionado (auditoria)
-  const [rdcSelecionado, setRdcSelecionado] = useState<Rdc | null>(null);
+  const [selectedExpenseReport, setSelectedExpenseReport] = useState<ExpenseReport | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editOrigemKanban, setEditOrigemKanban] = useState(false);
+  const [editFromKanban, setEditFromKanban] = useState(false);
 
-  // Modais de ação
-  const [rdcParaAprovar, setRdcParaAprovar] = useState<Rdc | null>(null);
-  const [rdcParaRejeitar, setRdcParaRejeitar] = useState<Rdc | null>(null);
-  const [rejeitando, setRejeitando] = useState(false);
-  const [motivoRejeicaoKanban, setMotivoRejeicaoKanban] = useState("");
-  const [rdcParaAgendar, setRdcParaAgendar] = useState<Rdc | null>(null);
-  const [rdcParaExcluir, setRdcParaExcluir] = useState<Rdc | null>(null);
-  const [excluindo, setExcluindo] = useState(false);
+  const [rdcToApprove, setExpenseReportToApprove] = useState<ExpenseReport | null>(null);
+  const [rdcToReject, setExpenseReportToReject] = useState<ExpenseReport | null>(null);
+  const [rejecting, setRejecting] = useState(false);
+  const [kanbanRejectReason, setKanbanRejectReason] = useState("");
+  const [rdcToSchedule, setExpenseReportToSchedule] = useState<ExpenseReport | null>(null);
+  const [rdcToDelete, setExpenseReportToDelete] = useState<ExpenseReport | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  // ── Carregamento ────────────────────────────────────────────────────────────
-
-  const carregar = useCallback(async () => {
+  const load = useCallback(async () => {
     try {
-      const data = await listarRdcsApi();
-      setRdcs(data);
-      setErro(null);
+      const data = await listExpenseReportsApi();
+      setExpenseReports(data);
+      setError(null);
     } catch {
-      setErro("Não foi possível carregar os RDCs.");
+      setError("Could not load the reports.");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { carregar(); }, [carregar]);
+  useEffect(() => { load(); }, [load]);
 
-  function recarregar() {
+  function reload() {
     setLoading(true);
-    setErro(null);
-    carregar();
+    setError(null);
+    load();
   }
 
-  // ── Filtro ──────────────────────────────────────────────────────────────────
-
-  const rdcsFiltrados = rdcs.filter((r) => {
-    if (filtros.requisitante && !(r.descricao_requisitante ?? "").toLowerCase().includes(filtros.requisitante.toLowerCase())) return false;
-    if (filtros.status && String(r.status) !== filtros.status) return false;
-    if (filtros.dataInicio && r.created_at.slice(0, 10) < filtros.dataInicio) return false;
-    if (filtros.dataFim && r.created_at.slice(0, 10) > filtros.dataFim) return false;
+  const filteredExpenseReports = rdcs.filter((r) => {
+    if (filters.requester && !(r.requester_description ?? "").toLowerCase().includes(filters.requester.toLowerCase())) return false;
+    if (filters.status && String(r.status) !== filters.status) return false;
+    if (filters.startDate && r.created_at.slice(0, 10) < filters.startDate) return false;
+    if (filters.endDate && r.created_at.slice(0, 10) > filters.endDate) return false;
     return true;
   });
 
-  // ── Mutations locais ────────────────────────────────────────────────────────
-
-  function atualizarRdcLocal(id: number, patch: Partial<Rdc>) {
-    setRdcs((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  function updateExpenseReportLocal(id: number, patch: Partial<ExpenseReport>) {
+    setExpenseReports((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   }
 
-  // ── Kanban ──────────────────────────────────────────────────────────────────
+  async function handleMoveExpenseReport(id: number, newStatus: ExpenseReportStatus) {
+    const expenseReport = rdcs.find((r) => r.id === id);
 
-  async function handleMoverRdc(id: number, novoStatus: RdcStatus) {
-    const rdc = rdcs.find((r) => r.id === id);
-
-    if (novoStatus === 3) { if (rdc) { setRdcParaAprovar(rdc); return; } }
-    if (novoStatus === 6) { if (rdc) { setRdcParaRejeitar(rdc); return; } }
-    if (novoStatus === 4) { if (rdc) { setRdcParaAgendar(rdc); return; } }
+    if (newStatus === 3) { if (expenseReport) { setExpenseReportToApprove(expenseReport); return; } }
+    if (newStatus === 6) { if (expenseReport) { setExpenseReportToReject(expenseReport); return; } }
+    if (newStatus === 4) { if (expenseReport) { setExpenseReportToSchedule(expenseReport); return; } }
 
     try {
-      await atualizarStatusRdcApi(id, novoStatus);
-      atualizarRdcLocal(id, { status: novoStatus });
+      await updateStatusExpenseReportApi(id, newStatus);
+      updateExpenseReportLocal(id, { status: newStatus });
     } catch {
-      toast.error("Não foi possível mover o RDC. Tente novamente.");
+      toast.error("Could not move the report. Please try again.");
     }
   }
 
-  // ── Aprovação ───────────────────────────────────────────────────────────────
-
-  async function handleConfirmarAprovacao(idCaixaConta: number) {
-    if (!rdcParaAprovar) return;
+  async function handleConfirmApproval(fundId: number) {
+    if (!rdcToApprove) return;
     try {
-      await aprovarRdcComCaixaApi(rdcParaAprovar.id, idCaixaConta);
-      atualizarRdcLocal(rdcParaAprovar.id, { status: 4 });
-      if (rdcSelecionado?.id === rdcParaAprovar.id) {
-        setRdcSelecionado((prev) => prev ? { ...prev, status: 4 } : prev);
+      await aprovarExpenseReportComCaixaApi(rdcToApprove.id, fundId);
+      updateExpenseReportLocal(rdcToApprove.id, { status: 4 });
+      if (selectedExpenseReport?.id === rdcToApprove.id) {
+        setSelectedExpenseReport((prev) => prev ? { ...prev, status: 4 } : prev);
       }
-      setRdcParaAprovar(null);
-      toast.success("RDC aprovado e caixa debitado.");
+      setExpenseReportToApprove(null);
+      toast.success("Report approved and fund debited.");
     } catch {
-      toast.error("Não foi possível aprovar o RDC.");
+      toast.error("Could not approve the report.");
     }
   }
 
-  // ── Rejeição ────────────────────────────────────────────────────────────────
-
-  async function handleRejeitarRdc(rdc: Rdc, motivo?: string) {
-    const atualizado = await atualizarStatusRdcApi(rdc.id, 7, motivo);
-    atualizarRdcLocal(atualizado.id, atualizado);
-    if (rdcSelecionado?.id === rdc.id) setRdcSelecionado(atualizado);
-    toast.success("RDC rejeitado.");
+  async function handleRejectExpenseReport(expenseReport: ExpenseReport, reason?: string) {
+    const updated = await updateStatusExpenseReportApi(expenseReport.id, 7, reason);
+    updateExpenseReportLocal(updated.id, updated);
+    if (selectedExpenseReport?.id === expenseReport.id) setSelectedExpenseReport(updated);
+    toast.success("Report rejected.");
   }
 
-  async function handleConfirmarRejeicao() {
-    if (!rdcParaRejeitar) return;
-    setRejeitando(true);
+  async function handleConfirmReject() {
+    if (!rdcToReject) return;
+    setRejecting(true);
     try {
-      await handleRejeitarRdc(rdcParaRejeitar, motivoRejeicaoKanban || undefined);
-      setRdcParaRejeitar(null);
-      setMotivoRejeicaoKanban("");
+      await handleRejectExpenseReport(rdcToReject, kanbanRejectReason || undefined);
+      setExpenseReportToReject(null);
+      setKanbanRejectReason("");
     } catch (err) {
-      console.error("Erro ao rejeitar RDC:", err);
-      toast.error(err instanceof Error ? err.message : "Não foi possível rejeitar o RDC.");
+      console.error("Error rejecting report:", err);
+      toast.error(err instanceof Error ? err.message : "Could not reject the report.");
     } finally {
-      setRejeitando(false);
+      setRejecting(false);
     }
   }
 
-  // ── Agendamento de pagamento ─────────────────────────────────────────────────
-
-  async function handleConfirmarAgendamento(dataPagamento: string) {
-    if (!rdcParaAgendar) return;
+  async function handleConfirmSchedule(paymentDate: string) {
+    if (!rdcToSchedule) return;
     try {
-      const atualizado = await atualizarStatusRdcApi(rdcParaAgendar.id, 5, undefined, dataPagamento);
-      atualizarRdcLocal(atualizado.id, atualizado);
-      if (rdcSelecionado?.id === rdcParaAgendar.id) setRdcSelecionado(atualizado);
-      setRdcParaAgendar(null);
-      toast.success("Pagamento agendado com sucesso!");
+      const updated = await updateStatusExpenseReportApi(rdcToSchedule.id, 5, undefined, paymentDate);
+      updateExpenseReportLocal(updated.id, updated);
+      if (selectedExpenseReport?.id === rdcToSchedule.id) setSelectedExpenseReport(updated);
+      setExpenseReportToSchedule(null);
+      toast.success("Payment scheduled successfully!");
     } catch {
-      toast.error("Não foi possível agendar o pagamento.");
+      toast.error("Could not schedule the payment.");
     }
   }
 
-  async function handleMarcarPago(rdc: Rdc) {
+  async function handleMarkPaid(expenseReport: ExpenseReport) {
     try {
-      const atualizado = await atualizarStatusRdcApi(rdc.id, 6);
-      atualizarRdcLocal(atualizado.id, atualizado);
-      if (rdcSelecionado?.id === rdc.id) setRdcSelecionado(atualizado);
-      toast.success("RDC marcado como pago.");
+      const updated = await updateStatusExpenseReportApi(expenseReport.id, 6);
+      updateExpenseReportLocal(updated.id, updated);
+      if (selectedExpenseReport?.id === expenseReport.id) setSelectedExpenseReport(updated);
+      toast.success("Report marked as paid.");
     } catch {
-      toast.error("Não foi possível marcar como pago.");
+      toast.error("Could not mark it as paid.");
     }
   }
 
-  // ── Criação ─────────────────────────────────────────────────────────────────
-
-  async function handleCriarRdc(dados: StoreRdcWithDespesasFormData, arquivosPorItem: File[][]) {
-    let novoId: number | null = null;
+  async function handleCreateExpenseReport(data: StoreExpenseReportWithDespesasFormData, filesByItem: File[][]) {
+    let newId: number | null = null;
     try {
-      const { despesas, ...rdcDados } = dados;
-      const novo = await criarRdcApi(rdcDados);
-      novoId = novo.id;
+      const { items, ...rdcData } = data;
+      const created = await createExpenseReportApi(rdcData);
+      newId = created.id;
 
-      for (const [idx, despesa] of (despesas ?? []).entries()) {
-        await criarDespesaRdcApi(novo.id, buildDespesaFormData(despesa, arquivosPorItem[idx] ?? []));
+      for (const [idx, item] of (items ?? []).entries()) {
+        await createExpenseReportItemApi(created.id, buildItemFormData(item, filesByItem[idx] ?? []));
       }
 
-      const rdcCompleto = await buscarRdcApi(novo.id);
-      setRdcs((prev) => [rdcCompleto, ...prev]);
+      const fullExpenseReport = await getExpenseReportApi(created.id);
+      setExpenseReports((prev) => [fullExpenseReport, ...prev]);
       setShowForm(false);
-      toast.success("RDC criado com sucesso!");
+      toast.success("Report created successfully!");
     } catch (err) {
-      console.error("Erro ao criar RDC:", err);
-      if (novoId !== null) {
+      console.error("Error creating report:", err);
+      if (newId !== null) {
         setShowForm(false);
-        toast.success("RDC criado. Atualize a lista se o item não aparecer.");
-        carregar();
+        toast.success("Report created. Refresh the list if the item does not appear.");
+        load();
         return;
       }
-      toast.error(err instanceof Error ? err.message : "Não foi possível salvar o RDC.");
+      toast.error(err instanceof Error ? err.message : "Could not save the report.");
     }
   }
 
-  // ── Edição ──────────────────────────────────────────────────────────────────
-
-  async function handleEditarRdc(dados: StoreRdcWithDespesasFormData, arquivos: File[][] = []) {
-    if (!rdcSelecionado) return;
+  async function handleEditExpenseReport(data: StoreExpenseReportWithDespesasFormData, files: File[][] = []) {
+    if (!selectedExpenseReport) return;
     try {
-      const { despesas, ...rdcDados } = dados;
-      await atualizarRdcApi(rdcSelecionado.id, rdcDados);
+      const { items, ...rdcData } = data;
+      await updateExpenseReportApi(selectedExpenseReport.id, rdcData);
 
-      const existingDespesas = rdcSelecionado.despesas ?? [];
-      const existingCount = existingDespesas.length;
-      const despesasForm = despesas ?? [];
+      const existingItems = selectedExpenseReport.items ?? [];
+      const existingCount = existingItems.length;
+      const formItems = items ?? [];
 
       for (let idx = 0; idx < existingCount; idx++) {
-        const despesaOriginal = existingDespesas[idx];
-        const despesaForm = despesasForm[idx];
-        if (!despesaOriginal || !despesaForm) continue;
-        await atualizarDespesaRdcApi(rdcSelecionado.id, despesaOriginal.id, despesaForm);
+        const originalItem = existingItems[idx];
+        const formItem = formItems[idx];
+        if (!originalItem || !formItem) continue;
+        await updateExpenseReportItemApi(selectedExpenseReport.id, originalItem.id, formItem);
       }
 
       await Promise.all(
-        existingDespesas.flatMap((despesaOriginal, idx) =>
-          (arquivos[idx] ?? []).map((file) =>
-            adicionarAnexoDespesaRdcApi(rdcSelecionado.id, despesaOriginal.id, file)
+        existingItems.flatMap((originalItem, idx) =>
+          (files[idx] ?? []).map((file) =>
+            adicionarAnexoExpenseReportItemApi(selectedExpenseReport.id, originalItem.id, file)
           )
         )
       );
 
-      const novasDespesas = despesasForm.slice(existingCount);
-      for (const [i, despesa] of novasDespesas.entries()) {
-        await criarDespesaRdcApi(rdcSelecionado.id, buildDespesaFormData(despesa, arquivos[existingCount + i] ?? []));
+      const newItems = formItems.slice(existingCount);
+      for (const [i, item] of newItems.entries()) {
+        await createExpenseReportItemApi(selectedExpenseReport.id, buildItemFormData(item, files[existingCount + i] ?? []));
       }
 
-      const rdcCompleto = await buscarRdcApi(rdcSelecionado.id);
-      atualizarRdcLocal(rdcCompleto.id, rdcCompleto);
+      const fullExpenseReport = await getExpenseReportApi(selectedExpenseReport.id);
+      updateExpenseReportLocal(fullExpenseReport.id, fullExpenseReport);
 
-      if (editOrigemKanban) {
-        setRdcSelecionado(null);
-        setEditOrigemKanban(false);
+      if (editFromKanban) {
+        setSelectedExpenseReport(null);
+        setEditFromKanban(false);
       } else {
-        setRdcSelecionado(rdcCompleto);
+        setSelectedExpenseReport(fullExpenseReport);
       }
       setIsEditing(false);
-      toast.success("RDC atualizado com sucesso!");
+      toast.success("Report updated successfully!");
     } catch (err) {
-      console.error("Erro ao atualizar RDC:", err);
-      toast.error(err instanceof Error ? err.message : "Não foi possível salvar as alterações.");
+      console.error("Error updating report:", err);
+      toast.error(err instanceof Error ? err.message : "Could not save the changes.");
     }
   }
 
-  // ── Submissão (Rascunho → Em Análise) ──────────────────────────────────────
-
-  async function handleSubmeterRdc() {
-    if (!rdcSelecionado) return;
-    const atualizado = await atualizarStatusRdcApi(rdcSelecionado.id, 2);
-    atualizarRdcLocal(atualizado.id, atualizado);
-    setRdcSelecionado(null);
-    toast.success("RDC enviado para aprovação!");
+  async function handleSubmitExpenseReport() {
+    if (!selectedExpenseReport) return;
+    const updated = await updateStatusExpenseReportApi(selectedExpenseReport.id, 2);
+    updateExpenseReportLocal(updated.id, updated);
+    setSelectedExpenseReport(null);
+    toast.success("Report sent for approval!");
   }
 
-  // ── Exclusão ────────────────────────────────────────────────────────────────
-
-  async function handleConfirmarExclusao() {
-    if (!rdcParaExcluir) return;
-    setExcluindo(true);
+  async function handleConfirmDelete() {
+    if (!rdcToDelete) return;
+    setDeleting(true);
     try {
-      await deletarRdcApi(rdcParaExcluir.id);
-      setRdcs((prev) => prev.filter((r) => r.id !== rdcParaExcluir.id));
-      setRdcParaExcluir(null);
-      toast.success("RDC excluído com sucesso!");
+      await deleteExpenseReportApi(rdcToDelete.id);
+      setExpenseReports((prev) => prev.filter((r) => r.id !== rdcToDelete.id));
+      setExpenseReportToDelete(null);
+      toast.success("Report deleted successfully!");
     } catch (err) {
-      console.error("Erro ao excluir RDC:", err);
-      toast.error(err instanceof Error ? err.message : "Não foi possível excluir o RDC.");
+      console.error("Error deleting report:", err);
+      toast.error(err instanceof Error ? err.message : "Could not delete the report.");
     } finally {
-      setExcluindo(false);
+      setDeleting(false);
     }
   }
-
-  // ── Retorno ─────────────────────────────────────────────────────────────────
 
   return {
-    // Lista
     rdcs,
-    rdcsFiltrados,
+    filteredExpenseReports,
     loading,
-    erro,
-    recarregar,
+    error,
+    reload,
 
-    // UI
     showForm,
     setShowForm,
     viewMode,
     setViewMode,
-    filtros,
-    setFiltros,
+    filters,
+    setFilters,
 
-    // Auditoria
-    rdcSelecionado,
-    setRdcSelecionado,
+    selectedExpenseReport,
+    setSelectedExpenseReport,
     isEditing,
     setIsEditing,
-    editOrigemKanban,
-    setEditOrigemKanban,
+    editFromKanban,
+    setEditFromKanban,
 
-    // Modais
-    rdcParaAprovar,
-    setRdcParaAprovar,
-    rdcParaRejeitar,
-    setRdcParaRejeitar,
-    rejeitando,
-    motivoRejeicaoKanban,
-    setMotivoRejeicaoKanban,
-    rdcParaAgendar,
-    setRdcParaAgendar,
-    rdcParaExcluir,
-    setRdcParaExcluir,
-    excluindo,
+    rdcToApprove,
+    setExpenseReportToApprove,
+    rdcToReject,
+    setExpenseReportToReject,
+    rejecting,
+    kanbanRejectReason,
+    setKanbanRejectReason,
+    rdcToSchedule,
+    setExpenseReportToSchedule,
+    rdcToDelete,
+    setExpenseReportToDelete,
+    deleting,
 
-    // Handlers
-    handleMoverRdc,
-    handleCriarRdc,
-    handleEditarRdc,
-    handleSubmeterRdc,
-    handleConfirmarAprovacao,
-    handleRejeitarRdc,
-    handleConfirmarRejeicao,
-    handleConfirmarAgendamento,
-    handleMarcarPago,
-    handleConfirmarExclusao,
+    handleMoveExpenseReport,
+    handleCreateExpenseReport,
+    handleEditExpenseReport,
+    handleSubmitExpenseReport,
+    handleConfirmApproval,
+    handleRejectExpenseReport,
+    handleConfirmReject,
+    handleConfirmSchedule,
+    handleMarkPaid,
+    handleConfirmDelete,
   };
 }
