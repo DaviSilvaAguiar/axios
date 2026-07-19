@@ -98,7 +98,7 @@ class IntegrationDispatchService
         }
 
         $batch = DB::transaction(function () use ($idUser, $batchType, $integration, $successes): ExportBatch {
-            $totalAmount = $this->calculateTotalAmount($batchType, $successes);
+            $totalAmount = $this->calculateTotalAmount($successes);
 
             $batch = ExportBatch::create([
                 'user_id'         => $idUser,
@@ -140,11 +140,11 @@ class IntegrationDispatchService
             return [
                 'id_plan_accounts_entities' => $this->categoryCode($d),
                 'id_cost_centers'           => $this->costCenterCode($d, $expenseReport->costCenter?->erp_code),
-                'value_in_cent'             => $this->toCents($this->amountExpenseReportItem($d)),
+                'value_in_cent'             => $this->toCents($d->value()),
             ];
         })->all();
 
-        $total      = $expenseReport->items->reduce(fn (Money $carry, ExpenseReportItem $d) => $carry->add($this->amountExpenseReportItem($d)), Money::zero());
+        $total      = $expenseReport->total();
         $competence = $expenseReport->needed_at ?? $expenseReport->created_at;
         $dueDate    = $expenseReport->paid_at;
 
@@ -173,11 +173,11 @@ class IntegrationDispatchService
             return [
                 'id_plan_accounts_entities' => $this->categoryCode($d),
                 'id_cost_centers'           => $this->costCenterCode($d),
-                'value_in_cent'             => $this->toCents($d->amount ?? Money::zero()),
+                'value_in_cent'             => $this->toCents($d->value()),
             ];
         })->all();
 
-        $total      = $reimbursement->items->reduce(fn (Money $carry, ReimbursementItem $d) => $carry->add($d->amount ?? Money::zero()), Money::zero());
+        $total      = $reimbursement->total();
         $competence = $reimbursement->period_start_date ?? $reimbursement->created_at;
         $dueDate    = $reimbursement->scheduled_payment_date ?? Carbon::now(self::TIMEZONE_LOCAL)->addDays(7);
 
@@ -226,14 +226,6 @@ class IntegrationDispatchService
         return (int) $code;
     }
 
-    private function amountExpenseReportItem(ExpenseReportItem $d): Money
-    {
-        if ($d->amount !== null) {
-            return $d->amount;
-        }
-        return ($d->unit_amount ?? Money::zero())->multiply((string) ($d->quantity ?? '1'));
-    }
-
     private function toCents(Money $amount): int
     {
         return $amount->cents();
@@ -260,16 +252,12 @@ class IntegrationDispatchService
         return $query->get();
     }
 
-    private function calculateTotalAmount(string $batchType, array $documents): Money
+    private function calculateTotalAmount(array $documents): Money
     {
         $total = Money::zero();
 
         foreach ($documents as $doc) {
-            if ($batchType === ExportBatch::TYPE_EXPENSE_REPORT) {
-                $total = $doc->items->reduce(fn (Money $carry, ExpenseReportItem $d) => $carry->add($this->amountExpenseReportItem($d)), $total);
-            } else {
-                $total = $doc->items->reduce(fn (Money $carry, ReimbursementItem $d) => $carry->add($d->amount ?? Money::zero()), $total);
-            }
+            $total = $total->add($doc->total());
         }
 
         return $total;

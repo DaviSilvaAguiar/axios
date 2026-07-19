@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Casts\MoneyCast;
+use App\Models\Concerns\ResolvesItemValue;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ExpenseReportItem extends Model
 {
+    use ResolvesItemValue;
+
     protected $table = 'expense_report_item';
 
     protected $fillable = [

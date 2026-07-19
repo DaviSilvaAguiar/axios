@@ -91,10 +91,7 @@ class DashboardService
             ->get(['id', 'title', 'requester_name', 'user_id', 'status', 'scheduled_payment_date']);
 
         return $reimbursements->map(function (Reimbursement $r) {
-            $totalAmount = $r->items->reduce(
-                fn (Money $acc, $d) => $acc->add($d->amount ?? Money::zero()),
-                Money::zero()
-            );
+            $totalAmount = $r->total();
 
             return [
                 'id'                     => $r->id,
@@ -109,15 +106,12 @@ class DashboardService
     public function pendingApproval(int $limit = 10): array
     {
         $expenseReports = ExpenseReport::where('status', ExpenseReport::STATUS_PENDING)
-            ->with(['items:id,expense_report_id,amount', 'requesterUser:id,name'])
+            ->with(['items:id,expense_report_id,amount,unit_amount,quantity', 'requesterUser:id,name'])
             ->orderBy('created_at')
             ->limit($limit)
             ->get(['id', 'description', 'requester_description', 'requester_user_id', 'status', 'created_at'])
             ->map(function (ExpenseReport $c) {
-                $totalAmount = $c->items->reduce(
-                    fn (Money $acc, $d) => $acc->add($d->amount ?? Money::zero()),
-                    Money::zero()
-                );
+                $totalAmount = $c->total();
 
                 return [
                     'type'        => 'expense_report',
@@ -135,10 +129,7 @@ class DashboardService
             ->limit($limit)
             ->get(['id', 'title', 'requester_name', 'user_id', 'status', 'created_at'])
             ->map(function (Reimbursement $r) {
-                $totalAmount = $r->items->reduce(
-                    fn (Money $acc, $d) => $acc->add($d->amount ?? Money::zero()),
-                    Money::zero()
-                );
+                $totalAmount = $r->total();
 
                 return [
                     'type'        => 'reimbursement',

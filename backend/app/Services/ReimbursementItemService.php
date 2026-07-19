@@ -27,6 +27,10 @@ class ReimbursementItemService
 
     private function ensureDateWithinPeriod(Reimbursement $reimbursement, string $date): void
     {
+        if (empty($reimbursement->period_start_date) || empty($reimbursement->period_end_date)) {
+            return;
+        }
+
         $itemDate = Carbon::parse($date)->startOfDay();
         $start    = $reimbursement->period_start_date->copy()->startOfDay();
         $end      = $reimbursement->period_end_date->copy()->startOfDay();

@@ -91,7 +91,7 @@ class ExportBatchService
 
     public function getPendingExpenseReports(int $perPage): array
     {
-        $paginator = ExpenseReport::with(['user:id,name', 'costCenter:id,description', 'items:id,expense_report_id,quantity,unit_amount'])
+        $paginator = ExpenseReport::with(['user:id,name', 'costCenter:id,description', 'items:id,expense_report_id,amount,quantity,unit_amount'])
             ->where('status', ExpenseReport::STATUS_APPROVED)
             ->whereNull('export_batch_id')
             ->orderByDesc('created_at')
@@ -104,10 +104,7 @@ class ExportBatchService
                 'description'     => $expenseReport->description,
                 'provider'     => $expenseReport->user?->name ?? '—',
                 'cost_center'  => $expenseReport->costCenter?->description,
-                'amount'         => $expenseReport->items->reduce(
-                    fn (Money $carry, $d) => $carry->add(($d->unit_amount ?? Money::zero())->multiply((string) ($d->quantity ?? '1'))),
-                    Money::zero()
-                ),
+                'amount'         => $expenseReport->total(),
                 'date'          => optional($expenseReport->created_at)->toIso8601String(),
                 'status'        => self::STATUS_EXPENSE_REPORT_LABEL[$expenseReport->status] ?? 'Unknown',
                 'type'          => ExportBatch::TYPE_EXPENSE_REPORT,
@@ -133,7 +130,7 @@ class ExportBatchService
                 'description'     => $reimbursement->title,
                 'provider'     => $reimbursement->user?->name ?? '—',
                 'cost_center'  => null,
-                'amount'         => $reimbursement->items->reduce(fn (Money $carry, $d) => $carry->add($d->amount ?? Money::zero()), Money::zero()),
+                'amount'         => $reimbursement->total(),
                 'date'          => optional($reimbursement->created_at)->toIso8601String(),
                 'status'        => self::STATUS_REIMBURSEMENT_LABEL[$reimbursement->status] ?? 'Unknown',
                 'type'          => ExportBatch::TYPE_REIMBURSEMENT,
@@ -152,7 +149,7 @@ class ExportBatchService
         $expenseReportCount  = (int) (clone $expenseReportQuery)->count();
         $expenseReportAmount = Money::fromDecimalString((string) (clone $expenseReportQuery)
             ->join('expense_report_item', 'expense_report.id', '=', 'expense_report_item.expense_report_id')
-            ->sum(DB::raw('COALESCE(expense_report_item.unit_amount, 0) * COALESCE(expense_report_item.quantity, 1)')));
+            ->sum(DB::raw('COALESCE(expense_report_item.amount, COALESCE(expense_report_item.unit_amount, 0) * COALESCE(expense_report_item.quantity, 1))')));
 
         $reimbursementQuery = Reimbursement::whereIn('status', [Reimbursement::STATUS_APPROVED, Reimbursement::STATUS_PAYMENT_SCHEDULED])
             ->whereNull('export_batch_id');
@@ -222,16 +219,9 @@ class ExportBatchService
 
     private function calculateTotalAmount(string $batchType, Collection $documents): Money
     {
-        if ($batchType === ExportBatch::TYPE_EXPENSE_REPORT) {
-            return $documents->flatMap->items->reduce(
-                fn (Money $carry, $expense) => $carry->add(($expense->unit_amount ?? Money::zero())->multiply((string) ($expense->quantity ?? '1'))),
-                Money::zero()
-            );
-        }
-
-        return $documents->flatMap->items->reduce(
-            fn (Money $carry, $expense) => $carry->add($expense->amount ?? Money::zero()),
-            Money::zero()
+        return $documents->reduce(
+            fn (Money $carry, $document): Money => $carry->add($document->total()),
+            Money::zero(),
         );
     }
 

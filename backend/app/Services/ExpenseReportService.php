@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\ExpenseReport;
 use App\Models\ExpenseReportItem;
 use App\Models\User;
+use App\Services\Concerns\ResolvesRequester;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Response;
@@ -16,6 +17,8 @@ use Illuminate\Validation\ValidationException;
 
 class ExpenseReportService
 {
+    use ResolvesRequester;
+
     public function __construct(
         private readonly FundTransactionService $transactionService,
     ) {}
@@ -51,7 +54,7 @@ class ExpenseReportService
 
     public function create(array $data): ExpenseReport
     {
-        $data = $this->resolveRequester($data);
+        $data = $this->resolveRequester($data, 'requester_description');
 
         $expenseReport = ExpenseReport::create([
             ...$data,
@@ -91,7 +94,7 @@ class ExpenseReportService
             ]);
         }
 
-        $data = $this->resolveRequester($data);
+        $data = $this->resolveRequester($data, 'requester_description');
         $expenseReport->update($data);
 
         return $expenseReport->load([
@@ -101,29 +104,6 @@ class ExpenseReportService
             'items.expenseCategory',
             'items.attachments',
         ]);
-    }
-
-    private function resolveRequester(array $data): array
-    {
-        if (empty($data['requester_user_id'])) {
-            return $data;
-        }
-
-        $user = User::find($data['requester_user_id']);
-        if (!$user) {
-            throw ValidationException::withMessages([
-                'requester_user_id' => ['Employee not found.'],
-            ]);
-        }
-
-        if (empty($data['requester_description'])) {
-            $data['requester_description'] = $user->name;
-        }
-        if (empty($data['requester_tax_id'])) {
-            $data['requester_tax_id'] = $user->tax_id ?? '';
-        }
-
-        return $data;
     }
 
     public function remove(int $id): void
@@ -151,10 +131,7 @@ class ExpenseReportService
                 ]);
             }
 
-            $amountTotal = Money::zero();
-            foreach ($expenseReport->items as $item) {
-                $amountTotal = $amountTotal->add($item->amount ?? Money::zero());
-            }
+            $amountTotal = $expenseReport->total();
 
             if ($amountTotal->isZero()) {
                 throw ValidationException::withMessages([

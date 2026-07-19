@@ -6,12 +6,15 @@ namespace App\Services;
 
 use App\Models\Reimbursement;
 use App\Models\User;
+use App\Services\Concerns\ResolvesRequester;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Response;
 
 class ReimbursementService
 {
+    use ResolvesRequester;
+
     public function list(User $user, int $perPage = 10, array $filters = [])
     {
         $query = Reimbursement::with(['user', 'costCenter', 'items.costCenter', 'items.expenseCategory', 'items.attachments', 'exportBatch:id,created_at']);
@@ -43,7 +46,7 @@ class ReimbursementService
 
     public function create(array $data, int $userId): Reimbursement
     {
-        $data = $this->resolveRequester($data);
+        $data = $this->resolveRequester($data, 'requester_name');
 
         $reimbursement = Reimbursement::create([
             ...$data,
@@ -52,27 +55,6 @@ class ReimbursementService
         ]);
 
         return $reimbursement->fresh();
-    }
-
-    private function resolveRequester(array $data): array
-    {
-        if (empty($data['requester_user_id'])) {
-            return $data;
-        }
-
-        $user = User::find($data['requester_user_id']);
-        if (!$user) {
-            return $data;
-        }
-
-        if (empty($data['requester_name'])) {
-            $data['requester_name'] = $user->name;
-        }
-        if (empty($data['requester_tax_id'])) {
-            $data['requester_tax_id'] = $user->tax_id ?? '';
-        }
-
-        return $data;
     }
 
     public function find(int $id): Reimbursement
@@ -88,7 +70,7 @@ class ReimbursementService
             abort(409, 'Only reimbursements with status "Draft" can be edited.');
         }
 
-        $data = $this->resolveRequester($data);
+        $data = $this->resolveRequester($data, 'requester_name');
         $reimbursement->update($data);
 
         return $reimbursement->fresh(['user', 'costCenter', 'items.costCenter', 'items.expenseCategory', 'items.attachments', 'exportBatch:id,created_at']);
