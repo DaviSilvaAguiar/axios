@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\ExpenseReport;
 use App\Models\ExpenseReportItem;
 use App\Models\User;
+use Illuminate\Support\Facades\Gate;
 use App\Services\Concerns\ResolvesRequester;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Collection;
@@ -39,9 +40,9 @@ class ExpenseReportService
 
     public function find(int $id): ExpenseReport
     {
-        $expenseReport = ExpenseReport::with(['costCenter', 'requesterUser'])
-            ->where('user_id', Auth::id())
-            ->findOrFail($id);
+        $expenseReport = ExpenseReport::with(['costCenter', 'requesterUser'])->findOrFail($id);
+
+        Gate::authorize('view', $expenseReport);
 
         $items = ExpenseReportItem::with(['costCenter', 'expenseCategory', 'attachments'])
             ->where('expense_report_id', $expenseReport->id)
@@ -73,7 +74,8 @@ class ExpenseReportService
 
     public function update(int $id, array $data): ExpenseReport
     {
-        $expenseReport = ExpenseReport::where('user_id', Auth::id())->findOrFail($id);
+        $expenseReport = ExpenseReport::findOrFail($id);
+        Gate::authorize('update', $expenseReport);
 
         $editingContent = !empty(array_intersect(array_keys($data), self::CONTENT_FIELDS));
         if ($editingContent && $expenseReport->status !== ExpenseReport::STATUS_DRAFT) {
@@ -109,6 +111,7 @@ class ExpenseReportService
     public function remove(int $id): void
     {
         $expenseReport = ExpenseReport::findOrFail($id);
+        Gate::authorize('delete', $expenseReport);
 
         if ($expenseReport->status !== ExpenseReport::STATUS_DRAFT) {
             throw ValidationException::withMessages([
@@ -123,6 +126,7 @@ class ExpenseReportService
     {
         return DB::transaction(function () use ($expenseReportId, $fundId): ExpenseReport {
             $expenseReport = ExpenseReport::with('items')->lockForUpdate()->findOrFail($expenseReportId);
+            Gate::authorize('approve', $expenseReport);
 
             $approvableStatuses = [ExpenseReport::STATUS_PENDING, ExpenseReport::STATUS_UNDER_REVIEW];
             if (!in_array($expenseReport->status, $approvableStatuses, true)) {
@@ -176,6 +180,8 @@ class ExpenseReportService
             'items.expenseCategory',
             'items.attachments',
         ])->findOrFail($id);
+
+        Gate::authorize('view', $expenseReport);
 
         return Pdf::loadView('pdf.expense-report', ['expenseReport' => $expenseReport])->output();
     }

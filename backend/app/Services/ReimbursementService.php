@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\Reimbursement;
 use App\Models\User;
+use Illuminate\Support\Facades\Gate;
 use App\Services\Concerns\ResolvesRequester;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Collection;
@@ -59,12 +60,17 @@ class ReimbursementService
 
     public function find(int $id): Reimbursement
     {
-        return Reimbursement::with(['user', 'costCenter', 'items.costCenter', 'items.expenseCategory', 'items.attachments', 'exportBatch:id,created_at'])->findOrFail($id);
+        $reimbursement = Reimbursement::with(['user', 'costCenter', 'items.costCenter', 'items.expenseCategory', 'items.attachments', 'exportBatch:id,created_at'])->findOrFail($id);
+
+        Gate::authorize('view', $reimbursement);
+
+        return $reimbursement;
     }
 
     public function update(int $id, array $data): Reimbursement
     {
         $reimbursement = Reimbursement::findOrFail($id);
+        Gate::authorize('update', $reimbursement);
 
         if ($reimbursement->status !== Reimbursement::STATUS_REQUESTED) {
             abort(409, 'Only reimbursements with status "Draft" can be edited.');
@@ -79,6 +85,7 @@ class ReimbursementService
     public function updateStatus(int $id, array $data): Reimbursement
     {
         $reimbursement = Reimbursement::findOrFail($id);
+        Gate::authorize('updateStatus', $reimbursement);
         $status = (int) $data['status'];
 
         if ($status === Reimbursement::STATUS_PAYMENT_SCHEDULED && empty($data['scheduled_payment_date'])) {
@@ -101,6 +108,7 @@ class ReimbursementService
     public function delete(int $id): void
     {
         $reimbursement = Reimbursement::findOrFail($id);
+        Gate::authorize('delete', $reimbursement);
 
         if ($reimbursement->status !== Reimbursement::STATUS_REQUESTED) {
             abort(409, 'Only reimbursements with status "Draft" can be deleted.');

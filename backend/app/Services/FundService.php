@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\Fund;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 class FundService
@@ -20,8 +21,11 @@ class FundService
 
     public function find(int $id): Fund
     {
-        return Fund::with(['user', 'costCenter'])
-            ->findOrFail($id);
+        $fund = Fund::with(['user', 'costCenter'])->findOrFail($id);
+
+        Gate::authorize('view', $fund);
+
+        return $fund;
     }
 
     public function create(array $data): Fund
@@ -38,6 +42,7 @@ class FundService
     public function update(int $id, array $data): Fund
     {
         $fund = Fund::findOrFail($id);
+        Gate::authorize('manage', $fund);
         $fund->update($data);
 
         return $fund->load(['user', 'costCenter']);
@@ -46,6 +51,7 @@ class FundService
     public function close(int $id): Fund
     {
         $fund = Fund::findOrFail($id);
+        Gate::authorize('manage', $fund);
 
         if (!$fund->balance->isZero()) {
             throw ValidationException::withMessages([
