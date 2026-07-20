@@ -5,7 +5,7 @@ import EmptyState from "@/ui/EmptyState";
 import DataTable, { type DataTableColumn } from "@/ui/DataTable";
 import StatusTag from "./StatusTag";
 import { type Reimbursement } from "../reimbursement.types";
-import { formatarData } from "@/lib/formatters";
+import { formatarData, formatarMoeda } from "@/lib/formatters";
 
 function calculateTotal(reimbursement: Reimbursement): number {
   if (!reimbursement.items || reimbursement.items.length === 0) return 0;
@@ -14,7 +14,7 @@ function calculateTotal(reimbursement: Reimbursement): number {
 
 function formatAmount(reimbursement: Reimbursement): string {
   if (!reimbursement.items || reimbursement.items.length === 0) return "—";
-  return calculateTotal(reimbursement).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return formatarMoeda(calculateTotal(reimbursement));
 }
 
 interface ListViewProps {

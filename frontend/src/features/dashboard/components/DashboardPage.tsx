@@ -18,8 +18,9 @@ import { type ElementType } from "react";
 import Card from "@/ui/Card";
 import Loading from "@/ui/Loading";
 import MobileScreen from "@/ui/MobileScreen";
-import TransactionCard from "@/ui/TransactionCard";
+import TransactionCard from "@/features/provider/components/TransactionCard";
 import { useAuth } from "@/contexts/AuthContext";
+import { formatarMoeda } from "@/lib/formatters";
 import {
   useRecentSubmissions,
   usePendingReimbursementTotal,
@@ -124,10 +125,6 @@ function ModuleCard({
   );
 }
 
-function fmtCurrency(value: number) {
-  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
 function ProviderDashboard() {
   const { data: recent = [], isLoading: recentLoading } = useRecentSubmissions();
   const { data: pendingReimbursement = 0, isLoading: pendingLoading } =
@@ -160,7 +157,7 @@ function ProviderDashboard() {
               <CurrencyCircleDollar size={18} weight="light" className="text-amber-600" />
             </div>
             <p className="text-small text-app-text-muted mt-1">Pending reimbursement</p>
-            <p className="text-feature-title text-app-text">{fmtCurrency(pendingReimbursement)}</p>
+            <p className="text-feature-title text-app-text">{formatarMoeda(pendingReimbursement)}</p>
           </Card>
         </motion.div>
       )}

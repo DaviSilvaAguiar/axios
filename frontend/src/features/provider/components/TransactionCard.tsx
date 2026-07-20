@@ -1,14 +1,12 @@
 import Link from "next/link";
 import Card from "@/ui/Card";
-import TypeChip from "@/ui/TypeChip";
-import StatusTag from "@/ui/StatusTag";
-import type { Submission } from "@/features/provider/provider.types";
+import { formatarMoeda } from "@/lib/formatters";
+import TypeChip from "./TypeChip";
+import StatusTag from "./StatusTag";
+import type { Submission } from "../provider.types";
 
 function formatAmount(amount: string): string {
-  return Number(amount).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
+  return formatarMoeda(Number(amount));
 }
 
 function formatRelative(iso: string): string {

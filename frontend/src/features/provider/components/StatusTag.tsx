@@ -8,7 +8,7 @@ import {
   Wallet,
   XCircle,
 } from "@phosphor-icons/react";
-import type { SubmissionType } from "@/features/provider/provider.types";
+import type { SubmissionType } from "../provider.types";
 
 type Variant = { label: string; classes: string; ringClass: string; StatusIcon: Icon };
 

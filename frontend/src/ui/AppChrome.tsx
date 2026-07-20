@@ -9,16 +9,17 @@ import MobileTabBar from "@/ui/MobileTabBar";
 
 interface Props {
   children: ReactNode;
+  userCount?: number;
 }
 
-export default function AppChrome({ children }: Props) {
+export default function AppChrome({ children, userCount = 0 }: Props) {
   const { user } = useAuth();
   const isProvider = user?.role === 3;
 
   if (!isProvider) {
     return (
       <div className="flex h-screen overflow-hidden bg-app-bg">
-        <Sidebar />
+        <Sidebar userCount={userCount} />
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
           <Header />
           <main className="flex-1 overflow-y-auto">{children}</main>
@@ -30,7 +31,7 @@ export default function AppChrome({ children }: Props) {
   return (
     <div className="flex h-screen overflow-hidden bg-app-bg">
       <div className="hidden md:flex">
-        <Sidebar />
+        <Sidebar userCount={userCount} />
       </div>
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <div className="hidden md:block">

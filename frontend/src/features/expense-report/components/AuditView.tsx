@@ -3,27 +3,17 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  type Icon,
-  X,
-  Image,
-  ImageBroken,
-  FileX,
-  ArrowRight,
-  ArrowLeft,
-  CircleNotch,
-  PencilSimple,
-  PaperPlaneTilt,
-  MapPin,
-  FilePdf,
-} from "@phosphor-icons/react";
-import Button from "@/ui/Button";
+import { X, ArrowRight, ArrowLeft } from "@phosphor-icons/react";
 import ConfirmModal from "@/ui/ConfirmModal";
 import StatusTag from "./StatusTag";
+import AuditItemsList from "./audit/AuditItemsList";
+import AuditAttachmentViewer from "./audit/AuditAttachmentViewer";
+import AuditItemDetails from "./audit/AuditItemDetails";
+import AuditActionFooter from "./audit/AuditActionFooter";
 import LocationViewer from "@/features/geolocation/components/LocationViewer";
 import { getAnexoExpenseReportApi } from "../expense-report.api";
 import { EXPENSE_REPORT_STATUS_DRAFT, type ExpenseReport } from "../expense-report.types";
-import { formatarData, formatarMoeda } from "@/lib/formatters";
+import { formatarData } from "@/lib/formatters";
 
 const SPRING = { type: "spring" as const, stiffness: 380, damping: 30 };
 
@@ -35,21 +25,6 @@ function getInitials(name?: string | null): string {
     .map((p) => p[0] ?? "")
     .join("")
     .toUpperCase();
-}
-
-function AttachmentPlaceholder({ icon: PhosphorIcon, label }: { icon: Icon; label: string }) {
-  return (
-    <motion.div
-      className="flex flex-col items-center gap-2 text-app-text-subtle"
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.18 }}
-    >
-      <PhosphorIcon size={44} weight="thin" />
-      <p className="text-small">{label}</p>
-    </motion.div>
-  );
 }
 
 interface Props {
@@ -218,63 +193,13 @@ export default function AuditView({ expenseReport, onClose, onEdit, onSubmit, on
         )}
 
         <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
-          <div className={`flex flex-col border-b md:border-b-0 md:border-r border-app-border md:w-2/5 ${mobilePanel === "detail" ? "hidden md:flex" : "flex"}`}>
-            <div className="flex-1 overflow-y-auto">
-              {items.length === 0 ? (
-                <p className="p-6 text-center text-body-sm text-app-text-muted">
-                  No items recorded.
-                </p>
-              ) : (
-                <ul>
-                  {items.map((d) => (
-                    <li key={d.id} className="relative">
-                      {selectedItem?.id === d.id && (
-                        <motion.div
-                          layoutId="active-indicator-expenseReport"
-                          className="absolute inset-0 border-l-2 border-l-brand bg-app-nav-active"
-                          transition={SPRING}
-                        />
-                      )}
-                      <motion.button
-                        onClick={() => { setSelectedItemId(d.id); setMobilePanel("detail"); }}
-                        whileHover={{ x: selectedItem?.id === d.id ? 0 : 2 }}
-                        transition={{ duration: 0.12 }}
-                        className="relative z-10 w-full border-b border-app-border-subtle px-5 py-4 text-left"
-                      >
-                        <p className="line-clamp-1 text-caption font-semibold text-app-text">
-                          {d.description}
-                        </p>
-                        <div className="mt-1 flex items-center justify-between">
-                          <span className="text-small text-app-text-muted">
-                            {formatarData(d.expense_date)}
-                          </span>
-                          <span className="text-caption font-semibold text-app-text">
-                            {d.amount ? formatarMoeda(parseFloat(d.amount)) : "—"}
-                          </span>
-                        </div>
-                        {d.cost_center && (
-                          <p className="mt-0.5 truncate text-small text-app-text-subtle">
-                            {d.cost_center.description}
-                          </p>
-                        )}
-                      </motion.button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            {items.length > 0 && (
-              <div className="flex shrink-0 items-center justify-between border-t border-app-border bg-app-surface px-5 py-3">
-                <span className="text-small text-app-text-muted">
-                  {items.length} {items.length === 1 ? "item" : "items"}
-                </span>
-                <span className="text-caption font-semibold text-app-text">
-                  {formatarMoeda(total)}
-                </span>
-              </div>
-            )}
-          </div>
+          <AuditItemsList
+            items={items}
+            selectedItem={selectedItem}
+            mobilePanel={mobilePanel}
+            total={total}
+            onSelectItem={(id) => { setSelectedItemId(id); setMobilePanel("detail"); }}
+          />
 
           <div className={`flex flex-col overflow-hidden md:w-3/5 ${mobilePanel === "list" ? "hidden md:flex" : "flex"}`}>
             <button
@@ -295,132 +220,22 @@ export default function AuditView({ expenseReport, onClose, onEdit, onSubmit, on
                     exit={{ opacity: 0, x: -8 }}
                     transition={{ duration: 0.18 }}
                   >
-                    <div className="relative flex h-80 items-center justify-center overflow-hidden border-b border-app-border bg-app-surface-raised/20">
-                      <AnimatePresence mode="wait">
-                        {loadingAttachment ? (
-                          <motion.div
-                            key="loading"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.15 }}
-                            className="flex flex-col items-center gap-2 text-app-text-subtle"
-                          >
-                            <motion.span
-                              animate={{ rotate: 360 }}
-                              transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }}
-                              className="inline-block"
-                            >
-                              <CircleNotch size={32} weight="thin" />
-                            </motion.span>
-                          </motion.div>
-                        ) : !path ? (
-                          <AttachmentPlaceholder key="empty" icon={Image} label="No attachment available" />
-                        ) : isPdf && blobUrl ? (
-                          <motion.iframe
-                            key="pdf"
-                            src={blobUrl}
-                            className="h-full w-full"
-                            title="PDF attachment"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                          />
-                        ) : isImage && blobUrl && !imgError ? (
-                          <motion.img
-                            key="img"
-                            src={blobUrl}
-                            alt={`Attachment — ${selectedItem.description}`}
-                            className="h-full w-full object-contain"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            onError={() => selectedItem && setErroredItemId(selectedItem.id)}
-                          />
-                        ) : imgError ? (
-                          <AttachmentPlaceholder key="error" icon={ImageBroken} label="Could not load the attachment" />
-                        ) : (
-                          <AttachmentPlaceholder key="unsupported" icon={FileX} label="Unsupported file format" />
-                        )}
-                      </AnimatePresence>
-                    </div>
+                    <AuditAttachmentViewer
+                      loadingAttachment={loadingAttachment}
+                      path={path}
+                      isPdf={isPdf}
+                      isImage={isImage}
+                      blobUrl={blobUrl}
+                      imgError={imgError}
+                      description={selectedItem.description}
+                      onImgError={() => selectedItem && setErroredItemId(selectedItem.id)}
+                    />
 
-                    <div className="space-y-3 p-5">
-                      <div className="grid grid-cols-2 gap-3">
-                        {(
-                          [
-                            { label: "Date", value: formatarData(selectedItem.expense_date) },
-                            { label: "Amount", value: selectedItem.amount ? formatarMoeda(parseFloat(selectedItem.amount)) : "—" },
-                            { label: "Category", value: selectedItem.expense_category?.description ?? "—" },
-                            { label: "Cost Center", value: selectedItem.cost_center?.description ?? "—" },
-                          ] as const
-                        ).map(({ label, value }) => (
-                          <div key={label} className="rounded-xl bg-app-surface-raised/30 p-3">
-                            <p className="mb-0.5 text-small text-app-text-muted">{label}</p>
-                            <p className="line-clamp-2 text-caption font-semibold text-app-text">
-                              {value}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="rounded-xl bg-app-surface-raised/30 p-3">
-                        <p className="mb-0.5 text-small text-app-text-muted">Description</p>
-                        <p className="text-body-sm text-app-text">{selectedItem.description}</p>
-                      </div>
-
-                      {selectedItem.latitude != null && selectedItem.longitude != null ? (
-                        <button
-                          type="button"
-                          onClick={() => setViewLocation(true)}
-                          className="w-full text-left rounded-xl bg-app-surface-raised/30 p-3 hover:bg-app-surface-raised/60 transition-colors cursor-pointer"
-                        >
-                          <p className="mb-0.5 flex items-center gap-1.5 text-small text-app-text-muted">
-                            <MapPin size={12} />
-                            Location — click to view on map
-                          </p>
-                          <p className="text-body-sm text-app-text">
-                            {selectedItem.address ?? `${Number(selectedItem.latitude).toFixed(6)}, ${Number(selectedItem.longitude).toFixed(6)}`}
-                          </p>
-                        </button>
-                      ) : null}
-                    </div>
-
-                    <div className="px-5 pb-4">
-                      <div className="rounded-2xl border border-app-border bg-app-surface-raised/40 p-4 space-y-3">
-                        <h3 className="text-caption font-semibold text-app-text-muted uppercase tracking-wide">
-                          Requester
-                        </h3>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <p className="text-small text-app-text-muted">Name</p>
-                            <p className="text-body-sm text-app-text">{expenseReport.requester_description ?? "—"}</p>
-                          </div>
-                          <div>
-                            <p className="text-small text-app-text-muted">Department</p>
-                            <p className="text-body-sm text-app-text">{expenseReport.requester_department ?? "—"}</p>
-                          </div>
-                          <div className="col-span-2">
-                            <p className="text-small text-app-text-muted">Tax ID</p>
-                            <p className="text-body-sm text-app-text">{expenseReport.requester_tax_id ?? "—"}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {expenseReport.notes && (
-                      <div className="px-5 pb-4">
-                        <div className="rounded-2xl border border-app-border bg-app-surface-raised/40 p-4 space-y-2">
-                          <h3 className="text-caption font-semibold text-app-text-muted uppercase tracking-wide">
-                            Notes
-                          </h3>
-                          <p className="text-body-sm text-app-text whitespace-pre-line">{expenseReport.notes}</p>
-                        </div>
-                      </div>
-                    )}
-
+                    <AuditItemDetails
+                      expenseReport={expenseReport}
+                      selectedItem={selectedItem}
+                      onViewLocation={() => setViewLocation(true)}
+                    />
                   </motion.div>
                 ) : (
                   <motion.div
@@ -438,111 +253,26 @@ export default function AuditView({ expenseReport, onClose, onEdit, onSubmit, on
           </div>
         </div>
 
-        {isDraft && (
-          <div className="shrink-0 border-t border-app-border bg-app-surface px-5 py-4">
-            {confirming ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/60 p-4 space-y-3">
-                <p className="text-body-sm text-amber-800 dark:text-amber-200 leading-relaxed">
-                  After submission the report will be locked for editing and will move to the auditor for approval.
-                </p>
-                <div className="flex gap-2 md:justify-end">
-                  <Button
-                    variant="light"
-                    size="sm"
-                    disabled={submitting}
-                    onClick={() => setConfirming(false)}
-                    className="flex-1 md:flex-none"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="dark"
-                    size="sm"
-                    disabled={submitting}
-                    onClick={handleConfirm}
-                    className="flex-1 md:flex-none"
-                  >
-                    {submitting ? (
-                      <span className="flex items-center gap-2">
-                        <motion.span
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }}
-                          className="inline-block"
-                        >
-                          <CircleNotch size={14} />
-                        </motion.span>
-                        Submitting…
-                      </span>
-                    ) : (
-                      "Confirm submission"
-                    )}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex gap-3 md:justify-end">
-                <Button variant="outlined" onClick={onEdit} className="flex-1 md:flex-none">
-                  <PencilSimple size={14} />
-                  Edit
-                </Button>
-                <Button variant="dark" onClick={() => setConfirming(true)} className="flex-1 md:flex-none">
-                  <PaperPlaneTilt size={14} />
-                  Submit
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {isUnderReview && (onApprove || onReject) && (
-          <div className="flex shrink-0 gap-3 border-t border-app-border bg-app-surface px-5 py-4 md:justify-end">
-            {onReject && (
-              <Button
-                variant="outlined"
-                onClick={() => setConfirmReject(true)}
-                disabled={rejecting}
-                className="flex-1 md:flex-none"
-              >
-                Reject
-              </Button>
-            )}
-            {onApprove && (
-              <Button variant="dark" onClick={() => onApprove(expenseReport)} className="flex-1 md:flex-none">
-                Approve
-              </Button>
-            )}
-          </div>
-        )}
-
-        {isApproved && onSchedule && (
-          <div className="flex shrink-0 gap-3 border-t border-app-border bg-app-surface px-5 py-4 md:justify-end">
-            <Button variant="dark" onClick={() => onSchedule(expenseReport)} className="flex-1 md:flex-none">
-              Schedule Payment
-            </Button>
-          </div>
-        )}
-
-        {isScheduled && onMarkPaid && (
-          <div className="flex shrink-0 gap-3 border-t border-app-border bg-app-surface px-5 py-4 md:justify-end">
-            <Button variant="dark" onClick={() => onMarkPaid(expenseReport)} className="flex-1 md:flex-none">
-              Mark as Paid
-            </Button>
-          </div>
-        )}
-
-        {expenseReport.status >= 4 && expenseReport.status !== 7 && onDownloadPdf && (
-          <div className="flex shrink-0 border-t border-app-border bg-app-surface px-5 py-4 md:justify-end">
-            <motion.button
-              onClick={() => onDownloadPdf(expenseReport.id)}
-              whileHover={{ x: 3 }}
-              transition={{ duration: 0.12 }}
-              className="flex w-full justify-center md:w-auto cursor-pointer items-center gap-2 text-caption font-semibold text-brand hover:underline"
-            >
-              <FilePdf size={18} />
-              Download PDF
-            </motion.button>
-          </div>
-        )}
+        <AuditActionFooter
+          expenseReport={expenseReport}
+          isDraft={isDraft}
+          isUnderReview={isUnderReview}
+          isApproved={isApproved}
+          isScheduled={isScheduled}
+          confirming={confirming}
+          submitting={submitting}
+          rejecting={rejecting}
+          onStartConfirm={() => setConfirming(true)}
+          onCancelConfirm={() => setConfirming(false)}
+          onConfirmSubmit={handleConfirm}
+          onEdit={onEdit}
+          onApprove={onApprove}
+          onReject={onReject}
+          onRequestReject={() => setConfirmReject(true)}
+          onSchedule={onSchedule}
+          onMarkPaid={onMarkPaid}
+          onDownloadPdf={onDownloadPdf}
+        />
       </motion.div>
       {currentLocation && (
         <LocationViewer

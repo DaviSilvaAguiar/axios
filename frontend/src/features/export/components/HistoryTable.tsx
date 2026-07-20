@@ -2,19 +2,8 @@
 
 import { HandCoins, Receipt } from "@phosphor-icons/react";
 import DataTable, { type DataTableColumn } from "@/ui/DataTable";
+import { formatarMoeda, formatarDataHora } from "@/lib/formatters";
 import type { BatchHistory } from "../export.types";
-
-const fmtCurrency = (v: number) =>
-  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
-const fmtDateTime = (iso: string) =>
-  new Date(iso).toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 
 interface Props {
   batches: BatchHistory[];
@@ -73,7 +62,7 @@ export default function HistoryTable({ batches, loading, onLoadMore, hasMore, lo
       header: "Date",
       sortable: true,
       sortAccessor: (l) => new Date(l.created_at),
-      render: (l) => <span className="text-app-text-muted">{fmtDateTime(l.created_at)}</span>,
+      render: (l) => <span className="text-app-text-muted">{formatarDataHora(l.created_at)}</span>,
     },
     {
       key: "amount",
@@ -83,7 +72,7 @@ export default function HistoryTable({ batches, loading, onLoadMore, hasMore, lo
       sortAccessor: (l) => l.total_amount,
       render: (l) => (
         <span className="font-semibold text-app-text tabular-nums">
-          {fmtCurrency(l.total_amount)}
+          {formatarMoeda(l.total_amount)}
         </span>
       ),
     },

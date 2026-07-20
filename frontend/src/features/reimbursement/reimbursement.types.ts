@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { paginatedSchema } from "@/lib/pagination";
+import { formatarData } from "@/lib/formatters";
 
 import { costCenterSchema } from "@/features/cost-center/cost-center.types";
 export { costCenterSchema };
@@ -174,11 +175,6 @@ export const itemReimbursementFormItemSchema = z.object({
   anexo: z.any().optional(),
 });
 
-function fmtDate(iso: string): string {
-  const [y, m, d] = iso.split("-");
-  return `${d}/${m}/${y}`;
-}
-
 function isValidDateYear(v: string): boolean {
   if (!v) return true;
   const year = parseInt(v.split("-")[0], 10);
@@ -232,13 +228,13 @@ export const storeReimbursementWithDespesasFormSchema = storeReimbursementFormSc
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["items", idx, "expense_date"],
-            message: `Before the start of the period (${fmtDate(start)})`,
+            message: `Before the start of the period (${formatarData(start)})`,
           });
         } else if (d > end) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["items", idx, "expense_date"],
-            message: `After the end of the period (${fmtDate(end)})`,
+            message: `After the end of the period (${formatarData(end)})`,
           });
         }
       });

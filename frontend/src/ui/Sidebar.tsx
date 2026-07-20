@@ -23,7 +23,6 @@ import {
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSidebar } from '@/contexts/SidebarContext';
-import { useUserCount } from '@/features/user/user.hooks';
 
 const navItemsAdmin = [
   { href: '/dashboard', label: 'Home', icon: HouseLine },
@@ -43,7 +42,7 @@ const navItemsProvider = [
   { href: '/my-submissions', label: 'My entries', icon: Receipt },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ userCount = 0 }: { userCount?: number }) {
   const { open, setOpen, collapsed, setCollapsed } = useSidebar();
   const pathname = usePathname();
   const { logout, tenant, user, enabledModules } = useAuth();
@@ -53,10 +52,9 @@ export default function Sidebar() {
     (item) => !('modulo' in item) || enabledModules.includes(item.modulo as string)
   );
   const isProvider = user?.role === 3;
-  const { data: totalUsers = 0 } = useUserCount();
 
   const maxUsers = tenant?.max_users ?? null;
-  const pct = maxUsers ? Math.min((totalUsers / maxUsers) * 100, 100) : 0;
+  const pct = maxUsers ? Math.min((userCount / maxUsers) * 100, 100) : 0;
   const barColor = pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : '#0052ff';
 
   const close = () => setOpen(false);
@@ -166,7 +164,7 @@ export default function Sidebar() {
                   <div className="flex items-center justify-between">
                     <span className="text-caption font-semibold text-app-text-muted">Users</span>
                     <span className="text-caption font-semibold" style={{ color: barColor }}>
-                      {totalUsers}/{maxUsers}
+                      {userCount}/{maxUsers}
                     </span>
                   </div>
                   <div className="h-1.5 w-full rounded-full bg-app-hover overflow-hidden">
@@ -194,7 +192,7 @@ export default function Sidebar() {
           {!isProvider && collapsed && maxUsers && (
             <div
               className="md:flex hidden justify-center py-2"
-              title={`${totalUsers}/${maxUsers} users`}
+              title={`${userCount}/${maxUsers} users`}
             >
               <Users size={19} style={{ color: barColor }} />
             </div>

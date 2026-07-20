@@ -1,34 +1,18 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { Plus, Receipt, CalendarDots } from "@phosphor-icons/react";
+import { Suspense } from "react";
+import { Plus, Receipt } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
-import Card from "@/ui/Card";
 import Loading from "@/ui/Loading";
 import EmptyState from "@/ui/EmptyState";
 import Button from "@/ui/Button";
 import ExpenseReportForm from "@/features/expense-report/components/ExpenseReportForm";
-import StatusTag from "@/features/expense-report/components/StatusTag";
-import { toast } from "@/lib/toast";
+import ExpenseReportListCard from "@/features/expense-report/components/ExpenseReportListCard";
 import {
-  createExpenseReportApi,
-  createExpenseReportItemApi,
-} from "@/features/expense-report/expense-report.api";
-import {
-  useExpenseReports,
-  useExpenseReportActions,
-} from "@/features/expense-report/expense-report.hooks";
-import {
-  EXPENSE_REPORT_STATUS_LABEL,
-  type ExpenseReportItemFormItem,
-  type ExpenseReport,
-  type ExpenseReportStatus,
-  type StoreExpenseReportWithDespesasFormData,
-} from "@/features/expense-report/expense-report.types";
-
-type StatusFilter = "" | ExpenseReportStatus;
+  useMyExpenseReportsPage,
+  type StatusFilter,
+} from "@/features/expense-report/hooks/useMyExpenseReportsPage";
+import { EXPENSE_REPORT_STATUS_LABEL } from "@/features/expense-report/expense-report.types";
 
 const STATUS_CHIPS: { label: string; value: StatusFilter }[] = [
   { label: "All",                       value: "" },
@@ -41,87 +25,6 @@ const STATUS_CHIPS: { label: string; value: StatusFilter }[] = [
   { label: EXPENSE_REPORT_STATUS_LABEL[7],         value: 7 },
 ];
 
-const STATUS_BORDER: Record<number, string> = {
-  1: "border-l-blue-400",
-  2: "border-l-orange-400",
-  3: "border-l-amber-400",
-  4: "border-l-green-400",
-  5: "border-l-purple-400",
-  6: "border-l-app-border",
-  7: "border-l-red-400",
-};
-
-function fmtAmount(v: number) {
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-function fmtDate(iso: string) {
-  const [y, m, d] = iso.split("T")[0].split("-");
-  return `${d}/${m}/${y}`;
-}
-
-function calcTotal(expenseReport: ExpenseReport) {
-  return (expenseReport.items ?? []).reduce((acc, d) => acc + Number(d.amount ?? 0), 0);
-}
-
-function buildItemFormData(item: ExpenseReportItemFormItem, files: File[]): FormData {
-  const fd = new FormData();
-  fd.append("expense_date", item.expense_date);
-  fd.append("amount", item.amount);
-  fd.append("cost_center_id", item.cost_center_id);
-  fd.append("description", item.description);
-  if (item.expense_category_id) fd.append("expense_category_id", item.expense_category_id);
-  if (item.latitude != null) fd.append("latitude", String(item.latitude));
-  if (item.longitude != null) fd.append("longitude", String(item.longitude));
-  if (item.address) fd.append("address", item.address);
-  for (const file of files) fd.append("attachments[]", file);
-  return fd;
-}
-
-interface ExpenseReportCardProps {
-  expenseReport: ExpenseReport;
-}
-
-function ExpenseReportCard({ expenseReport }: ExpenseReportCardProps) {
-  const total = calcTotal(expenseReport);
-  const count = (expenseReport.items ?? []).length;
-  const border = STATUS_BORDER[expenseReport.status] ?? "border-l-app-border";
-
-  return (
-    <Link href={`/my-expense-reports/${expenseReport.id}`}>
-      <motion.div whileTap={{ scale: 0.98 }} transition={{ duration: 0.12 }}>
-        <Card className={`p-0 border-l-4 ${border} overflow-hidden hover:shadow-md transition-all cursor-pointer`}>
-          <div className="p-4 space-y-2.5">
-            <p className="text-body font-semibold text-app-text leading-snug line-clamp-2">
-              {expenseReport.description}
-            </p>
-            <div className="flex items-center justify-between gap-2">
-              <StatusTag status={expenseReport.status} />
-              <span className="text-caption text-app-text-subtle shrink-0">
-                {fmtDate(expenseReport.created_at)}
-              </span>
-            </div>
-            {expenseReport.period_start_date && expenseReport.period_end_date && (
-              <div className="flex items-center gap-1.5 text-small text-app-text-muted">
-                <CalendarDots size={13} weight="bold" className="shrink-0" />
-                <span>
-                  {fmtDate(expenseReport.period_start_date)} → {fmtDate(expenseReport.period_end_date)}
-                </span>
-              </div>
-            )}
-          </div>
-          <div className="border-t border-app-border-subtle px-4 py-2.5 flex items-center justify-between bg-app-surface-raised/40">
-            <p className="text-body font-bold text-app-text">{fmtAmount(total)}</p>
-            <span className="text-caption text-app-text-subtle">
-              {count} {count === 1 ? "item" : "items"}
-            </span>
-          </div>
-        </Card>
-      </motion.div>
-    </Link>
-  );
-}
-
 export default function MyExpenseReportsPage() {
   return (
     <Suspense fallback={<Loading size="sm" />}>
@@ -131,45 +34,17 @@ export default function MyExpenseReportsPage() {
 }
 
 function MyExpenseReportsContent() {
-  const params = useSearchParams();
-  const query = useExpenseReports();
-  const { invalidate } = useExpenseReportActions();
-  const rdcs = query.data ?? [];
-  const loading = query.isLoading;
-  const error = query.isError ? "Could not load the reports." : null;
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("");
-  const [showForm, setShowForm] = useState(() => params.get("novo") === "1");
-
-  const load = () => { query.refetch(); };
-
-  const filteredExpenseReports = statusFilter
-    ? rdcs.filter((r) => r.status === statusFilter)
-    : rdcs;
-
-  async function handleCreate(data: StoreExpenseReportWithDespesasFormData, filesByItem: File[][]) {
-    let newId: number | null = null;
-    try {
-      const { items, ...rdcData } = data;
-      const created = await createExpenseReportApi(rdcData);
-      newId = created.id;
-
-      for (const [idx, item] of (items ?? []).entries()) {
-        await createExpenseReportItemApi(created.id, buildItemFormData(item, filesByItem[idx] ?? []));
-      }
-
-      invalidate();
-      setShowForm(false);
-      toast.success("Report created successfully!");
-    } catch (err) {
-      if (newId !== null) {
-        setShowForm(false);
-        toast.success("Report created. Refresh if the item does not appear.");
-        invalidate();
-        return;
-      }
-      toast.error(err instanceof Error ? err.message : "Could not save.");
-    }
-  }
+  const {
+    loading,
+    error,
+    load,
+    statusFilter,
+    setStatusFilter,
+    showForm,
+    setShowForm,
+    filteredExpenseReports,
+    handleCreate,
+  } = useMyExpenseReportsPage();
 
   return (
     <>
@@ -245,7 +120,7 @@ function MyExpenseReportsContent() {
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
               >
                 {filteredExpenseReports.map((expenseReport) => (
-                  <ExpenseReportCard key={expenseReport.id} expenseReport={expenseReport} />
+                  <ExpenseReportListCard key={expenseReport.id} expenseReport={expenseReport} />
                 ))}
               </motion.div>
             </AnimatePresence>

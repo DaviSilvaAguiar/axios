@@ -2,6 +2,7 @@
 
 import { FilePdf } from "@phosphor-icons/react";
 import DataTable, { type DataTableColumn } from "@/ui/DataTable";
+import { formatarMoeda, formatarData } from "@/lib/formatters";
 import type { PendingDocument } from "../export.types";
 
 const STATUS_CLASS: Record<string, string> = {
@@ -17,18 +18,6 @@ function StatusPill({ text }: { text: string }) {
     </span>
   );
 }
-
-const fmtCurrency = (v: number) =>
-  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
-const fmtDate = (iso: string | null) => {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-};
 
 interface Props {
   documents: PendingDocument[];
@@ -118,7 +107,7 @@ export default function PendingTable({
       sortable: true,
       sortAccessor: (d) => (d.date ? new Date(d.date) : null),
       render: (d) => (
-        <span className="text-app-text-muted whitespace-nowrap">{fmtDate(d.date)}</span>
+        <span className="text-app-text-muted whitespace-nowrap">{formatarData(d.date)}</span>
       ),
     },
     {
@@ -129,7 +118,7 @@ export default function PendingTable({
       sortAccessor: (d) => d.amount,
       render: (d) => (
         <span className="font-semibold text-app-text tabular-nums whitespace-nowrap">
-          {fmtCurrency(d.amount)}
+          {formatarMoeda(d.amount)}
         </span>
       ),
     },

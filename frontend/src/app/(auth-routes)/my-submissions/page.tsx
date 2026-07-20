@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Plus } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 import MobileScreen from "@/ui/MobileScreen";
-import TransactionCard from "@/ui/TransactionCard";
+import TransactionCard from "@/features/provider/components/TransactionCard";
 import Button from "@/ui/Button";
 import Loading from "@/ui/Loading";
 import FabActionSheet from "@/ui/FabActionSheet";

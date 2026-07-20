@@ -15,9 +15,7 @@ import AuditView from "@/features/expense-report/components/AuditView";
 import ApproveExpenseReportWithFundModal from "@/features/fund/components/ApproveExpenseReportWithFundModal";
 import SchedulePaymentModal from "@/features/expense-report/components/SchedulePaymentModal";
 import { useExpenseReportPage } from "@/features/expense-report/hooks/useExpenseReportPage";
-import { downloadPdfExpenseReportApi } from "@/features/expense-report/expense-report.api";
 import { EXPENSE_REPORT_STATUS_LABEL } from "@/features/expense-report/expense-report.types";
-import { toast } from "@/lib/toast";
 
 export default function ExpenseReportsPage() {
   const {
@@ -63,21 +61,8 @@ export default function ExpenseReportsPage() {
     handleConfirmSchedule,
     handleMarkPaid,
     handleConfirmDelete,
+    handleDownloadPdf,
   } = useExpenseReportPage();
-
-  async function handleDownloadPdf(id: number) {
-    try {
-      const blob = await downloadPdfExpenseReportApi(id);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `report-${id}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      toast.error("Could not download the PDF.");
-    }
-  }
 
   if (selectedExpenseReport && (!isEditing || !editFromKanban)) {
     return (

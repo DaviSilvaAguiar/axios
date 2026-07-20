@@ -3,9 +3,7 @@
 import { motion } from "framer-motion";
 import { PaperPlaneTilt, Plug } from "@phosphor-icons/react";
 import Button from "@/ui/Button";
-
-const fmtCurrency = (v: number) =>
-  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+import { formatarMoeda } from "@/lib/formatters";
 
 interface Props {
   quantity: number;
@@ -51,7 +49,7 @@ export default function IntegrationSendActionBar({
               {quantity} {quantity === 1 ? "document selected" : "documents selected"}
             </span>
             <span className="text-small text-app-text-muted font-normal truncate">
-              Total {fmtCurrency(totalAmount)} • {hint}
+              Total {formatarMoeda(totalAmount)} • {hint}
             </span>
           </div>
         </div>

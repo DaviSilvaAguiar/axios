@@ -10,31 +10,15 @@ import {
   updateExpenseReportApi,
   updateStatusExpenseReportApi,
   deleteExpenseReportApi,
+  downloadPdfExpenseReportApi,
 } from "../expense-report.api";
 import { useExpenseReports, useExpenseReportActions } from "../expense-report.hooks";
+import { buildItemFormData } from "../expense-report.form";
 import {
-  type ExpenseReportItemFormItem,
   type ExpenseReport,
   type ExpenseReportStatus,
   type StoreExpenseReportWithDespesasFormData,
 } from "../expense-report.types";
-
-function buildItemFormData(item: ExpenseReportItemFormItem, files: File[]): FormData {
-  const fd = new FormData();
-  fd.append("expense_date", item.expense_date);
-  fd.append("amount", item.amount);
-  fd.append("cost_center_id", item.cost_center_id);
-  fd.append("description", item.description);
-  if (item.expense_category_id) fd.append("expense_category_id", item.expense_category_id);
-  if (item.latitude != null) fd.append("latitude", String(item.latitude));
-  if (item.longitude != null) fd.append("longitude", String(item.longitude));
-  if (item.address) fd.append("address", item.address);
-  if (item.description_supplier) fd.append("description_supplier", item.description_supplier);
-  if (item.supplier_tax_id) fd.append("supplier_tax_id", item.supplier_tax_id.replace(/\D/g, ""));
-  if (item.supplier_id) fd.append("supplier_id", item.supplier_id);
-  for (const file of files) fd.append("attachments[]", file);
-  return fd;
-}
 
 export interface ExpenseReportFilters {
   requester: string;
@@ -238,6 +222,20 @@ export function useExpenseReportPage() {
     toast.success("Report sent for approval!");
   }
 
+  async function handleDownloadPdf(id: number) {
+    try {
+      const blob = await downloadPdfExpenseReportApi(id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `report-${id}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Could not download the PDF.");
+    }
+  }
+
   async function handleConfirmDelete() {
     if (!rdcToDelete) return;
     setDeleting(true);
@@ -298,5 +296,6 @@ export function useExpenseReportPage() {
     handleConfirmSchedule,
     handleMarkPaid,
     handleConfirmDelete,
+    handleDownloadPdf,
   };
 }

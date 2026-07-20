@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { Users, Gear, CaretRight } from "@phosphor-icons/react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSettingsModal } from "@/contexts/SettingsModalContext";
 import OffCanvas from "@/ui/OffCanvas";
-import SettingsModal from "@/features/settings/components/SettingsModal";
 
 interface Props {
   open: boolean;
@@ -14,11 +13,11 @@ interface Props {
 
 export default function OffCanvasMenu({ open, onClose }: Props) {
   const { user } = useAuth();
-  const [configsOpen, setSettingsOpen] = useState(false);
+  const { open: openSettingsModal } = useSettingsModal();
 
   function openSettings() {
     onClose();
-    setSettingsOpen(true);
+    openSettingsModal();
   }
 
   return (
@@ -55,11 +54,6 @@ export default function OffCanvasMenu({ open, onClose }: Props) {
           </ul>
         </nav>
       </OffCanvas>
-
-      <SettingsModal
-        open={configsOpen}
-        onClose={() => setSettingsOpen(false)}
-      />
     </>
   );
 }

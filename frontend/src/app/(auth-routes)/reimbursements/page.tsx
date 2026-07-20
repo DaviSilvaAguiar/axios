@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { List, SquaresFour, Plus, FunnelSimple } from "@phosphor-icons/react";
 import DatePicker from "@/ui/DatePicker";
 import { AnimatePresence, motion } from "framer-motion";
 import Button from "@/ui/Button";
-import { toast } from "@/lib/toast";
 import Loading from "@/ui/Loading";
 import Card from "@/ui/Card";
 import Combobox from "@/ui/Combobox";
@@ -16,223 +14,45 @@ import FormReimbursement from "@/features/reimbursement/components/FormReimburse
 import SchedulingModal from "@/features/reimbursement/components/SchedulingModal";
 import RejectionModal from "@/features/reimbursement/components/RejectionModal";
 import ConfirmModal from "@/ui/ConfirmModal";
-import {
-  createReimbursementApi,
-  updateReimbursementApi,
-  createReimbursementItemApi,
-  updateReimbursementItemApi,
-  deleteReimbursementItemApi,
-  adicionarAnexoReimbursementApi,
-  deleteAnexoEspecificoReimbursementApi,
-  updateStatusReimbursementApi,
-  downloadPdfReimbursementApi,
-  deleteReimbursementApi,
-} from "@/features/reimbursement/reimbursement.api";
-import {
-  useReimbursements,
-  useReimbursementActions,
-} from "@/features/reimbursement/reimbursement.hooks";
-import {
-  REIMBURSEMENT_STATUS_LABEL,
-  type Reimbursement,
-  type ReimbursementStatus,
-  type StoreReimbursementWithDespesasFormData,
-} from "@/features/reimbursement/reimbursement.types";
-import type { AttachmentToAdd, AttachmentToDelete } from "@/features/reimbursement/components/FormReimbursement";
-
-type ViewMode = "kanban" | "list";
+import { useReimbursementsPage } from "@/features/reimbursement/hooks/useReimbursementsPage";
+import { REIMBURSEMENT_STATUS_LABEL } from "@/features/reimbursement/reimbursement.types";
 
 export default function ReimbursementsPage() {
-  const [viewMode, setViewMode] = useState<ViewMode>("kanban");
-  const [selectedReimbursement, setSelectedReimbursement] = useState<Reimbursement | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [reimbursementToEdit, setReimbursementToEdit] = useState<Reimbursement | null>(null);
-  const [schedulingModal, setSchedulingModal] = useState<Reimbursement | null>(null);
-  const [rejectionModal, setRejectionModal] = useState<Reimbursement | null>(null);
-  const [reimbursementToDelete, setReimbursementToDelete] = useState<Reimbursement | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  const [filters, setFilters] = useState({
-    employee: "",
-    status: "",
-    startDate: "",
-    endDate: "",
-  });
-
-  const [debouncedFilters, setDebouncedFilters] = useState(filters);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedFilters(filters), 400);
-    return () => clearTimeout(timer);
-  }, [filters]);
-
   const {
-    items: reimbursements,
+    viewMode,
+    setViewMode,
+    selectedReimbursement,
+    setSelectedReimbursement,
+    showForm,
+    setShowForm,
+    reimbursementToEdit,
+    schedulingModal,
+    setSchedulingModal,
+    rejectionModal,
+    setRejectionModal,
+    reimbursementToDelete,
+    setReimbursementToDelete,
+    deleting,
+    filters,
+    setFilters,
+    reimbursements,
     loading,
     error,
     hasMore,
     loadingMore,
     reload,
     loadMore,
-  } = useReimbursements(debouncedFilters);
-  const { invalidate, patchInList, removeFromList } = useReimbursementActions(debouncedFilters);
-
-  function updateReimbursementLocal(id: number, patch: Partial<Reimbursement>) {
-    patchInList(id, patch);
-    setSelectedReimbursement((prev) => (prev?.id === id ? { ...prev, ...patch } : prev));
-  }
-
-  async function handleConfirmDelete() {
-    if (!reimbursementToDelete) return;
-    setDeleting(true);
-    try {
-      await deleteReimbursementApi(reimbursementToDelete.id);
-      removeFromList(reimbursementToDelete.id);
-      setSelectedReimbursement((prev) => (prev?.id === reimbursementToDelete.id ? null : prev));
-      setReimbursementToDelete(null);
-      toast.success("Reimbursement deleted successfully!");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not delete the reimbursement.");
-    } finally {
-      setDeleting(false);
-    }
-  }
-
-  async function handleMoveReimbursement(id: number, newStatus: ReimbursementStatus) {
-    try {
-      await updateStatusReimbursementApi(id, { status: newStatus });
-      updateReimbursementLocal(id, { status: newStatus });
-    } catch {
-    }
-  }
-
-  async function handleConfirmRejection(reason: string) {
-    if (!rejectionModal) return;
-    await updateStatusReimbursementApi(rejectionModal.id, { status: 7, rejection_reason: reason });
-    updateReimbursementLocal(rejectionModal.id, { status: 7, rejection_reason: reason });
-    setRejectionModal(null);
-  }
-
-  async function handleConfirmScheduling(date: string) {
-    if (!schedulingModal) return;
-    await updateStatusReimbursementApi(schedulingModal.id, {
-      status: 5,
-      scheduled_payment_date: date,
-    });
-    updateReimbursementLocal(schedulingModal.id, {
-      status: 5,
-      scheduled_payment_date: date,
-    });
-    setSchedulingModal(null);
-  }
-
-  async function handleApprove(id: number) {
-    await updateStatusReimbursementApi(id, { status: 4 });
-    updateReimbursementLocal(id, { status: 4 });
-    setSelectedReimbursement(null);
-  }
-
-  async function handleReject(id: number, reason: string) {
-    await updateStatusReimbursementApi(id, { status: 7, rejection_reason: reason });
-    updateReimbursementLocal(id, { status: 7, rejection_reason: reason });
-    setSelectedReimbursement(null);
-  }
-
-  function closeForm() {
-    setShowForm(false);
-    setReimbursementToEdit(null);
-  }
-
-  function handleEditReimbursement(reimbursement: Reimbursement) {
-    setReimbursementToEdit(reimbursement);
-    setShowForm(true);
-  }
-
-  async function handleDownloadPdf(id: number) {
-    try {
-      const blob = await downloadPdfReimbursementApi(id);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `reimbursement-${id}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-    }
-  }
-
-  async function handleSaveForm(
-    data: StoreReimbursementWithDespesasFormData,
-    deleteItemIds: number[],
-    deleteAttachments: AttachmentToDelete[],
-    addAttachments: AttachmentToAdd[]
-  ) {
-    try {
-      const { items, ...header } = data;
-      let reimbursementId: number;
-
-      if (reimbursementToEdit) {
-        await updateReimbursementApi(reimbursementToEdit.id, header);
-        reimbursementId = reimbursementToEdit.id;
-      } else {
-        const { reimbursement } = await createReimbursementApi(header);
-        reimbursementId = reimbursement.id;
-      }
-
-      for (const id of deleteItemIds) {
-        await deleteReimbursementItemApi(reimbursementId, id);
-      }
-
-      for (const { itemId, attachmentId } of deleteAttachments) {
-        await deleteAnexoEspecificoReimbursementApi(reimbursementId, itemId, attachmentId);
-      }
-
-      for (const { itemId, file } of addAttachments) {
-        await adicionarAnexoReimbursementApi(reimbursementId, itemId, file);
-      }
-
-      for (const item of items) {
-        if (item.itemId) {
-          await updateReimbursementItemApi(reimbursementId, item.itemId, {
-            expense_date: item.expense_date,
-            amount: item.amount,
-            cost_center_id: item.cost_center_id,
-            description: item.description,
-            expense_category_id: item.expense_category_id || undefined,
-            latitude: item.latitude ?? null,
-            longitude: item.longitude ?? null,
-            address: item.address ?? null,
-            description_supplier: item.description_supplier || undefined,
-            supplier_tax_id: item.supplier_tax_id || undefined,
-            supplier_id: item.supplier_id || undefined,
-          });
-        } else {
-          const fd = new FormData();
-          fd.append("expense_date", item.expense_date);
-          fd.append("amount", item.amount);
-          fd.append("cost_center_id", item.cost_center_id);
-          fd.append("description", item.description);
-          if (item.expense_category_id) fd.append("expense_category_id", item.expense_category_id);
-          if (item.latitude != null) fd.append("latitude", String(item.latitude));
-          if (item.longitude != null) fd.append("longitude", String(item.longitude));
-          if (item.address) fd.append("address", item.address);
-          if (item.description_supplier) fd.append("description_supplier", item.description_supplier);
-          if (item.supplier_tax_id) fd.append("supplier_tax_id", item.supplier_tax_id.replace(/\D/g, ""));
-          if (item.supplier_id) fd.append("supplier_id", item.supplier_id);
-          const files = (item.anexo as File[] | undefined) ?? [];
-          files.forEach((f) => fd.append("attachments[]", f));
-          await createReimbursementItemApi(reimbursementId, fd);
-        }
-      }
-
-      closeForm();
-      toast.success(reimbursementToEdit ? "Request updated successfully!" : "Request created successfully!");
-      invalidate();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Error saving the request.";
-      toast.error(message);
-    }
-  }
+    handleConfirmDelete,
+    handleMoveReimbursement,
+    handleConfirmRejection,
+    handleConfirmScheduling,
+    handleApprove,
+    handleReject,
+    closeForm,
+    handleEditReimbursement,
+    handleDownloadPdf,
+    handleSaveForm,
+  } = useReimbursementsPage();
 
   if (selectedReimbursement) {
     return (

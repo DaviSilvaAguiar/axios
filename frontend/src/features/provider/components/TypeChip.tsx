@@ -1,4 +1,4 @@
-import type { SubmissionType } from "@/features/provider/provider.types";
+import type { SubmissionType } from "../provider.types";
 
 const STYLES: Record<SubmissionType, string> = {
   expense_report: "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300",

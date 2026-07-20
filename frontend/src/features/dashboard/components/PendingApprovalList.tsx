@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { CheckCircle, ArrowRight } from "@phosphor-icons/react";
 import Card from "@/ui/Card";
-import TypeChip from "@/ui/TypeChip";
+import TypeChip from "@/features/provider/components/TypeChip";
 import { formatarMoeda } from "@/lib/formatters";
 import { usePendingApproval } from "../dashboard.hooks";
 import ListSkeleton from "./ListSkeleton";
