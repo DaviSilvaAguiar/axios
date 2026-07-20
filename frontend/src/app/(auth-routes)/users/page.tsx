@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { usePaginatedList } from "@/lib/usePaginatedList";
 import {
   Plus,
   Trash,
@@ -20,12 +19,7 @@ import ActiveBadge from "@/ui/ActiveBadge";
 import { toast } from "@/lib/toast";
 import { useAuth } from "@/contexts/AuthContext";
 import UserForm from "@/features/user/components/UserForm";
-import {
-  listUsersApi,
-  createUserApi,
-  updateUserApi,
-  deleteUserApi,
-} from "@/features/user/user.api";
+import { useUsers, useUserMutations } from "@/features/user/user.hooks";
 import type {
   User,
   CriarUserFormData,
@@ -61,17 +55,14 @@ export default function UsersPage() {
 
   const {
     items: users,
-    setItems: setUsers,
     loading,
     loadingMore,
     hasMore,
-    error: error,
-    reload: reload,
-    loadMore: loadMore,
-  } = usePaginatedList<User>(
-    (page, perPage) => listUsersApi(page, perPage),
-    { errorMessage: "Could not load the users." }
-  );
+    error,
+    reload,
+    loadMore,
+  } = useUsers();
+  const { create, update, remove } = useUserMutations();
 
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
@@ -97,12 +88,10 @@ export default function UsersPage() {
 
   async function handleSave(data: CriarUserFormData | EditarUserFormData) {
     if (selected) {
-      const { user } = await updateUserApi(selected.id, data as EditarUserFormData);
-      setUsers((prev) => prev.map((u) => (u.id === user.id ? user : u)));
+      await update.mutateAsync({ id: selected.id, data: data as EditarUserFormData });
       toast.success("User updated.");
     } else {
-      const { user } = await createUserApi(data as CriarUserFormData);
-      setUsers((prev) => [...prev, user].sort((a, b) => a.name.localeCompare(b.name)));
+      await create.mutateAsync(data as CriarUserFormData);
       toast.success("User created.");
     }
     closeModal();
@@ -111,14 +100,16 @@ export default function UsersPage() {
   async function handleToggleActive(u: User) {
     setTogglingId(u.id);
     try {
-      const { user: updated } = await updateUserApi(u.id, {
-        role: u.role,
-        name: u.name,
-        email: u.email,
-        active: !u.active,
-        erp_code: u.erp_code ?? undefined,
+      await update.mutateAsync({
+        id: u.id,
+        data: {
+          role: u.role,
+          name: u.name,
+          email: u.email,
+          active: !u.active,
+          erp_code: u.erp_code ?? undefined,
+        },
       });
-      setUsers((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
       toast.success(u.active ? "User deactivated." : "User activated.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not change the status.");
@@ -131,8 +122,7 @@ export default function UsersPage() {
     if (!toDelete) return;
     setDeletingId(toDelete.id);
     try {
-      await deleteUserApi(toDelete.id);
-      setUsers((prev) => prev.filter((u) => u.id !== toDelete.id));
+      await remove.mutateAsync(toDelete.id);
       toast.success("User removed.");
       setToDelete(null);
     } catch (err) {

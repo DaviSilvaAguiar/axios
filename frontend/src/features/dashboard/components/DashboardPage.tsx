@@ -14,14 +14,17 @@ import {
   CurrencyCircleDollar,
   Files,
 } from "@phosphor-icons/react";
-import { type ElementType, useEffect, useState } from "react";
+import { type ElementType } from "react";
 import Card from "@/ui/Card";
 import Loading from "@/ui/Loading";
 import MobileScreen from "@/ui/MobileScreen";
 import TransactionCard from "@/ui/TransactionCard";
 import { useAuth } from "@/contexts/AuthContext";
-import { listSubmissionsApi } from "@/features/provider/provider.api";
-import type { Submission } from "@/features/provider/provider.types";
+import {
+  useRecentSubmissions,
+  usePendingReimbursementTotal,
+  useDraftExpenseReportCount,
+} from "@/features/provider/provider.hooks";
 import PendingApprovalList from "./PendingApprovalList";
 
 const operationModules = [
@@ -126,28 +129,12 @@ function fmtCurrency(value: number) {
 }
 
 function ProviderDashboard() {
-  const [recent, setRecent] = useState<Submission[]>([]);
-  const [pendingReimbursement, setPendingReimbursement] = useState(0);
-  const [draftExpenseReports, setDraftExpenseReports] = useState(0);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    Promise.all([
-      listSubmissionsApi("all", 1, 3),
-      listSubmissionsApi("reimbursement", 1, 50),
-      listSubmissionsApi("expense_report", 1, 50),
-    ])
-      .then(([recentRes, reimbursementRes, expenseReportRes]) => {
-        setRecent(recentRes.data);
-        const pending = reimbursementRes.data
-          .filter((r) => r.status === 1 || r.status === 2 || r.status === 3)
-          .reduce((s, r) => s + Number(r.total_amount), 0);
-        setPendingReimbursement(pending);
-        setDraftExpenseReports(expenseReportRes.data.filter((r) => r.status === 1).length);
-      })
-      .catch(() => { })
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: recent = [], isLoading: recentLoading } = useRecentSubmissions();
+  const { data: pendingReimbursement = 0, isLoading: pendingLoading } =
+    usePendingReimbursementTotal();
+  const { data: draftExpenseReports = 0, isLoading: draftLoading } =
+    useDraftExpenseReportCount();
+  const loading = recentLoading || pendingLoading || draftLoading;
 
   return (
     <MobileScreen>

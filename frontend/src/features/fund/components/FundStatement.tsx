@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
@@ -17,17 +17,11 @@ import {
   FUND_TIPO_LABEL,
   SUBTYPE_LABEL,
   TIPO_TRANSACAO_CREDIT,
-  type ExtratoResponse,
   type LancarAjusteFormData,
   type LancarCreditoFormData,
   type TransacaoExtrato,
 } from "../fund.types";
-import {
-  extratoFundApi,
-  fecharFundApi,
-  lancarAjusteApi,
-  lancarCreditoApi,
-} from "../fund.api";
+import { useFundStatement, useFundMutations } from "../fund.hooks";
 import PostCreditModal from "./PostCreditModal";
 import PostAdjustmentModal from "./PostAdjustmentModal";
 
@@ -37,51 +31,32 @@ interface Props {
 
 export default function FundStatement({ fundId }: Props) {
   const router = useRouter();
-  const [data, setData] = useState<ExtratoResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading } = useFundStatement(fundId);
+  const { close, postCredit, postAdjustment } = useFundMutations();
   const [showCredit, setShowCredit] = useState(false);
   const [showAdjustment, setShowAdjustment] = useState(false);
   const [showClose, setShowClose] = useState(false);
-  const [closing, setClosing] = useState(false);
-
-  const load = useCallback(async () => {
-    try {
-      setData(await extratoFundApi(fundId));
-    } catch {
-      toast.error("Could not load the statement.");
-    } finally {
-      setLoading(false);
-    }
-  }, [fundId]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
 
   async function handleCredit(values: LancarCreditoFormData) {
-    await lancarCreditoApi(fundId, values);
+    await postCredit.mutateAsync({ id: fundId, data: values });
     setShowCredit(false);
     toast.success("Advance posted!");
-    await load();
   }
 
   async function handleAdjustment(values: LancarAjusteFormData) {
-    await lancarAjusteApi(fundId, values);
+    await postAdjustment.mutateAsync({ id: fundId, data: values });
     setShowAdjustment(false);
     toast.success("Adjustment posted!");
-    await load();
   }
 
   async function handleClose() {
-    setClosing(true);
     try {
-      await fecharFundApi(fundId);
+      await close.mutateAsync(fundId);
       toast.success("Fund closed!");
       router.push("/funds");
     } catch {
       toast.error("Could not close the fund. Check the balance.");
     } finally {
-      setClosing(false);
       setShowClose(false);
     }
   }
@@ -270,7 +245,7 @@ export default function FundStatement({ fundId }: Props) {
         title="Close fund?"
         description="Once closed, the fund will no longer accept new transactions."
         confirmLabel="Close Fund"
-        loading={closing}
+        loading={close.isPending}
         onConfirm={handleClose}
         onCancel={() => setShowClose(false)}
       />

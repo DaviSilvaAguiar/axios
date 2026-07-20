@@ -3,13 +3,13 @@ import { mapListarExpenseReportsResponse, mapExpenseReportResponse } from "./exp
 import { expenseReportItemSchema } from "./expense-report.types";
 import type { ExpenseReportItem, ExpenseReportItemFormItem, ExpenseReport, StoreExpenseReportFormData } from "./expense-report.types";
 
-export async function listExpenseReportsApi(): Promise<ExpenseReport[]> {
-  const raw = await api.get<unknown>("/v1/expense-reports");
+export async function listExpenseReportsApi(signal?: AbortSignal): Promise<ExpenseReport[]> {
+  const raw = await api.get<unknown>("/v1/expense-reports", { signal });
   return mapListarExpenseReportsResponse(raw);
 }
 
-export async function getExpenseReportApi(id: number): Promise<ExpenseReport> {
-  const raw = await api.get<unknown>(`/v1/expense-reports/${id}`);
+export async function getExpenseReportApi(id: number, signal?: AbortSignal): Promise<ExpenseReport> {
+  const raw = await api.get<unknown>(`/v1/expense-reports/${id}`, { signal });
   return mapExpenseReportResponse(raw);
 }
 
@@ -116,8 +116,9 @@ export async function getAnexoExpenseReportApi(
   idExpenseReport: number,
   idDespesa: number,
   idAnexo: number,
+  signal?: AbortSignal,
 ): Promise<Blob> {
-  return api.blob(`/v1/expense-reports/${idExpenseReport}/items/${idDespesa}/attachments/${idAnexo}`);
+  return api.blob(`/v1/expense-reports/${idExpenseReport}/items/${idDespesa}/attachments/${idAnexo}`, signal);
 }
 
 export { listCentrosDeCustoApi } from "@/features/cost-center/cost-center.api";

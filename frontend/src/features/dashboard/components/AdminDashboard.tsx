@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import dynamic from "next/dynamic";
 import { ArrowClockwise } from "@phosphor-icons/react";
 import Card from "@/ui/Card";
 import Button from "@/ui/Button";
 import { formatarMoeda } from "@/lib/formatters";
-import { overviewDashboardApi } from "../dashboard.api";
-import type { Overview } from "../dashboard.types";
+import { useDashboardOverview } from "../dashboard.hooks";
 import KpiCard from "./KpiCard";
 import KpiCardSkeleton from "./KpiCardSkeleton";
 import MonthlyMovementSkeleton from "./MonthlyMovementSkeleton";
@@ -26,26 +25,7 @@ export default function AdminDashboard() {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
-  const [data, setData] = useState<Overview | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(false);
-    try {
-      const overview = await overviewDashboardApi(year, month);
-      setData(overview);
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [year, month]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  const { data, isLoading: loading, isError: error, refetch } = useDashboardOverview(year, month);
 
   function handleChangePeriod(newYear: number, newMonth: number) {
     setYear(newYear);
@@ -60,7 +40,7 @@ export default function AdminDashboard() {
           <p className="text-body-sm text-app-text-muted">
             Check your connection and try again.
           </p>
-          <Button variant="dark" onClick={load}>
+          <Button variant="dark" onClick={() => refetch()}>
             <ArrowClockwise size={16} />
             Try again
           </Button>

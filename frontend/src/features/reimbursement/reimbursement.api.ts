@@ -14,7 +14,8 @@ import type {
 export async function listReimbursementsApi(
   page: number = 1,
   perPage: number = PAGE_SIZE,
-  filters?: { employee?: string; status?: string; startDate?: string; endDate?: string }
+  filters?: { employee?: string; status?: string; startDate?: string; endDate?: string },
+  signal?: AbortSignal
 ): Promise<ListarReimbursementsResponse> {
   const params = new URLSearchParams({ page: String(page), per_page: String(perPage) });
   if (filters?.employee) params.append("employee", filters.employee);
@@ -22,12 +23,12 @@ export async function listReimbursementsApi(
   if (filters?.startDate) params.append("startDate", filters.startDate);
   if (filters?.endDate) params.append("endDate", filters.endDate);
 
-  const raw = await api.get<unknown>(`/v1/reimbursements?${params.toString()}`);
+  const raw = await api.get<unknown>(`/v1/reimbursements?${params.toString()}`, { signal });
   return mapListarReimbursementsResponse(raw);
 }
 
-export async function getReimbursementApi(id: number): Promise<Reimbursement> {
-  const raw = await api.get<unknown>(`/v1/reimbursements/${id}`);
+export async function getReimbursementApi(id: number, signal?: AbortSignal): Promise<Reimbursement> {
+  const raw = await api.get<unknown>(`/v1/reimbursements/${id}`, { signal });
   return mapReimbursementResponse(raw).reimbursement;
 }
 
@@ -138,8 +139,8 @@ export async function downloadPdfReimbursementApi(id: number): Promise<Blob> {
   return api.blob(`/v1/reimbursements/${id}/pdf`);
 }
 
-export async function getAnexoReimbursementApi(reimbursementId: number, itemId: number): Promise<Blob> {
-  return api.blob(`/v1/reimbursements/${reimbursementId}/items/${itemId}/attachment`);
+export async function getAnexoReimbursementApi(reimbursementId: number, itemId: number, signal?: AbortSignal): Promise<Blob> {
+  return api.blob(`/v1/reimbursements/${reimbursementId}/items/${itemId}/attachment`, signal);
 }
 
 export async function adicionarAnexoReimbursementApi(

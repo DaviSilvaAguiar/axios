@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   type Icon,
@@ -20,8 +21,8 @@ import Button from "@/ui/Button";
 import ConfirmModal from "@/ui/ConfirmModal";
 import StatusTag from "./StatusTag";
 import LocationViewer from "@/features/geolocation/components/LocationViewer";
-import { getAnexoExpenseReportApi, getExpenseReportApi } from "../expense-report.api";
-import { EXPENSE_REPORT_STATUS_DRAFT, type ExpenseReportItem, type ExpenseReport } from "../expense-report.types";
+import { getAnexoExpenseReportApi } from "../expense-report.api";
+import { EXPENSE_REPORT_STATUS_DRAFT, type ExpenseReport } from "../expense-report.types";
 import { formatarData, formatarMoeda } from "@/lib/formatters";
 
 const SPRING = { type: "spring" as const, stiffness: 380, damping: 30 };
@@ -64,10 +65,10 @@ interface Props {
   modalOpen?: boolean;
 }
 
-export default function AuditView({ expenseReport: initialExpenseReport, onClose, onEdit, onSubmit, onApprove, onReject, onSchedule, onMarkPaid, onDownloadPdf, modalOpen = false }: Props) {
-  const [expenseReport, setExpenseReport] = useState<ExpenseReport>(initialExpenseReport);
+export default function AuditView({ expenseReport, onClose, onEdit, onSubmit, onApprove, onReject, onSchedule, onMarkPaid, onDownloadPdf, modalOpen = false }: Props) {
   const items = expenseReport.items ?? [];
-  const [selectedItem, setSelectedItem] = useState<ExpenseReportItem | null>(items[0] ?? null);
+  const [selectedItemId, setSelectedItemId] = useState<number | null>(items[0]?.id ?? null);
+  const selectedItem = items.find((d) => d.id === selectedItemId) ?? items[0] ?? null;
   const [mobilePanel, setMobilePanel] = useState<"list" | "detail">("list");
   const [confirming, setConfirming] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -75,6 +76,7 @@ export default function AuditView({ expenseReport: initialExpenseReport, onClose
   const [rejecting, setRejecting] = useState(false);
   const [confirmReject, setConfirmReject] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [erroredItemId, setErroredItemId] = useState<number | null>(null);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -86,22 +88,6 @@ export default function AuditView({ expenseReport: initialExpenseReport, onClose
     return () => window.removeEventListener("keydown", handler);
   }, [viewLocation, confirming, confirmReject, modalOpen, onClose]);
 
-  useEffect(() => {
-    setExpenseReport(initialExpenseReport);
-    const newItems = initialExpenseReport.items ?? [];
-    setSelectedItem((current) => current ? (newItems.find((d) => d.id === current.id) ?? newItems[0] ?? null) : (newItems[0] ?? null));
-  }, [initialExpenseReport]);
-
-  useEffect(() => {
-    getExpenseReportApi(initialExpenseReport.id)
-      .then((updated) => {
-        setExpenseReport(updated);
-        const newItems = updated.items ?? [];
-        setSelectedItem((current) => current ? (newItems.find((d) => d.id === current.id) ?? newItems[0] ?? null) : (newItems[0] ?? null));
-      })
-      .catch(() => { });
-  }, [initialExpenseReport.id]);
-
   const total = items.reduce((acc, d) => acc + parseFloat(d.amount ?? "0"), 0);
 
   const attachment = selectedItem?.attachments?.[0] ?? null;
@@ -109,41 +95,22 @@ export default function AuditView({ expenseReport: initialExpenseReport, onClose
   const isPdf = path?.toLowerCase().endsWith(".pdf") ?? false;
   const isImage = path ? /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(path) : false;
 
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [loadingAttachment, setLoadingAttachment] = useState(false);
-  const [imgError, setImgError] = useState(false);
-  const prevBlobUrl = useRef<string | null>(null);
+  const attachmentQuery = useQuery({
+    queryKey: ["expense-report-attachment", expenseReport.id, selectedItem?.id],
+    queryFn: ({ signal }) => getAnexoExpenseReportApi(expenseReport.id, selectedItem!.id, attachment!.id, signal),
+    enabled: Boolean(path && selectedItem && attachment),
+  });
 
+  const blob = attachmentQuery.data;
+  const blobUrl = useMemo(() => (blob ? URL.createObjectURL(blob) : null), [blob]);
   useEffect(() => {
-    setImgError(false);
-    setBlobUrl(null);
+    return () => {
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+  }, [blobUrl]);
 
-    if (prevBlobUrl.current) {
-      URL.revokeObjectURL(prevBlobUrl.current);
-      prevBlobUrl.current = null;
-    }
-
-    if (!attachment || !selectedItem) return;
-
-    let cancelled = false;
-    setLoadingAttachment(true);
-
-    getAnexoExpenseReportApi(expenseReport.id, selectedItem.id, attachment.id)
-      .then((blob) => {
-        if (cancelled) return;
-        const url = URL.createObjectURL(blob);
-        prevBlobUrl.current = url;
-        setBlobUrl(url);
-      })
-      .catch(() => {
-        if (!cancelled) setImgError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingAttachment(false);
-      });
-
-    return () => { cancelled = true; };
-  }, [selectedItem?.id, attachment?.id]);
+  const loadingAttachment = attachmentQuery.isFetching;
+  const imgError = attachmentQuery.isError || erroredItemId === selectedItem?.id;
 
   async function handleConfirm() {
     setSubmitting(true);
@@ -269,7 +236,7 @@ export default function AuditView({ expenseReport: initialExpenseReport, onClose
                         />
                       )}
                       <motion.button
-                        onClick={() => { setSelectedItem(d); setMobilePanel("detail"); }}
+                        onClick={() => { setSelectedItemId(d.id); setMobilePanel("detail"); }}
                         whileHover={{ x: selectedItem?.id === d.id ? 0 : 2 }}
                         transition={{ duration: 0.12 }}
                         className="relative z-10 w-full border-b border-app-border-subtle px-5 py-4 text-left"
@@ -370,7 +337,7 @@ export default function AuditView({ expenseReport: initialExpenseReport, onClose
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.2 }}
-                            onError={() => setImgError(true)}
+                            onError={() => selectedItem && setErroredItemId(selectedItem.id)}
                           />
                         ) : imgError ? (
                           <AttachmentPlaceholder key="error" icon={ImageBroken} label="Could not load the attachment" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Plus, Receipt, CalendarDots } from "@phosphor-icons/react";
@@ -13,11 +13,13 @@ import ExpenseReportForm from "@/features/expense-report/components/ExpenseRepor
 import StatusTag from "@/features/expense-report/components/StatusTag";
 import { toast } from "@/lib/toast";
 import {
-  listExpenseReportsApi,
   createExpenseReportApi,
   createExpenseReportItemApi,
-  getExpenseReportApi,
 } from "@/features/expense-report/expense-report.api";
+import {
+  useExpenseReports,
+  useExpenseReportActions,
+} from "@/features/expense-report/expense-report.hooks";
 import {
   EXPENSE_REPORT_STATUS_LABEL,
   type ExpenseReportItemFormItem,
@@ -130,30 +132,15 @@ export default function MyExpenseReportsPage() {
 
 function MyExpenseReportsContent() {
   const params = useSearchParams();
-  const [rdcs, setExpenseReports] = useState<ExpenseReport[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const query = useExpenseReports();
+  const { invalidate } = useExpenseReportActions();
+  const rdcs = query.data ?? [];
+  const loading = query.isLoading;
+  const error = query.isError ? "Could not load the reports." : null;
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("");
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(() => params.get("novo") === "1");
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await listExpenseReportsApi();
-      setExpenseReports(data);
-    } catch {
-      setError("Could not load the reports.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  useEffect(() => {
-    if (params.get("novo") === "1") setShowForm(true);
-  }, [params]);
+  const load = () => { query.refetch(); };
 
   const filteredExpenseReports = statusFilter
     ? rdcs.filter((r) => r.status === statusFilter)
@@ -170,15 +157,14 @@ function MyExpenseReportsContent() {
         await createExpenseReportItemApi(created.id, buildItemFormData(item, filesByItem[idx] ?? []));
       }
 
-      const fullExpenseReport = await getExpenseReportApi(created.id);
-      setExpenseReports((prev) => [fullExpenseReport, ...prev]);
+      invalidate();
       setShowForm(false);
       toast.success("Report created successfully!");
     } catch (err) {
       if (newId !== null) {
         setShowForm(false);
         toast.success("Report created. Refresh if the item does not appear.");
-        load();
+        invalidate();
         return;
       }
       toast.error(err instanceof Error ? err.message : "Could not save.");

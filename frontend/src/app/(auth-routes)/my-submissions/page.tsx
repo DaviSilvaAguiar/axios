@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Plus } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
@@ -9,8 +9,8 @@ import TransactionCard from "@/ui/TransactionCard";
 import Button from "@/ui/Button";
 import Loading from "@/ui/Loading";
 import FabActionSheet from "@/ui/FabActionSheet";
-import { listSubmissionsApi } from "@/features/provider/provider.api";
-import type { Submission, SubmissionFilter } from "@/features/provider/provider.types";
+import { useSubmissions } from "@/features/provider/provider.hooks";
+import type { SubmissionFilter } from "@/features/provider/provider.types";
 
 const CHIPS: { label: string; value: SubmissionFilter }[] = [
   { label: "All", value: "all" },
@@ -44,35 +44,13 @@ function MySubmissionsContent() {
   const router = useRouter();
   const filter = parseFilter(params.get("type"));
 
-  const [items, setItems] = useState<Submission[]>([]);
-  const [page, setPage] = useState(1);
-  const [lastPage, setLastPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const { items, loading, loadingMore, hasMore, loadMore } = useSubmissions(filter, PER_PAGE);
   const [sheetOpen, setSheetOpen] = useState(false);
-
-  const load = useCallback(async (pageArg: number, append: boolean) => {
-    if (append) setLoadingMore(true); else setLoading(true);
-    try {
-      const res = await listSubmissionsApi(filter, pageArg, PER_PAGE);
-      setItems((prev) => (append ? [...prev, ...res.data] : res.data));
-      setPage(pageArg);
-      setLastPage(res.meta.last_page);
-    } finally {
-      if (append) setLoadingMore(false); else setLoading(false);
-    }
-  }, [filter]);
-
-  useEffect(() => {
-    void load(1, false);
-  }, [load]);
 
   function changeFilter(next: SubmissionFilter): void {
     const qs = next === "all" ? "" : `?type=${next}`;
     router.replace(`/my-submissions${qs}`);
   }
-
-  const hasMore = page < lastPage;
 
   return (
     <MobileScreen>
@@ -137,7 +115,7 @@ function MySubmissionsContent() {
               variant="outlined"
               fullWidth
               disabled={loadingMore}
-              onClick={() => { void load(page + 1, true); }}
+              onClick={() => loadMore()}
             >
               {loadingMore ? "Loading…" : "Load more"}
             </Button>

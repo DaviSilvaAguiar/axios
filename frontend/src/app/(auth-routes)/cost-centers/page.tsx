@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { usePaginatedList } from "@/lib/usePaginatedList";
 import {
   Plus,
   Trash,
@@ -20,27 +19,22 @@ import ActiveBadge from "@/ui/ActiveBadge";
 import { toast } from "@/lib/toast";
 import CostCenterForm from "@/features/cost-center/components/CostCenterForm";
 import {
-  listCentrosDeCustoApi,
-  createCostCenterApi,
-  updateCostCenterApi,
-  deleteCostCenterApi,
-} from "@/features/cost-center/cost-center.api";
+  useCostCenters,
+  useCostCenterMutations,
+} from "@/features/cost-center/cost-center.hooks";
 import type { CostCenter, CostCenterFormData } from "@/features/cost-center/cost-center.types";
 
 export default function CostCentersPage() {
   const {
     items: costCenters,
-    setItems: setCostCenters,
     loading,
     loadingMore,
     hasMore,
-    error: error,
-    reload: reload,
-    loadMore: loadMore,
-  } = usePaginatedList<CostCenter>(
-    (page, perPage) => listCentrosDeCustoApi(page, perPage),
-    { errorMessage: "Could not load the cost centers." }
-  );
+    error,
+    reload,
+    loadMore,
+  } = useCostCenters();
+  const { create, update, remove } = useCostCenterMutations();
 
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
@@ -66,14 +60,10 @@ export default function CostCentersPage() {
 
   async function handleSave(data: CostCenterFormData) {
     if (selected) {
-      const { cost_center } = await updateCostCenterApi(selected.id, data);
-      setCostCenters((prev) => prev.map((c) => (c.id === cost_center.id ? cost_center : c)));
+      await update.mutateAsync({ id: selected.id, data });
       toast.success("Cost center updated.");
     } else {
-      const { cost_center } = await createCostCenterApi(data);
-      setCostCenters((prev) =>
-        [...prev, cost_center].sort((a, b) => a.description.localeCompare(b.description))
-      );
+      await create.mutateAsync(data);
       toast.success("Cost center created.");
     }
     closeModal();
@@ -82,8 +72,7 @@ export default function CostCentersPage() {
   async function handleToggleActive(c: CostCenter) {
     setTogglingId(c.id);
     try {
-      const { cost_center } = await updateCostCenterApi(c.id, { active: !c.active });
-      setCostCenters((prev) => prev.map((x) => (x.id === cost_center.id ? cost_center : x)));
+      await update.mutateAsync({ id: c.id, data: { active: !c.active } });
       toast.success(c.active ? "Cost center deactivated." : "Cost center activated.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not change the status.");
@@ -96,8 +85,7 @@ export default function CostCentersPage() {
     if (!toDelete) return;
     setDeletingId(toDelete.id);
     try {
-      await deleteCostCenterApi(toDelete.id);
-      setCostCenters((prev) => prev.filter((c) => c.id !== toDelete.id));
+      await remove.mutateAsync(toDelete.id);
       toast.success("Cost center removed.");
       setToDelete(null);
     } catch (err) {

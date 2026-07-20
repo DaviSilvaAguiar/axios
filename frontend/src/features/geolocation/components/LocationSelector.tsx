@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import dynamic from "next/dynamic";
 import { MagnifyingGlass, Crosshair, X, CircleNotch } from "@phosphor-icons/react";
 import Modal from "@/ui/Modal";
@@ -34,15 +34,19 @@ export default function LocationSelector({ open, onClose, onConfirm, initialValu
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<NominatimResult[]>([]);
   const [capturing, setCapturing] = useState(false);
+  const [lastSync, setLastSync] = useState<{ open: boolean; initialValue: Localizacao | null | undefined }>({
+    open: false,
+    initialValue: undefined,
+  });
 
-  useEffect(() => {
-    if (!open) return;
+  if (open && (lastSync.open !== open || lastSync.initialValue !== initialValue)) {
+    setLastSync({ open, initialValue });
     setLatitude(initialValue?.latitude ?? null);
     setLongitude(initialValue?.longitude ?? null);
     setAddress(initialValue?.address ?? "");
     setSearch("");
     setResults([]);
-  }, [open, initialValue]);
+  }
 
   async function handleSearch() {
     if (!search.trim()) return;

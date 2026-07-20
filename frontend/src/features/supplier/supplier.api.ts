@@ -14,14 +14,15 @@ import type {
 
 export async function listSupplieresApi(
   page: number = 1,
-  perPage: number = PAGE_SIZE
+  perPage: number = PAGE_SIZE,
+  signal?: AbortSignal
 ): Promise<Paginated<Supplier>> {
-  const raw = await api.get<unknown>(`/v1/suppliers${buildPageQuery(page, perPage)}`);
+  const raw = await api.get<unknown>(`/v1/suppliers${buildPageQuery(page, perPage)}`, { signal });
   return mapListarSupplieres(raw);
 }
 
-export async function listSupplieresAtivosApi(): Promise<Supplier[]> {
-  const result = await listSupplieresApi(1, 9999);
+export async function listSupplieresAtivosApi(signal?: AbortSignal): Promise<Supplier[]> {
+  const result = await listSupplieresApi(1, 9999, signal);
   return result.data.filter((f) => f.active);
 }
 

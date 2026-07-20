@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -24,7 +23,7 @@ import {
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSidebar } from '@/contexts/SidebarContext';
-import { listUsersApi } from '@/features/user/user.api';
+import { useUserCount } from '@/features/user/user.hooks';
 
 const navItemsAdmin = [
   { href: '/dashboard', label: 'Home', icon: HouseLine },
@@ -54,12 +53,7 @@ export default function Sidebar() {
     (item) => !('modulo' in item) || enabledModules.includes(item.modulo as string)
   );
   const isProvider = user?.role === 3;
-  const [totalUsers, setTotalUsers] = useState<number>(0);
-
-  useEffect(() => {
-    if (isProvider) return;
-    listUsersApi(1, 1).then((res) => setTotalUsers(res.meta.total)).catch(() => { });
-  }, [isProvider]);
+  const { data: totalUsers = 0 } = useUserCount();
 
   const maxUsers = tenant?.max_users ?? null;
   const pct = maxUsers ? Math.min((totalUsers / maxUsers) * 100, 100) : 0;

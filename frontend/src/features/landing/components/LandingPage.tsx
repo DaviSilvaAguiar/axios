@@ -240,7 +240,7 @@ export default function LandingPage() {
           >
             <PlugsConnected size={16} weight="bold" className="shrink-0" />
             <span className="font-ui text-[13px]">
-              Integrates with the market's ERPs.
+              Integrates with the market&apos;s ERPs.
             </span>
           </div>
 
@@ -393,7 +393,7 @@ export default function LandingPage() {
               See Axios in action.
             </h2>
             <p className="text-body text-ink-muted">
-              Fill out the form. Our team will get in touch to show how Axios fits your company's management.
+              Fill out the form. Our team will get in touch to show how Axios fits your company&apos;s management.
             </p>
             <ul className="flex flex-col gap-3 mt-2">
               {[

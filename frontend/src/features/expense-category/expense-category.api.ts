@@ -12,9 +12,10 @@ import type {
 
 export async function listCategoriasDespesaApi(
   page: number = 1,
-  perPage: number = PAGE_SIZE
+  perPage: number = PAGE_SIZE,
+  signal?: AbortSignal
 ): Promise<Paginated<ExpenseCategory>> {
-  const raw = await api.get<unknown>(`/v1/expense-categories${buildPageQuery(page, perPage)}`);
+  const raw = await api.get<unknown>(`/v1/expense-categories${buildPageQuery(page, perPage)}`, { signal });
   return mapListarCategoriasDespesa(raw);
 }
 

@@ -143,7 +143,7 @@ export default function LoginPage() {
           <h2 className="text-display-hero text-white">
             Total control
             <br />
-            over your team's
+            over your team&apos;s
             <br />
             expenses.
           </h2>

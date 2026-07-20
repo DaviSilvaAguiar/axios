@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "@phosphor-icons/react";
 import { AnimatePresence } from "framer-motion";
@@ -10,41 +10,20 @@ import Loading from "@/ui/Loading";
 import { toast } from "@/lib/toast";
 import FundsDashboard from "@/features/fund/components/FundsDashboard";
 import FundForm from "@/features/fund/components/FundForm";
-import {
-  createFundApi,
-  listFundsApi,
-  type FundStatusFiltro,
-} from "@/features/fund/fund.api";
-import {
-  type Fund,
-  type StoreFundFormData,
-} from "@/features/fund/fund.types";
+import { useFunds, useFundMutations } from "@/features/fund/fund.hooks";
+import { type FundStatusFiltro } from "@/features/fund/fund.api";
+import { type StoreFundFormData } from "@/features/fund/fund.types";
 
 export default function FundsPage() {
   const router = useRouter();
-  const [funds, setFunds] = useState<Fund[]>([]);
-  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<FundStatusFiltro>("abertos");
   const [showForm, setShowForm] = useState(false);
 
-  const load = useCallback(async (filter: FundStatusFiltro) => {
-    setLoading(true);
-    try {
-      setFunds(await listFundsApi(filter));
-    } catch {
-      toast.error("Could not load the funds.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load(tab);
-  }, [load, tab]);
+  const { data: funds = [], isLoading: loading } = useFunds(tab);
+  const { create } = useFundMutations();
 
   async function handleCreate(data: StoreFundFormData) {
-    const created = await createFundApi(data);
-    setFunds((prev) => [created, ...prev]);
+    await create.mutateAsync(data);
     setShowForm(false);
     toast.success("Fund created successfully!");
   }

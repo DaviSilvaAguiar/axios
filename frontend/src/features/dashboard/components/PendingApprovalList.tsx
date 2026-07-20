@@ -1,26 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CheckCircle, ArrowRight } from "@phosphor-icons/react";
 import Card from "@/ui/Card";
 import TypeChip from "@/ui/TypeChip";
 import { formatarMoeda } from "@/lib/formatters";
-import { pendingApprovalApi } from "../dashboard.api";
-import type { PendingApprovalItem } from "../dashboard.types";
+import { usePendingApproval } from "../dashboard.hooks";
 import ListSkeleton from "./ListSkeleton";
 
 export default function PendingApprovalList() {
-  const [items, setItems] = useState<PendingApprovalItem[] | null>(null);
-  const [error, setError] = useState(false);
+  const { data: items, isLoading, isError: error } = usePendingApproval();
 
-  useEffect(() => {
-    pendingApprovalApi()
-      .then(setItems)
-      .catch(() => setError(true));
-  }, []);
-
-  if (items === null && !error) {
+  if (isLoading && !error) {
     return <ListSkeleton />;
   }
 

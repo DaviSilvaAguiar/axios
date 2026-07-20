@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ClockCounterClockwise,
@@ -17,19 +18,20 @@ import Modal from "@/ui/Modal";
 import EmptyState from "@/ui/EmptyState";
 import { toast } from "@/lib/toast";
 import {
-  getPendingExpenseReportsApi,
-  getPendingReimbursementsApi,
-  obterPendingStatsApi,
-  obterHistoricoApi,
-} from "@/features/export/export.api";
-import type { BatchType, PendingStats } from "@/features/export/export.types";
-import { usePaginatedList } from "@/lib/usePaginatedList";
+  usePendingStats,
+  usePendingExpenseReports,
+  usePendingReimbursements,
+  useExportHistory,
+} from "@/features/export/export.hooks";
+import { queryKeys } from "@/lib/queryKeys";
+import type { BatchType } from "@/features/export/export.types";
 import PendingTable from "@/features/export/components/PendingTable";
 import HistoryTable from "@/features/export/components/HistoryTable";
 import IntegrationSelector from "@/features/integration/components/IntegrationSelector";
 import IntegrationKeyModal from "@/features/integration/components/IntegrationKeyModal";
 import IntegrationSendActionBar from "@/features/integration/components/IntegrationSendActionBar";
-import { listIntegracoesApi, sendLoteIntegrationApi } from "@/features/integration/integration.api";
+import { sendLoteIntegrationApi } from "@/features/integration/integration.api";
+import { useIntegrations } from "@/features/integration/integration.hooks";
 import type { Integration } from "@/features/integration/integration.types";
 import { downloadPdfReimbursementApi } from "@/features/reimbursement/reimbursement.api";
 import { downloadPdfExpenseReportApi } from "@/features/expense-report/expense-report.api";
@@ -127,16 +129,15 @@ export default function ExportPage() {
   const [selExpenseReport, setSelExpenseReport] = useState<Set<number>>(new Set());
   const [selReimbursement, setSelReimbursement] = useState<Set<number>>(new Set());
 
-  const { items: pendingExpenseReports, loading: loadingExpenseReports, error: errorExpenseReports, hasMore: hasMoreExpenseReports, loadingMore: loadingMoreExpenseReports, loadMore: loadMoreExpenseReports, reload: reloadExpenseReports } = usePaginatedList(getPendingExpenseReportsApi);
-  const { items: pendingReimbursements, loading: loadingReimbursements, error: errorReimbursements, hasMore: hasMoreReimbursements, loadingMore: loadingMoreReimbursements, loadMore: loadMoreReimbursements, reload: reloadReimbursements } = usePaginatedList(getPendingReimbursementsApi);
-  const { items: history, loading: loadingHistory, error: errorHistory, hasMore: hasMoreHistory, loadingMore: loadingMoreHistory, loadMore: loadMoreHistory, reload: reloadHistory } = usePaginatedList(obterHistoricoApi);
+  const queryClient = useQueryClient();
 
-  const [stats, setStats] = useState<PendingStats | null>(null);
-  const [loadingBase, setLoadingBase] = useState(true);
-  const [errorBase, setErrorBase] = useState<string | null>(null);
+  const { items: pendingExpenseReports, loading: loadingExpenseReports, error: errorExpenseReports, hasMore: hasMoreExpenseReports, loadingMore: loadingMoreExpenseReports, loadMore: loadMoreExpenseReports } = usePendingExpenseReports();
+  const { items: pendingReimbursements, loading: loadingReimbursements, error: errorReimbursements, hasMore: hasMoreReimbursements, loadingMore: loadingMoreReimbursements, loadMore: loadMoreReimbursements } = usePendingReimbursements();
+  const { items: history, loading: loadingHistory, error: errorHistory, hasMore: hasMoreHistory, loadingMore: loadingMoreHistory, loadMore: loadMoreHistory } = useExportHistory();
 
-  const [integrations, setIntegrations] = useState<Integration[]>([]);
-  const [loadingIntegrations, setLoadingIntegrations] = useState(true);
+  const { data: stats = null, isLoading: loadingBase, isError: statsError } = usePendingStats();
+  const { data: integrations = [], isLoading: loadingIntegrations } = useIntegrations();
+
   const [integrationModal, setIntegrationModal] = useState<Integration | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [sending, setSending] = useState(false);
@@ -145,34 +146,8 @@ export default function ExportPage() {
   const [loadingAccounts, setLoadingAccounts] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
 
-  const loadIntegrations = useCallback(async () => {
-    setLoadingIntegrations(true);
-    try {
-      const { data } = await listIntegracoesApi();
-      setIntegrations(data);
-    } catch {
-    } finally {
-      setLoadingIntegrations(false);
-    }
-  }, []);
-
-  const loadBase = useCallback(async () => {
-    setLoadingBase(true);
-    setErrorBase(null);
-    try {
-      const s = await obterPendingStatsApi();
-      setStats(s);
-    } catch {
-      setErrorBase("Unable to load the base export data.");
-    } finally {
-      setLoadingBase(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadBase();
-    loadIntegrations();
-  }, [loadBase, loadIntegrations]);
+  const reloadBase = () => queryClient.invalidateQueries({ queryKey: queryKeys.export.all });
+  const errorBase = statsError ? "Unable to load the base export data." : null;
 
   const generalError = errorBase || errorExpenseReports || errorReimbursements || errorHistory;
 
@@ -258,10 +233,7 @@ export default function ExportPage() {
       }
       setSelection(new Set());
       setConfirming(false);
-      loadBase();
-      reloadExpenseReports();
-      reloadReimbursements();
-      reloadHistory();
+      queryClient.invalidateQueries({ queryKey: queryKeys.export.all });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Unable to send the batch.");
     } finally {
@@ -303,7 +275,7 @@ export default function ExportPage() {
           <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-4 m-4">
             <p className="text-body-sm text-red-700">{generalError}</p>
             <button
-              onClick={loadBase}
+              onClick={reloadBase}
               className="mt-2 text-caption font-semibold text-brand hover:underline cursor-pointer"
             >
               Try again
@@ -451,7 +423,7 @@ export default function ExportPage() {
           onClose={() => setIntegrationModal(null)}
           onSaved={() => {
             setIntegrationModal(null);
-            loadIntegrations();
+            queryClient.invalidateQueries({ queryKey: queryKeys.export.integrations });
           }}
         />
       )}

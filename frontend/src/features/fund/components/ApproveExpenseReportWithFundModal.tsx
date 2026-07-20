@@ -1,15 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { X } from "@phosphor-icons/react";
 import Modal from "@/ui/Modal";
 import Button from "@/ui/Button";
 import Combobox from "@/ui/Combobox";
 import Loading from "@/ui/Loading";
-import { toast } from "@/lib/toast";
 import { formatarMoeda } from "@/lib/formatters";
-import { listFundsApi } from "../fund.api";
-import type { Fund } from "../fund.types";
+import { useFunds } from "../fund.hooks";
 
 interface Props {
   reportUserId: number;
@@ -26,22 +24,14 @@ export default function ApproveExpenseReportWithFundModal({
   onConfirm,
   onClose,
 }: Props) {
-  const [funds, setFunds] = useState<Fund[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    listFundsApi("abertos")
-      .then((all) => {
-        const compatible = all.filter(
-          (c) => c.user_id === reportUserId || c.cost_center_id === reportCostCenterId,
-        );
-        setFunds(compatible.length > 0 ? compatible : all);
-      })
-      .catch(() => toast.error("Could not load the funds."))
-      .finally(() => setLoading(false));
-  }, [reportUserId, reportCostCenterId]);
+  const { data: allFunds = [], isLoading: loading } = useFunds("abertos");
+  const compatible = allFunds.filter(
+    (c) => c.user_id === reportUserId || c.cost_center_id === reportCostCenterId,
+  );
+  const funds = compatible.length > 0 ? compatible : allFunds;
 
   async function handleConfirm() {
     if (!selectedId) return;

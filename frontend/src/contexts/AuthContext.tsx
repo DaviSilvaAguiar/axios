@@ -1,20 +1,19 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { cookieClient } from '@/lib/cookies';
+import { queryKeys } from '@/lib/queryKeys';
 import { loginApi, logoutApi, getMeApi } from '@/features/auth/auth.api';
 import type { User, TenantInfo } from '@/features/auth/auth.types';
 
-interface AuthState {
+interface AuthContextValue {
   user: User | null;
   tenant: TenantInfo | null;
   enabledModules: string[];
   isAuthenticated: boolean;
   isLoading: boolean;
-}
-
-interface AuthContextValue extends AuthState {
   login: (tenant: string, email: string, password: string, rememberMe: boolean) => Promise<void>;
   logout: () => Promise<void>;
   hasModule: (slug: string) => boolean;
@@ -24,45 +23,38 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    tenant: null,
-    enabledModules: [],
-    isAuthenticated: false,
-    isLoading: true,
+  const queryClient = useQueryClient();
+
+  const hasToken = typeof window !== 'undefined' && !!cookieClient.getToken();
+
+  const meQuery = useQuery({
+    queryKey: queryKeys.me,
+    queryFn: async () => {
+      try {
+        return await getMeApi();
+      } catch (error) {
+        cookieClient.clear();
+        throw error;
+      }
+    },
+    enabled: hasToken,
+    retry: false,
+    staleTime: Infinity,
   });
 
-  useEffect(() => {
-    const token = cookieClient.getToken();
-
-    if (!token) {
-      setState(prev => ({ ...prev, isLoading: false }));
-      return;
-    }
-
-    getMeApi()
-      .then(({ user, tenant, modules }) => {
-        setState({ user: user, tenant, enabledModules: modules, isAuthenticated: true, isLoading: false });
-      })
-      .catch(() => {
-        cookieClient.clear();
-        setState({ user: null, tenant: null, enabledModules: [], isAuthenticated: false, isLoading: false });
-      });
-  }, []);
+  const me = meQuery.data ?? null;
 
   async function login(tenantSlug: string, email: string, password: string, rememberMe: boolean): Promise<void> {
     cookieClient.setTenant(tenantSlug);
 
-    const { token, expires_at, user, tenant } = await loginApi(tenantSlug, email, password, rememberMe);
+    const { token, expires_at } = await loginApi(tenantSlug, email, password, rememberMe);
 
     const daysToExpire = Math.ceil(
       (new Date(expires_at).getTime() - Date.now()) / 86_400_000
     );
     cookieClient.setToken(token, daysToExpire);
 
-    const { modules } = await getMeApi();
-
-    setState({ user: user, tenant, enabledModules: modules, isAuthenticated: true, isLoading: false });
+    queryClient.setQueryData(queryKeys.me, await getMeApi());
   }
 
   async function logout(): Promise<void> {
@@ -70,17 +62,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await logoutApi();
     } finally {
       cookieClient.clear();
-      setState({ user: null, tenant: null, enabledModules: [], isAuthenticated: false, isLoading: false });
+      queryClient.removeQueries();
       router.push('/login');
     }
   }
 
   function hasModule(slug: string): boolean {
-    return state.enabledModules.includes(slug);
+    return (me?.modules ?? []).includes(slug);
   }
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, hasModule }}>
+    <AuthContext.Provider
+      value={{
+        user: me?.user ?? null,
+        tenant: me?.tenant ?? null,
+        enabledModules: me?.modules ?? [],
+        isAuthenticated: Boolean(me?.user),
+        isLoading: meQuery.isLoading,
+        login,
+        logout,
+        hasModule,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

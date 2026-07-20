@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Input from "@/ui/Input";
 import Combobox from "@/ui/Combobox";
 import Checkbox from "@/ui/Checkbox";
 import { maskCpfCnpj } from "@/lib/masks";
-import { listSupplieresAtivosApi } from "../supplier.api";
-import type { Supplier } from "../supplier.types";
+import { useActiveSuppliers } from "../supplier.hooks";
 
 interface Props {
   idSupplier: string;
@@ -32,14 +31,8 @@ export default function SupplierSection({
   errors,
   className = "",
 }: Props) {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const { data: suppliers = [] } = useActiveSuppliers();
   const [useRegistered, setUseRegistered] = useState<boolean>(!!idSupplier);
-
-  useEffect(() => {
-    listSupplieresAtivosApi()
-      .then(setSuppliers)
-      .catch(() => {});
-  }, []);
 
   function handleToggle(flag: boolean) {
     setUseRegistered(flag);

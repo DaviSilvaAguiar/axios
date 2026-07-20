@@ -1,7 +1,9 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { queryKeys } from "@/lib/queryKeys";
 import { listSettingsApi } from "@/features/settings/settings.api";
 import type { Config } from "@/features/settings/settings.types";
 
@@ -16,26 +18,19 @@ const ConfigContext = createContext<SettingsContextValue | null>(null);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [configs, setSettings] = useState<Config[]>([]);
-  const [loading, setLoading] = useState(false);
 
+  const settingsQuery = useQuery({
+    queryKey: queryKeys.settings,
+    queryFn: ({ signal }) => listSettingsApi(signal),
+    enabled: Boolean(user),
+  });
+
+  const configs = useMemo(() => settingsQuery.data ?? [], [settingsQuery.data]);
+
+  const { refetch } = settingsQuery;
   const reload = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await listSettingsApi();
-      setSettings(data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!user) {
-      setSettings([]);
-      return;
-    }
-    reload().catch(() => {});
-  }, [user, reload]);
+    await refetch();
+  }, [refetch]);
 
   const isEnabled = useCallback(
     (param: string) => configs.some((c) => c.parameter === param && c.value === 1),
@@ -43,7 +38,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <ConfigContext.Provider value={{ configs, loading, reload, isEnabled }}>
+    <ConfigContext.Provider
+      value={{ configs, loading: settingsQuery.isLoading, reload, isEnabled }}
+    >
       {children}
     </ConfigContext.Provider>
   );

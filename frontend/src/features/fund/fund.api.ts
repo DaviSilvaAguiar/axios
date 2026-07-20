@@ -17,8 +17,9 @@ export type FundStatusFiltro = "abertos" | "fechados";
 
 export async function listFundsApi(
   status: FundStatusFiltro = "abertos",
+  signal?: AbortSignal,
 ): Promise<Fund[]> {
-  const raw = await api.get<unknown>(`/v1/funds?status=${status}`);
+  const raw = await api.get<unknown>(`/v1/funds?status=${status}`, { signal });
   return mapListarFundsResponse(raw);
 }
 
@@ -55,8 +56,8 @@ export async function fecharFundApi(id: number): Promise<Fund> {
   return mapFundResponse(raw);
 }
 
-export async function extratoFundApi(id: number): Promise<ExtratoResponse> {
-  const raw = await api.get<unknown>(`/v1/funds/${id}/statement`);
+export async function extratoFundApi(id: number, signal?: AbortSignal): Promise<ExtratoResponse> {
+  const raw = await api.get<unknown>(`/v1/funds/${id}/statement`, { signal });
   return mapExtratoResponse(raw);
 }
 

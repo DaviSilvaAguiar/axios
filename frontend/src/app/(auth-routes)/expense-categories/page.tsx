@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { usePaginatedList } from "@/lib/usePaginatedList";
 import {
   Plus,
   Trash,
@@ -20,11 +19,9 @@ import ActiveBadge from "@/ui/ActiveBadge";
 import { toast } from "@/lib/toast";
 import ExpenseCategoryForm from "@/features/expense-category/components/ExpenseCategoryForm";
 import {
-  listCategoriasDespesaApi,
-  createExpenseCategoryApi,
-  updateExpenseCategoryApi,
-  deleteExpenseCategoryApi,
-} from "@/features/expense-category/expense-category.api";
+  useExpenseCategories,
+  useExpenseCategoryMutations,
+} from "@/features/expense-category/expense-category.hooks";
 import type {
   ExpenseCategory,
   ExpenseCategoryFormData,
@@ -33,17 +30,14 @@ import type {
 export default function ExpenseCategoriesPage() {
   const {
     items: categories,
-    setItems: setCategories,
     loading,
     loadingMore,
     hasMore,
-    error: error,
-    reload: reload,
-    loadMore: loadMore,
-  } = usePaginatedList<ExpenseCategory>(
-    (page, perPage) => listCategoriasDespesaApi(page, perPage),
-    { errorMessage: "Could not load the categories." }
-  );
+    error,
+    reload,
+    loadMore,
+  } = useExpenseCategories();
+  const { create, update, remove } = useExpenseCategoryMutations();
 
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
@@ -69,16 +63,10 @@ export default function ExpenseCategoriesPage() {
 
   async function handleSave(data: ExpenseCategoryFormData) {
     if (selected) {
-      const { expense_category } = await updateExpenseCategoryApi(selected.id, data);
-      setCategories((prev) =>
-        prev.map((c) => (c.id === expense_category.id ? expense_category : c))
-      );
+      await update.mutateAsync({ id: selected.id, data });
       toast.success("Category updated.");
     } else {
-      const { expense_category } = await createExpenseCategoryApi(data);
-      setCategories((prev) =>
-        [...prev, expense_category].sort((a, b) => a.description.localeCompare(b.description))
-      );
+      await create.mutateAsync(data);
       toast.success("Category created.");
     }
     closeModal();
@@ -87,8 +75,7 @@ export default function ExpenseCategoriesPage() {
   async function handleToggleActive(c: ExpenseCategory) {
     setTogglingId(c.id);
     try {
-      const { expense_category } = await updateExpenseCategoryApi(c.id, { active: !c.active });
-      setCategories((prev) => prev.map((x) => (x.id === expense_category.id ? expense_category : x)));
+      await update.mutateAsync({ id: c.id, data: { active: !c.active } });
       toast.success(c.active ? "Category deactivated." : "Category activated.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not change the status.");
@@ -101,8 +88,7 @@ export default function ExpenseCategoriesPage() {
     if (!toDelete) return;
     setDeletingId(toDelete.id);
     try {
-      await deleteExpenseCategoryApi(toDelete.id);
-      setCategories((prev) => prev.filter((c) => c.id !== toDelete.id));
+      await remove.mutateAsync(toDelete.id);
       toast.success("Category removed.");
       setToDelete(null);
     } catch (err) {

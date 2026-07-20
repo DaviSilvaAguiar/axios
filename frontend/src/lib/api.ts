@@ -56,13 +56,14 @@ async function apiFetch<T>(path: string, options: ApiOptions = {}): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-async function apiFetchUpload<T>(path: string, body: FormData): Promise<T> {
+async function apiFetchUpload<T>(path: string, body: FormData, signal?: AbortSignal): Promise<T> {
   const auth = await getAuthHeaders();
 
   const response = await fetch(`${BASE_URL}${path}`, {
     method: 'POST',
     headers: { Accept: 'application/json', ...auth },
     body,
+    signal,
   });
 
   if (!response.ok) {
@@ -75,11 +76,12 @@ async function apiFetchUpload<T>(path: string, body: FormData): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-async function apiFetchBlob(path: string): Promise<Blob> {
+async function apiFetchBlob(path: string, signal?: AbortSignal): Promise<Blob> {
   const auth = await getAuthHeaders();
 
   const response = await fetch(`${BASE_URL}${path}`, {
     headers: { Accept: 'application/octet-stream', ...auth },
+    signal,
   });
 
   if (!response.ok) throw new Error('Failed to download file.');
@@ -102,9 +104,9 @@ export const api = {
   delete: <T>(path: string, options?: ApiOptions) =>
     apiFetch<T>(path, { ...options, method: 'DELETE' }),
 
-  upload: <T>(path: string, body: FormData) =>
-    apiFetchUpload<T>(path, body),
+  upload: <T>(path: string, body: FormData, signal?: AbortSignal) =>
+    apiFetchUpload<T>(path, body, signal),
 
-  blob: (path: string) =>
-    apiFetchBlob(path),
+  blob: (path: string, signal?: AbortSignal) =>
+    apiFetchBlob(path, signal),
 };

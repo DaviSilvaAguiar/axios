@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   type Icon,
@@ -90,41 +91,24 @@ export default function AuditView({ reimbursement, onClose, onApprove, onReject,
   const isPdf = path?.toLowerCase().endsWith(".pdf") ?? false;
   const isImage = path ? /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(path) : false;
 
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [loadingAttachment, setLoadingAttachment] = useState(false);
-  const [imgError, setImgError] = useState(false);
-  const prevBlobUrl = useRef<string | null>(null);
+  const [erroredItemId, setErroredItemId] = useState<number | null>(null);
 
+  const attachmentQuery = useQuery({
+    queryKey: ["reimbursement-attachment", reimbursement.id, selectedItem?.id],
+    queryFn: ({ signal }) => getAnexoReimbursementApi(reimbursement.id, selectedItem!.id, signal),
+    enabled: Boolean(path && selectedItem),
+  });
+
+  const blob = attachmentQuery.data;
+  const blobUrl = useMemo(() => (blob ? URL.createObjectURL(blob) : null), [blob]);
   useEffect(() => {
-    setImgError(false);
-    setBlobUrl(null);
+    return () => {
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+  }, [blobUrl]);
 
-    if (prevBlobUrl.current) {
-      URL.revokeObjectURL(prevBlobUrl.current);
-      prevBlobUrl.current = null;
-    }
-
-    if (!path || !selectedItem) return;
-
-    let cancelled = false;
-    setLoadingAttachment(true);
-
-    getAnexoReimbursementApi(reimbursement.id, selectedItem.id)
-      .then((blob) => {
-        if (cancelled) return;
-        const url = URL.createObjectURL(blob);
-        prevBlobUrl.current = url;
-        setBlobUrl(url);
-      })
-      .catch(() => {
-        if (!cancelled) setImgError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingAttachment(false);
-      });
-
-    return () => { cancelled = true; };
-  }, [selectedItem?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const loadingAttachment = attachmentQuery.isFetching;
+  const imgError = attachmentQuery.isError || erroredItemId === selectedItem?.id;
 
   async function handleApprove() {
     setLoadingApprove(true);
@@ -341,7 +325,7 @@ export default function AuditView({ reimbursement, onClose, onApprove, onReject,
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.2 }}
-                            onError={() => setImgError(true)}
+                            onError={() => selectedItem && setErroredItemId(selectedItem.id)}
                           />
                         ) : imgError ? (
                           <AttachmentPlaceholder key="error" icon={ImageBroken} label="Could not load the attachment" />

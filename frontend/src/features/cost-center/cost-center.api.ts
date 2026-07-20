@@ -12,9 +12,10 @@ import type {
 
 export async function listCentrosDeCustoApi(
   page: number = 1,
-  perPage: number = PAGE_SIZE
+  perPage: number = PAGE_SIZE,
+  signal?: AbortSignal
 ): Promise<Paginated<CostCenter>> {
-  const raw = await api.get<unknown>(`/v1/cost-center${buildPageQuery(page, perPage)}`);
+  const raw = await api.get<unknown>(`/v1/cost-center${buildPageQuery(page, perPage)}`, { signal });
   return mapListarCentrosDeCusto(raw);
 }
 

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ArrowUUpLeft, Wallet, Gear, CircleNotch, X } from "@phosphor-icons/react";
 import Modal from "@/ui/Modal";
 import Button from "@/ui/Button";
 import { toast } from "@/lib/toast";
 import { useSettings } from "@/contexts/SettingContext";
-import { listSettingsApi, updateConfigApi } from "../settings.api";
+import { updateConfigApi } from "../settings.api";
 import type { Config } from "../settings.types";
 
 interface Props {
@@ -46,34 +46,25 @@ function formatParameterLabel(parametro: string): string {
 }
 
 export default function SettingsModal({ open, onClose }: Props) {
-  const { reload: reloadContextSettings } = useSettings();
-  const [originalSettings, setOriginalSettings] = useState<Config[]>([]);
-  const [configs, setSettings] = useState<Config[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { configs: baseline, loading, reload: reloadContextSettings } = useSettings();
+  const [overrides, setOverrides] = useState<Record<number, number>>({});
   const [saving, setSaving] = useState(false);
   const [activeModule, setActiveModule] = useState<ModuleKey>("general");
 
-  useEffect(() => {
-    if (!open) return;
-    setLoading(true);
-    listSettingsApi()
-      .then((res) => {
-        setOriginalSettings(res);
-        setSettings(res);
-      })
-      .catch((err) => toast.error(err instanceof Error ? err.message : "Error loading settings."))
-      .finally(() => setLoading(false));
-  }, [open]);
+  const configs: Config[] = baseline.map((c) => ({
+    ...c,
+    value: overrides[c.id] ?? c.value,
+  }));
 
   function handleToggle(config: Config) {
     const nextValue = config.value === 1 ? 0 : 1;
-    setSettings((prev) => prev.map((c) => (c.id === config.id ? { ...c, value: nextValue } : c)));
+    setOverrides((prev) => ({ ...prev, [config.id]: nextValue }));
   }
 
   function getChanges(): Config[] {
     return configs.filter((current) => {
-      const original = originalSettings.find((o) => o.id === current.id);
-      return original && original.value !== current.value;
+      const base = baseline.find((o) => o.id === current.id);
+      return base && base.value !== current.value;
     });
   }
 
@@ -86,22 +77,9 @@ export default function SettingsModal({ open, onClose }: Props) {
 
     setSaving(true);
     try {
-      const results = await Promise.all(
-        changes.map((c) => updateConfigApi(c.id, c.value)),
-      );
-      setSettings((prev) =>
-        prev.map((c) => {
-          const updated = results.find((r) => r.id === c.id);
-          return updated ?? c;
-        }),
-      );
-      setOriginalSettings((prev) =>
-        prev.map((c) => {
-          const updated = results.find((r) => r.id === c.id);
-          return updated ?? c;
-        }),
-      );
+      await Promise.all(changes.map((c) => updateConfigApi(c.id, c.value)));
       await reloadContextSettings();
+      setOverrides({});
       toast.success("Settings saved.");
       onClose();
     } catch (err) {
@@ -113,7 +91,7 @@ export default function SettingsModal({ open, onClose }: Props) {
 
   function handleClose() {
     if (saving) return;
-    setSettings(originalSettings);
+    setOverrides({});
     onClose();
   }
 

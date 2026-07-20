@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { usePaginatedList } from "@/lib/usePaginatedList";
 import {
   Plus,
   Trash,
@@ -21,11 +20,9 @@ import { toast } from "@/lib/toast";
 import { formatarCpfCnpj } from "@/lib/formatters";
 import SupplierForm from "@/features/supplier/components/SupplierForm";
 import {
-  listSupplieresApi,
-  createSupplierApi,
-  updateSupplierApi,
-  deleteSupplierApi,
-} from "@/features/supplier/supplier.api";
+  useSuppliers,
+  useSupplierMutations,
+} from "@/features/supplier/supplier.hooks";
 import type {
   Supplier,
   SupplierFormData,
@@ -34,17 +31,14 @@ import type {
 export default function SuppliersPage() {
   const {
     items: suppliers,
-    setItems: setSuppliers,
     loading,
     loadingMore,
     hasMore,
-    error: error,
-    reload: reload,
-    loadMore: loadMore,
-  } = usePaginatedList<Supplier>(
-    (page, perPage) => listSupplieresApi(page, perPage),
-    { errorMessage: "Could not load the suppliers." }
-  );
+    error,
+    reload,
+    loadMore,
+  } = useSuppliers();
+  const { create, update, remove } = useSupplierMutations();
 
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
@@ -70,16 +64,10 @@ export default function SuppliersPage() {
 
   async function handleSave(data: SupplierFormData) {
     if (selected) {
-      const { supplier } = await updateSupplierApi(selected.id, data);
-      setSuppliers((prev) =>
-        prev.map((s) => (s.id === supplier.id ? supplier : s))
-      );
+      await update.mutateAsync({ id: selected.id, data });
       toast.success("Supplier updated.");
     } else {
-      const { supplier } = await createSupplierApi(data);
-      setSuppliers((prev) =>
-        [...prev, supplier].sort((a, b) => a.description.localeCompare(b.description))
-      );
+      await create.mutateAsync(data);
       toast.success("Supplier created.");
     }
     closeModal();
@@ -88,8 +76,7 @@ export default function SuppliersPage() {
   async function handleToggleActive(s: Supplier) {
     setTogglingId(s.id);
     try {
-      const { supplier } = await updateSupplierApi(s.id, { active: !s.active });
-      setSuppliers((prev) => prev.map((x) => (x.id === supplier.id ? supplier : x)));
+      await update.mutateAsync({ id: s.id, data: { active: !s.active } });
       toast.success(s.active ? "Supplier deactivated." : "Supplier activated.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not change the status.");
@@ -102,8 +89,7 @@ export default function SuppliersPage() {
     if (!toDelete) return;
     setDeletingId(toDelete.id);
     try {
-      await deleteSupplierApi(toDelete.id);
-      setSuppliers((prev) => prev.filter((s) => s.id !== toDelete.id));
+      await remove.mutateAsync(toDelete.id);
       toast.success("Supplier removed.");
       setToDelete(null);
     } catch (err) {

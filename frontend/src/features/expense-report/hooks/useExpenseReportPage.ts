@@ -1,8 +1,7 @@
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { toast } from "@/lib/toast";
 import { aprovarExpenseReportComCaixaApi } from "@/features/fund/fund.api";
 import {
-  listExpenseReportsApi,
   getExpenseReportApi,
   createExpenseReportApi,
   createExpenseReportItemApi,
@@ -12,6 +11,7 @@ import {
   updateStatusExpenseReportApi,
   deleteExpenseReportApi,
 } from "../expense-report.api";
+import { useExpenseReports, useExpenseReportActions } from "../expense-report.hooks";
 import {
   type ExpenseReportItemFormItem,
   type ExpenseReport,
@@ -44,9 +44,12 @@ export interface ExpenseReportFilters {
 }
 
 export function useExpenseReportPage() {
-  const [rdcs, setExpenseReports] = useState<ExpenseReport[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const query = useExpenseReports();
+  const { invalidate, patchInList } = useExpenseReportActions();
+  const rdcs = query.data ?? [];
+  const loading = query.isLoading;
+  const error = query.isError ? "Could not load the reports." : null;
+  const reload = () => { query.refetch(); };
 
   const [showForm, setShowForm] = useState(false);
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
@@ -69,26 +72,6 @@ export function useExpenseReportPage() {
   const [rdcToDelete, setExpenseReportToDelete] = useState<ExpenseReport | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const load = useCallback(async () => {
-    try {
-      const data = await listExpenseReportsApi();
-      setExpenseReports(data);
-      setError(null);
-    } catch {
-      setError("Could not load the reports.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  function reload() {
-    setLoading(true);
-    setError(null);
-    load();
-  }
-
   const filteredExpenseReports = rdcs.filter((r) => {
     if (filters.requester && !(r.requester_description ?? "").toLowerCase().includes(filters.requester.toLowerCase())) return false;
     if (filters.status && String(r.status) !== filters.status) return false;
@@ -96,10 +79,6 @@ export function useExpenseReportPage() {
     if (filters.endDate && r.created_at.slice(0, 10) > filters.endDate) return false;
     return true;
   });
-
-  function updateExpenseReportLocal(id: number, patch: Partial<ExpenseReport>) {
-    setExpenseReports((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
-  }
 
   async function handleMoveExpenseReport(id: number, newStatus: ExpenseReportStatus) {
     const expenseReport = rdcs.find((r) => r.id === id);
@@ -110,7 +89,7 @@ export function useExpenseReportPage() {
 
     try {
       await updateStatusExpenseReportApi(id, newStatus);
-      updateExpenseReportLocal(id, { status: newStatus });
+      patchInList(id, { status: newStatus });
     } catch {
       toast.error("Could not move the report. Please try again.");
     }
@@ -120,11 +99,12 @@ export function useExpenseReportPage() {
     if (!rdcToApprove) return;
     try {
       await aprovarExpenseReportComCaixaApi(rdcToApprove.id, fundId);
-      updateExpenseReportLocal(rdcToApprove.id, { status: 4 });
+      patchInList(rdcToApprove.id, { status: 4 });
       if (selectedExpenseReport?.id === rdcToApprove.id) {
         setSelectedExpenseReport((prev) => prev ? { ...prev, status: 4 } : prev);
       }
       setExpenseReportToApprove(null);
+      invalidate();
       toast.success("Report approved and fund debited.");
     } catch {
       toast.error("Could not approve the report.");
@@ -133,7 +113,7 @@ export function useExpenseReportPage() {
 
   async function handleRejectExpenseReport(expenseReport: ExpenseReport, reason?: string) {
     const updated = await updateStatusExpenseReportApi(expenseReport.id, 7, reason);
-    updateExpenseReportLocal(updated.id, updated);
+    patchInList(updated.id, updated);
     if (selectedExpenseReport?.id === expenseReport.id) setSelectedExpenseReport(updated);
     toast.success("Report rejected.");
   }
@@ -157,7 +137,7 @@ export function useExpenseReportPage() {
     if (!rdcToSchedule) return;
     try {
       const updated = await updateStatusExpenseReportApi(rdcToSchedule.id, 5, undefined, paymentDate);
-      updateExpenseReportLocal(updated.id, updated);
+      patchInList(updated.id, updated);
       if (selectedExpenseReport?.id === rdcToSchedule.id) setSelectedExpenseReport(updated);
       setExpenseReportToSchedule(null);
       toast.success("Payment scheduled successfully!");
@@ -169,7 +149,7 @@ export function useExpenseReportPage() {
   async function handleMarkPaid(expenseReport: ExpenseReport) {
     try {
       const updated = await updateStatusExpenseReportApi(expenseReport.id, 6);
-      updateExpenseReportLocal(updated.id, updated);
+      patchInList(updated.id, updated);
       if (selectedExpenseReport?.id === expenseReport.id) setSelectedExpenseReport(updated);
       toast.success("Report marked as paid.");
     } catch {
@@ -188,8 +168,7 @@ export function useExpenseReportPage() {
         await createExpenseReportItemApi(created.id, buildItemFormData(item, filesByItem[idx] ?? []));
       }
 
-      const fullExpenseReport = await getExpenseReportApi(created.id);
-      setExpenseReports((prev) => [fullExpenseReport, ...prev]);
+      invalidate();
       setShowForm(false);
       toast.success("Report created successfully!");
     } catch (err) {
@@ -197,7 +176,7 @@ export function useExpenseReportPage() {
       if (newId !== null) {
         setShowForm(false);
         toast.success("Report created. Refresh the list if the item does not appear.");
-        load();
+        invalidate();
         return;
       }
       toast.error(err instanceof Error ? err.message : "Could not save the report.");
@@ -235,7 +214,7 @@ export function useExpenseReportPage() {
       }
 
       const fullExpenseReport = await getExpenseReportApi(selectedExpenseReport.id);
-      updateExpenseReportLocal(fullExpenseReport.id, fullExpenseReport);
+      invalidate();
 
       if (editFromKanban) {
         setSelectedExpenseReport(null);
@@ -254,7 +233,7 @@ export function useExpenseReportPage() {
   async function handleSubmitExpenseReport() {
     if (!selectedExpenseReport) return;
     const updated = await updateStatusExpenseReportApi(selectedExpenseReport.id, 2);
-    updateExpenseReportLocal(updated.id, updated);
+    patchInList(updated.id, updated);
     setSelectedExpenseReport(null);
     toast.success("Report sent for approval!");
   }
@@ -264,7 +243,7 @@ export function useExpenseReportPage() {
     setDeleting(true);
     try {
       await deleteExpenseReportApi(rdcToDelete.id);
-      setExpenseReports((prev) => prev.filter((r) => r.id !== rdcToDelete.id));
+      invalidate();
       setExpenseReportToDelete(null);
       toast.success("Report deleted successfully!");
     } catch (err) {

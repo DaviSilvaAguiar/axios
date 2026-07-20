@@ -10,9 +10,10 @@ import type {
 
 export async function listUsersApi(
   page: number = 1,
-  perPage: number = PAGE_SIZE
+  perPage: number = PAGE_SIZE,
+  signal?: AbortSignal
 ): Promise<Paginated<User>> {
-  const raw = await api.get<unknown>(`/v1/users${buildPageQuery(page, perPage)}`);
+  const raw = await api.get<unknown>(`/v1/users${buildPageQuery(page, perPage)}`, { signal });
   return mapListarUsers(raw);
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X } from "@phosphor-icons/react";
@@ -23,10 +23,8 @@ import {
   FUND_TIPO_LABEL,
   type StoreFundFormData,
 } from "../fund.types";
-import { listUsersApi } from "@/features/user/user.api";
-import { listCentrosDeCustoApi } from "@/features/cost-center/cost-center.api";
-import type { User } from "@/features/auth/auth.types";
-import type { CostCenter } from "@/features/cost-center/cost-center.types";
+import { useUsersLookup } from "@/features/user/user.hooks";
+import { useCostCentersLookup } from "@/features/cost-center/cost-center.hooks";
 
 interface Props {
   onSave: (data: StoreFundFormData) => Promise<void>;
@@ -34,8 +32,9 @@ interface Props {
 }
 
 export default function FundForm({ onSave, onClose }: Props) {
-  const [users, setUsers] = useState<User[]>([]);
-  const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
+  const { data: users = [] } = useUsersLookup();
+  const { data: allCostCenters = [] } = useCostCentersLookup();
+  const costCenters = allCostCenters.filter((costCenter) => costCenter.active);
   const [pixKeyType, setPixKeyType] = useState<TipoChavePix | null>(null);
 
   const {
@@ -60,15 +59,6 @@ export default function FundForm({ onSave, onClose }: Props) {
       pix_key: "",
     },
   });
-
-  useEffect(() => {
-    listUsersApi(1, 200)
-      .then((r) => setUsers(r.data.filter((u) => u.active)))
-      .catch(() => toast.error("Could not load users."));
-    listCentrosDeCustoApi(1, 200)
-      .then((r) => setCostCenters(r.data.filter((c) => c.active)))
-      .catch(() => toast.error("Could not load cost centers."));
-  }, []);
 
   const userId = watch("user_id");
   const costCenterId = watch("cost_center_id");

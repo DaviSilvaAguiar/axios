@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { usePaginatedList } from "@/lib/usePaginatedList";
 import {
   Plus,
   Trash,
@@ -20,11 +19,9 @@ import ActiveBadge from "@/ui/ActiveBadge";
 import { toast } from "@/lib/toast";
 import BankAccountForm from "@/features/bank-account/components/BankAccountForm";
 import {
-  listContasBancariasApi,
-  createBankAccountApi,
-  updateBankAccountApi,
-  deleteBankAccountApi,
-} from "@/features/bank-account/bank-account.api";
+  useBankAccounts,
+  useBankAccountMutations,
+} from "@/features/bank-account/bank-account.hooks";
 import type {
   BankAccount,
   BankAccountFormData,
@@ -33,17 +30,14 @@ import type {
 export default function BankAccountsPage() {
   const {
     items: accounts,
-    setItems: setAccounts,
     loading,
     loadingMore,
     hasMore,
-    error: error,
-    reload: reload,
-    loadMore: loadMore,
-  } = usePaginatedList<BankAccount>(
-    (page, perPage) => listContasBancariasApi(page, perPage),
-    { errorMessage: "Could not load the bank accounts." }
-  );
+    error,
+    reload,
+    loadMore,
+  } = useBankAccounts();
+  const { create, update, remove } = useBankAccountMutations();
 
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
@@ -69,16 +63,10 @@ export default function BankAccountsPage() {
 
   async function handleSave(data: BankAccountFormData) {
     if (selected) {
-      const { bank_account } = await updateBankAccountApi(selected.id, data);
-      setAccounts((prev) =>
-        prev.map((c) => (c.id === bank_account.id ? bank_account : c))
-      );
+      await update.mutateAsync({ id: selected.id, data });
       toast.success("Bank account updated.");
     } else {
-      const { bank_account } = await createBankAccountApi(data);
-      setAccounts((prev) =>
-        [...prev, bank_account].sort((a, b) => a.description.localeCompare(b.description))
-      );
+      await create.mutateAsync(data);
       toast.success("Bank account created.");
     }
     closeModal();
@@ -87,8 +75,7 @@ export default function BankAccountsPage() {
   async function handleToggleActive(c: BankAccount) {
     setTogglingId(c.id);
     try {
-      const { bank_account } = await updateBankAccountApi(c.id, { active: !c.active });
-      setAccounts((prev) => prev.map((x) => (x.id === bank_account.id ? bank_account : x)));
+      await update.mutateAsync({ id: c.id, data: { active: !c.active } });
       toast.success(c.active ? "Account deactivated." : "Account activated.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not change the status.");
@@ -101,8 +88,7 @@ export default function BankAccountsPage() {
     if (!toDelete) return;
     setDeletingId(toDelete.id);
     try {
-      await deleteBankAccountApi(toDelete.id);
-      setAccounts((prev) => prev.filter((c) => c.id !== toDelete.id));
+      await remove.mutateAsync(toDelete.id);
       toast.success("Bank account removed.");
       setToDelete(null);
     } catch (err) {

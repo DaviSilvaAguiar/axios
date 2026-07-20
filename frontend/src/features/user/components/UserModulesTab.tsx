@@ -1,35 +1,36 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import Button from "@/ui/Button";
 import Switch from "@/ui/Switch";
 import { toast } from "@/lib/toast";
-import {
-  listModulosUserApi,
-  updateModulosUserApi,
-} from "@/features/module/module.api";
-import type { Modulo } from "@/features/module/module.types";
+import { updateModulosUserApi } from "@/features/module/module.api";
+import { useUserModules } from "@/features/module/module.hooks";
+import { queryKeys } from "@/lib/queryKeys";
 
 interface Props {
   userId: number;
 }
 
 export default function UserModulesTab({ userId }: Props) {
-  const [modules, setModules] = useState<Modulo[]>([]);
+  const queryClient = useQueryClient();
+  const { data, isLoading, isError } = useUserModules(userId);
+  const modules = data?.modules ?? [];
   const [enabled, setEnabled] = useState<Set<number>>(new Set());
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [syncedData, setSyncedData] = useState(data);
+
+  if (data && data !== syncedData) {
+    setSyncedData(data);
+    setEnabled(new Set(data.habilitados));
+  }
 
   useEffect(() => {
-    setLoading(true);
-    listModulosUserApi(userId)
-      .then(({ modules: list, habilitados: ids }) => {
-        setModules(list);
-        setEnabled(new Set(ids));
-      })
-      .catch(() => toast.error("Could not load the modules."))
-      .finally(() => setLoading(false));
-  }, [userId]);
+    if (isError) {
+      toast.error("Could not load the modules.");
+    }
+  }, [isError]);
 
   function toggle(id: number) {
     setEnabled((prev) => {
@@ -47,6 +48,7 @@ export default function UserModulesTab({ userId }: Props) {
     setSaving(true);
     try {
       await updateModulosUserApi(userId, Array.from(enabled));
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.modules(userId) });
       toast.success("Modules updated.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not save.");
@@ -55,7 +57,7 @@ export default function UserModulesTab({ userId }: Props) {
     }
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col gap-3 animate-pulse py-2">
         {[1, 2, 3, 4].map((i) => (

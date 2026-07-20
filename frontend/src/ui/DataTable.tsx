@@ -93,8 +93,17 @@ export default function DataTable<T, K extends string | number>({
     });
   }, [rows, sort, columns]);
 
-  useEffect(() => {
+  const [resetKey, setResetKey] = useState({ pageSize, rows, sort });
+  if (
+    resetKey.pageSize !== pageSize ||
+    resetKey.rows !== rows ||
+    resetKey.sort !== sort
+  ) {
+    setResetKey({ pageSize, rows, sort });
     setVisibleCount(pageSize);
+  }
+
+  useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [pageSize, rows, sort]);
 

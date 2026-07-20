@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useState, use } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -19,7 +19,6 @@ import ExpenseReportForm from "@/features/expense-report/components/ExpenseRepor
 import StatusTag from "@/features/expense-report/components/StatusTag";
 import { toast } from "@/lib/toast";
 import {
-  getExpenseReportApi,
   createExpenseReportItemApi,
   adicionarAnexoExpenseReportItemApi,
   updateExpenseReportApi,
@@ -27,9 +26,12 @@ import {
   deleteExpenseReportApi,
 } from "@/features/expense-report/expense-report.api";
 import {
+  useExpenseReport,
+  useExpenseReportActions,
+} from "@/features/expense-report/expense-report.hooks";
+import {
   EXPENSE_REPORT_STATUS_DRAFT,
   type ExpenseReportItemFormItem,
-  type ExpenseReport,
   type StoreExpenseReportWithDespesasFormData,
 } from "@/features/expense-report/expense-report.types";
 
@@ -66,20 +68,15 @@ export default function ExpenseReportDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const [expenseReport, setExpenseReport] = useState<ExpenseReport | null>(null);
-  const [loading, setLoading] = useState(true);
+  const query = useExpenseReport(Number(id));
+  const { invalidate } = useExpenseReportActions();
+  const expenseReport = query.data ?? null;
+  const loading = query.isLoading;
   const [isEditing, setIsEditing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
-
-  useEffect(() => {
-    getExpenseReportApi(Number(id))
-      .then(setExpenseReport)
-      .catch(() => toast.error("Could not load the report."))
-      .finally(() => setLoading(false));
-  }, [id]);
 
   async function handleEdit(data: StoreExpenseReportWithDespesasFormData, files: File[][] = []) {
     if (!expenseReport) return;
@@ -103,8 +100,7 @@ export default function ExpenseReportDetailPage({
         await createExpenseReportItemApi(expenseReport.id, buildItemFormData(item, files[existingCount + i] ?? []));
       }
 
-      const updated = await getExpenseReportApi(expenseReport.id);
-      setExpenseReport(updated);
+      invalidate();
       setIsEditing(false);
       toast.success("Report updated!");
     } catch (err) {
@@ -116,8 +112,8 @@ export default function ExpenseReportDetailPage({
     if (!expenseReport) return;
     setSubmitting(true);
     try {
-      const updated = await updateStatusExpenseReportApi(expenseReport.id, 2);
-      setExpenseReport(updated);
+      await updateStatusExpenseReportApi(expenseReport.id, 2);
+      invalidate();
       toast.success("Report sent for approval!");
     } catch {
       toast.error("Could not send it for approval.");

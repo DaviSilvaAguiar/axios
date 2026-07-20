@@ -30,7 +30,6 @@ import Button from "@/ui/Button";
 import FormReimbursement from "@/features/reimbursement/components/FormReimbursement";
 import { toast } from "@/lib/toast";
 import {
-  getReimbursementApi,
   deleteReimbursementApi,
   updateReimbursementApi,
   createReimbursementItemApi,
@@ -40,8 +39,11 @@ import {
   deleteAnexoEspecificoReimbursementApi,
   getAnexoEspecificoReimbursementApi,
 } from "@/features/reimbursement/reimbursement.api";
+import { useReimbursement } from "@/features/reimbursement/reimbursement.hooks";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/queryKeys";
 import { REIMBURSEMENT_STATUS_LABEL } from "@/features/reimbursement/reimbursement.types";
-import type { Reimbursement, StoreReimbursementWithDespesasFormData } from "@/features/reimbursement/reimbursement.types";
+import type { StoreReimbursementWithDespesasFormData } from "@/features/reimbursement/reimbursement.types";
 import type { AttachmentToAdd, AttachmentToDelete } from "@/features/reimbursement/components/FormReimbursement";
 
 function fmtAmount(amount: number) {
@@ -245,9 +247,8 @@ function ConfirmDialog({ title, onConfirm, onCancel, loading }: ConfirmDialogPro
 export default function ReimbursementDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const [reimbursement, setReimbursement] = useState<Reimbursement | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const { data: reimbursement, isLoading: loading, isError } = useReimbursement(Number(id));
   const [showForm, setShowForm] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -255,13 +256,6 @@ export default function ReimbursementDetailPage({ params }: { params: Promise<{ 
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const [deletingItem, setDeletingItem] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    getReimbursementApi(Number(id))
-      .then(setReimbursement)
-      .catch(() => setError("Could not load the reimbursement."))
-      .finally(() => setLoading(false));
-  }, [id]);
 
   useEffect(() => {
     if (!showMenu) return;
@@ -294,8 +288,7 @@ export default function ReimbursementDetailPage({ params }: { params: Promise<{ 
       await deleteReimbursementItemApi(reimbursement.id, itemToDelete);
       toast.success("Item deleted.");
       setItemToDelete(null);
-      const updated = await getReimbursementApi(reimbursement.id);
-      setReimbursement(updated);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.reimbursements.detail(reimbursement.id) });
     } catch {
       toast.error("Error deleting the item.");
     } finally {
@@ -363,8 +356,7 @@ export default function ReimbursementDetailPage({ params }: { params: Promise<{ 
 
       toast.success("Reimbursement updated successfully!");
       setShowForm(false);
-      const updated = await getReimbursementApi(reimbursement.id);
-      setReimbursement(updated);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.reimbursements.detail(reimbursement.id) });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error saving.");
     }
@@ -388,7 +380,7 @@ export default function ReimbursementDetailPage({ params }: { params: Promise<{ 
     );
   }
 
-  if (error || !reimbursement) {
+  if (isError || !reimbursement) {
     return (
       <div className="p-4 sm:p-6 max-w-3xl mx-auto">
         <button
@@ -399,7 +391,7 @@ export default function ReimbursementDetailPage({ params }: { params: Promise<{ 
           Back
         </button>
         <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-center">
-          <p className="text-small text-red-700">{error ?? "Reimbursement not found."}</p>
+          <p className="text-small text-red-700">{isError ? "Could not load the reimbursement." : "Reimbursement not found."}</p>
         </div>
       </div>
     );

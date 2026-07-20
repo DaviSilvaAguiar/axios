@@ -12,9 +12,10 @@ import type {
 
 export async function listContasBancariasApi(
   page: number = 1,
-  perPage: number = PAGE_SIZE
+  perPage: number = PAGE_SIZE,
+  signal?: AbortSignal
 ): Promise<Paginated<BankAccount>> {
-  const raw = await api.get<unknown>(`/v1/bank-accounts${buildPageQuery(page, perPage)}`);
+  const raw = await api.get<unknown>(`/v1/bank-accounts${buildPageQuery(page, perPage)}`, { signal });
   return mapListarContasBancarias(raw);
 }
 

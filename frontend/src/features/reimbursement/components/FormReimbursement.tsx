@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Controller, useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash, X, Receipt, Paperclip, CaretDown, CaretUp } from "@phosphor-icons/react";
@@ -17,16 +17,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSettings } from "@/contexts/SettingContext";
 import LocationField from "@/features/geolocation/components/LocationField";
 import SupplierSection from "@/features/supplier/components/SupplierSection";
-import { listCentrosCustoApi, listCategoriasDespesaApi } from "../reimbursement.api";
-import { listUsersApi } from "@/features/user/user.api";
+import { useCostCentersLookup } from "@/features/cost-center/cost-center.hooks";
+import { useExpenseCategoriesLookup } from "@/features/expense-category/expense-category.hooks";
+import { useUsersLookup } from "@/features/user/user.hooks";
 import {
   storeReimbursementWithDespesasFormSchema,
-  type CostCenter,
-  type ExpenseCategory,
   type Reimbursement,
   type StoreReimbursementWithDespesasFormData,
 } from "../reimbursement.types";
-import type { User } from "@/features/auth/auth.types";
 import { maskBanco, maskAgencia, maskConta, maskCpfCnpj } from "@/lib/masks";
 import { EMAIL_REGEX } from "@/lib/validators";
 import {
@@ -60,9 +58,9 @@ export default function FormReimbursement({ initialReimbursement, onSave, onClos
   const { user: currentUser } = useAuth();
   const { isEnabled } = useSettings();
   const geolocationEnabled = isEnabled("enable_geolocation_reimbursement_item");
-  const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
-  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const { data: costCenters = [] } = useCostCentersLookup();
+  const { data: categories = [] } = useExpenseCategoriesLookup();
+  const { data: users = [] } = useUsersLookup();
   const [deleteIds, setDeleteIds] = useState<number[]>([]);
   const [attachmentsToDelete, setAttachmentsToDelete] = useState<AttachmentToDelete[]>([]);
   const [attachmentsToAdd, setAttachmentsToAdd] = useState<AttachmentToAdd[]>([]);
@@ -140,12 +138,6 @@ export default function FormReimbursement({ initialReimbursement, onSave, onClos
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
-
-  useEffect(() => {
-    listCentrosCustoApi(1, 1000).then((r) => setCostCenters(r.data)).catch(() => { });
-    listCategoriasDespesaApi(1, 1000).then((r) => setCategories(r.data.filter((c) => c.active))).catch(() => { });
-    listUsersApi(1, 200).then((r) => setUsers(r.data.filter((u) => u.active))).catch(() => { });
-  }, []);
 
   const requesterUserId = watch("requester_user_id");
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { motion } from 'framer-motion';
 import { Moon, Sun, List } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -33,11 +33,8 @@ export default function Header() {
   const { setOpen } = useSidebar();
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [localHour, setLocalHour] = useState<number | null>(null);
-
-  useEffect(() => {
-    setLocalHour(new Date().getHours());
-  }, []);
+  const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
+  const localHour = mounted ? new Date().getHours() : null;
 
   const initials = user ? getInitials(user.name) : '?';
   const company = tenant?.trade_name ?? tenant?.legal_name ?? '';

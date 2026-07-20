@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { List, SquaresFour, Plus, FunnelSimple } from "@phosphor-icons/react";
 import DatePicker from "@/ui/DatePicker";
 import { AnimatePresence, motion } from "framer-motion";
@@ -17,7 +17,6 @@ import SchedulingModal from "@/features/reimbursement/components/SchedulingModal
 import RejectionModal from "@/features/reimbursement/components/RejectionModal";
 import ConfirmModal from "@/ui/ConfirmModal";
 import {
-  listReimbursementsApi,
   createReimbursementApi,
   updateReimbursementApi,
   createReimbursementItemApi,
@@ -29,7 +28,10 @@ import {
   downloadPdfReimbursementApi,
   deleteReimbursementApi,
 } from "@/features/reimbursement/reimbursement.api";
-import { usePaginatedList } from "@/lib/usePaginatedList";
+import {
+  useReimbursements,
+  useReimbursementActions,
+} from "@/features/reimbursement/reimbursement.hooks";
 import {
   REIMBURSEMENT_STATUS_LABEL,
   type Reimbursement,
@@ -64,27 +66,19 @@ export default function ReimbursementsPage() {
     return () => clearTimeout(timer);
   }, [filters]);
 
-  const fetcher = useCallback((page: number, perPage: number) => {
-    return listReimbursementsApi(page, perPage, debouncedFilters);
-  }, [debouncedFilters]);
-
   const {
     items: reimbursements,
-    setItems: setReimbursements,
     loading,
-    error: error,
+    error,
     hasMore,
     loadingMore,
-    reload: reload,
-    loadMore: loadMore,
-  } = usePaginatedList(fetcher);
-
-  useEffect(() => {
-    reload();
-  }, [debouncedFilters, reload]);
+    reload,
+    loadMore,
+  } = useReimbursements(debouncedFilters);
+  const { invalidate, patchInList, removeFromList } = useReimbursementActions(debouncedFilters);
 
   function updateReimbursementLocal(id: number, patch: Partial<Reimbursement>) {
-    setReimbursements((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+    patchInList(id, patch);
     setSelectedReimbursement((prev) => (prev?.id === id ? { ...prev, ...patch } : prev));
   }
 
@@ -93,7 +87,7 @@ export default function ReimbursementsPage() {
     setDeleting(true);
     try {
       await deleteReimbursementApi(reimbursementToDelete.id);
-      setReimbursements((prev) => prev.filter((r) => r.id !== reimbursementToDelete.id));
+      removeFromList(reimbursementToDelete.id);
       setSelectedReimbursement((prev) => (prev?.id === reimbursementToDelete.id ? null : prev));
       setReimbursementToDelete(null);
       toast.success("Reimbursement deleted successfully!");
@@ -233,7 +227,7 @@ export default function ReimbursementsPage() {
 
       closeForm();
       toast.success(reimbursementToEdit ? "Request updated successfully!" : "Request created successfully!");
-      reload();
+      invalidate();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Error saving the request.";
       toast.error(message);

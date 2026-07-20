@@ -7,8 +7,8 @@ import type {
 } from "./integration.types";
 import type { BatchType } from "@/features/export/export.types";
 
-export async function listIntegracoesApi(): Promise<ListarIntegracoesResponse> {
-  const raw = await api.get<unknown>("/v1/integration");
+export async function listIntegracoesApi(signal?: AbortSignal): Promise<ListarIntegracoesResponse> {
+  const raw = await api.get<unknown>("/v1/integration", { signal });
   return mapListarIntegracoes(raw);
 }
 

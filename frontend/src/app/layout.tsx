@@ -5,6 +5,7 @@ import "leaflet/dist/leaflet.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { SettingsProvider } from "@/contexts/SettingContext";
+import { QueryProvider } from "@/lib/queryClient";
 import Toaster from "@/ui/Toaster";
 
 const inter = Inter({
@@ -27,11 +28,13 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} h-full`}>
       <body className="min-h-full flex flex-col bg-surface-white text-text-primary">
         <ThemeProvider>
-          <AuthProvider>
-            <SettingsProvider>
-              {children}
-            </SettingsProvider>
-          </AuthProvider>
+          <QueryProvider>
+            <AuthProvider>
+              <SettingsProvider>
+                {children}
+              </SettingsProvider>
+            </AuthProvider>
+          </QueryProvider>
           <Toaster />
         </ThemeProvider>
       </body>
