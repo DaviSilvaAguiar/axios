@@ -12,6 +12,8 @@ class User extends Authenticatable
 {
     use HasApiTokens, Notifiable;
 
+    protected $table = 'user';
+
     public const ROLE_ADMIN = 1;
 
     public const ROLE_AUDITOR = 2;
