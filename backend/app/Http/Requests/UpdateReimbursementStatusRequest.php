@@ -18,7 +18,7 @@ class UpdateReimbursementStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status'                    => ['required', 'integer', Rule::in([
+            'status' => ['required', 'integer', Rule::in([
                 Reimbursement::STATUS_REQUESTED,
                 Reimbursement::STATUS_PENDING,
                 Reimbursement::STATUS_UNDER_REVIEW,
@@ -27,8 +27,8 @@ class UpdateReimbursementStatusRequest extends FormRequest
                 Reimbursement::STATUS_PAID,
                 Reimbursement::STATUS_REJECTED,
             ])],
-            'scheduled_payment_date' => ['required_if:status,' . Reimbursement::STATUS_PAYMENT_SCHEDULED, 'nullable', 'date'],
-            'rejection_reason'           => ['required_if:status,' . Reimbursement::STATUS_REJECTED, 'nullable', 'string', 'max:1000'],
+            'scheduled_payment_date' => ['required_if:status,'.Reimbursement::STATUS_PAYMENT_SCHEDULED, 'nullable', 'date'],
+            'rejection_reason' => ['required_if:status,'.Reimbursement::STATUS_REJECTED, 'nullable', 'string', 'max:1000'],
         ];
     }
 }

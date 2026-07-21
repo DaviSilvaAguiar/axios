@@ -107,8 +107,7 @@ export const reimbursementSchema = z.object({
 export const listReimbursementsResponseSchema = paginatedSchema(reimbursementSchema);
 
 export const rcmResponseSchema = z.object({
-  message: z.string(),
-  reimbursement: reimbursementSchema,
+  data: reimbursementSchema,
 });
 
 export const storeReimbursementFormSchema = z.object({

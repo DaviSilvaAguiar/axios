@@ -13,12 +13,15 @@ class Fund extends Model
 {
     protected $table = 'fund';
 
-    public const STATUS_ACTIVE   = 1;
+    public const STATUS_ACTIVE = 1;
+
     public const STATUS_CLOSED = 2;
 
     public const TYPE_DINHEIRO_PIX = 1;
-    public const TYPE_CARTAO_PRE   = 2;
-    public const TYPE_OUTRO        = 3;
+
+    public const TYPE_CARTAO_PRE = 2;
+
+    public const TYPE_OUTRO = 3;
 
     protected $fillable = [
         'user_id',
@@ -35,9 +38,9 @@ class Fund extends Model
     ];
 
     protected $casts = [
-        'balance'          => MoneyCast::class,
-        'type'           => 'integer',
-        'status'         => 'integer',
+        'balance' => MoneyCast::class,
+        'type' => 'integer',
+        'status' => 'integer',
         'paid_at' => 'datetime',
     ];
 

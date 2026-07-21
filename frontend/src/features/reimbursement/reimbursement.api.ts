@@ -6,7 +6,6 @@ import type {
   ReimbursementItem,
   ListarReimbursementsResponse,
   Reimbursement,
-  ReimbursementResponse,
   StoreReimbursementFormData,
   UpdateReimbursementStatusFormData,
 } from "./reimbursement.types";
@@ -29,7 +28,7 @@ export async function listReimbursementsApi(
 
 export async function getReimbursementApi(id: number, signal?: AbortSignal): Promise<Reimbursement> {
   const raw = await api.get<unknown>(`/v1/reimbursements/${id}`, { signal });
-  return mapReimbursementResponse(raw).reimbursement;
+  return mapReimbursementResponse(raw);
 }
 
 function normalizeReimbursementHeader<T extends Partial<StoreReimbursementFormData>>(data: T) {
@@ -42,7 +41,7 @@ function normalizeReimbursementHeader<T extends Partial<StoreReimbursementFormDa
   };
 }
 
-export async function createReimbursementApi(data: StoreReimbursementFormData): Promise<ReimbursementResponse> {
+export async function createReimbursementApi(data: StoreReimbursementFormData): Promise<Reimbursement> {
   const raw = await api.post<unknown>("/v1/reimbursements", normalizeReimbursementHeader(data));
   return mapReimbursementResponse(raw);
 }
@@ -50,7 +49,7 @@ export async function createReimbursementApi(data: StoreReimbursementFormData): 
 export async function updateReimbursementApi(
   id: number,
   data: Partial<StoreReimbursementFormData>
-): Promise<ReimbursementResponse> {
+): Promise<Reimbursement> {
   const raw = await api.put<unknown>(`/v1/reimbursements/${id}`, normalizeReimbursementHeader(data));
   return mapReimbursementResponse(raw);
 }
@@ -58,7 +57,7 @@ export async function updateReimbursementApi(
 export async function updateStatusReimbursementApi(
   id: number,
   data: UpdateReimbursementStatusFormData
-): Promise<ReimbursementResponse> {
+): Promise<Reimbursement> {
   const raw = await api.patch<unknown>(`/v1/reimbursements/${id}/status`, data);
   return mapReimbursementResponse(raw);
 }
@@ -75,7 +74,7 @@ export async function createReimbursementItemApi(
   data: FormData
 ): Promise<ReimbursementItem> {
   const raw = await api.upload<unknown>(`/v1/reimbursements/${reimbursementId}/items`, data);
-  return itemReimbursementSchema.parse((raw as { item?: unknown })?.item ?? raw);
+  return itemReimbursementSchema.parse((raw as { data: unknown }).data);
 }
 
 export async function updateReimbursementItemApi(
@@ -108,7 +107,7 @@ export async function updateReimbursementItemApi(
     supplier_tax_id: data.supplier_tax_id ? data.supplier_tax_id.replace(/\D/g, "") : null,
     supplier_id: data.supplier_id ? Number(data.supplier_id) : null,
   });
-  return itemReimbursementSchema.parse((raw as { item?: unknown })?.item ?? raw);
+  return itemReimbursementSchema.parse((raw as { data: unknown }).data);
 }
 
 export async function deleteReimbursementItemApi(

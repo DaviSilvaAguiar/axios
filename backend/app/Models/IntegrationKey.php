@@ -17,6 +17,6 @@ class IntegrationKey extends Model
 
     protected $casts = [
         'integration_id' => 'integer',
-        'key'         => 'encrypted',
+        'key' => 'encrypted',
     ];
 }

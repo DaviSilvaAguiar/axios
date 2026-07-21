@@ -19,7 +19,7 @@ class UpdateDocumentTypeRequest extends FormRequest
 
         return [
             'description' => ['sometimes', 'required', 'string', 'max:255'],
-            'code'    => ['sometimes', 'required', 'string', 'size:4', "unique:document_type,code,{$id}"],
+            'code' => ['sometimes', 'required', 'string', 'size:4', "unique:document_type,code,{$id}"],
         ];
     }
 }

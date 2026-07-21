@@ -18,8 +18,8 @@ class IntegrationService
 
         return $integrations
             ->map(fn (Integration $i): array => [
-                'id'          => $i->id,
-                'name'        => $i->name,
+                'id' => $i->id,
+                'name' => $i->name,
                 'configured' => in_array($i->id, $configured, true),
             ])
             ->all();

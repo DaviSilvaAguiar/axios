@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\Paginates;
 use App\Http\Requests\StoreCostCenterRequest;
 use App\Http\Requests\UpdateCostCenterRequest;
+use App\Http\Resources\CostCenterResource;
 use App\Services\CostCenterService;
 use Illuminate\Http\JsonResponse;
 
@@ -20,48 +21,41 @@ class CostCenterController extends Controller
 
     public function index(): JsonResponse
     {
+        $paginator = $this->service->list($this->perPage());
+
         return response()->json(
-            $this->paginated($this->service->list($this->perPage()))
+            $this->paginated($paginator, CostCenterResource::collection($paginator->items())->resolve())
         );
     }
 
     public function store(StoreCostCenterRequest $request): JsonResponse
     {
-        $data = $request->validated();
+        $costCenter = $this->service->create($request->validated());
 
-        $costCenter = $this->service->create($data);
-
-        return response()->json([
-            'message'      => 'Cost center created successfully.',
-            'cost_center'  => $costCenter,
-        ], 201);
+        return CostCenterResource::make($costCenter)
+            ->additional(['message' => 'Cost center created successfully.'])
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function show(int $id): JsonResponse
     {
-        return response()->json([
-            'cost_center' => $this->service->find($id),
-        ]);
+        return CostCenterResource::make($this->service->find($id))->response();
     }
 
     public function update(UpdateCostCenterRequest $request, int $id): JsonResponse
     {
-        $data = $request->validated();
+        $costCenter = $this->service->update($id, $request->validated());
 
-        $costCenter = $this->service->update($id, $data);
-
-        return response()->json([
-            'message'      => 'Cost center updated successfully.',
-            'cost_center'  => $costCenter,
-        ]);
+        return CostCenterResource::make($costCenter)
+            ->additional(['message' => 'Cost center updated successfully.'])
+            ->response();
     }
 
     public function destroy(int $id): JsonResponse
     {
         $this->service->delete($id);
 
-        return response()->json([
-            'message' => 'Cost center deleted successfully.',
-        ]);
+        return response()->json(null, 204);
     }
 }

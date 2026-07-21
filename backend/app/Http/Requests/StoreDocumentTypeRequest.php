@@ -17,7 +17,7 @@ class StoreDocumentTypeRequest extends FormRequest
     {
         return [
             'description' => ['required', 'string', 'max:255'],
-            'code'    => ['required', 'string', 'size:4', 'unique:document_type,code'],
+            'code' => ['required', 'string', 'size:4', 'unique:document_type,code'],
         ];
     }
 }

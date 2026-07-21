@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\ExpenseReport;
+use App\Models\ExportBatch;
 use App\Models\Fund;
 use App\Models\FundTransaction;
-use App\Models\ExportBatch;
 use App\Models\Reimbursement;
+use App\Support\Money;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -17,20 +18,20 @@ class DashboardService
     public function overview(int $year, int $month): array
     {
         return [
-            'kpis'                    => $this->kpis($year, $month),
-            'monthly_movement'        => $this->monthlyMovement($year, $month),
-            'upcoming_payments'       => $this->upcomingPayments(),
-            'top_cost_centers_month'  => $this->topCostCentersMonth($year, $month),
+            'kpis' => $this->kpis($year, $month),
+            'monthly_movement' => $this->monthlyMovement($year, $month),
+            'upcoming_payments' => $this->upcomingPayments(),
+            'top_cost_centers_month' => $this->topCostCentersMonth($year, $month),
         ];
     }
 
     private function kpis(int $year, int $month): array
     {
         return [
-            'active_funds'             => (int) Fund::where('status', Fund::STATUS_ACTIVE)->count(),
-            'total_balance'            => (string) Fund::where('status', Fund::STATUS_ACTIVE)->sum('balance'),
-            'pending_expense_reports'  => (int) ExpenseReport::where('status', ExpenseReport::STATUS_PENDING)->count(),
-            'exported_batches_month'   => (int) ExportBatch::whereYear('created_at', $year)
+            'active_funds' => (int) Fund::where('status', Fund::STATUS_ACTIVE)->count(),
+            'total_balance' => (string) Fund::where('status', Fund::STATUS_ACTIVE)->sum('balance'),
+            'pending_expense_reports' => (int) ExpenseReport::where('status', ExpenseReport::STATUS_PENDING)->count(),
+            'exported_batches_month' => (int) ExportBatch::whereYear('created_at', $year)
                 ->whereMonth('created_at', $month)
                 ->count(),
         ];
@@ -39,9 +40,9 @@ class DashboardService
     private function monthlyMovement(int $year, int $month): array
     {
         $startOfMonth = Carbon::create($year, $month, 1);
-        $end          = $startOfMonth->copy()->endOfMonth();
+        $end = $startOfMonth->copy()->endOfMonth();
 
-        $start        = $startOfMonth->copy()->subMonths(11);
+        $start = $startOfMonth->copy()->subMonths(11);
 
         $rows = FundTransaction::selectRaw(
             'YEAR(transaction_date) as year, MONTH(transaction_date) as month, transaction_type, SUM(amount) as total'
@@ -53,7 +54,7 @@ class DashboardService
         $byMonth = [];
         foreach ($rows as $row) {
             $key = sprintf('%04d-%02d', (int) $row->year, (int) $row->month);
-            if (!isset($byMonth[$key])) {
+            if (! isset($byMonth[$key])) {
                 $byMonth[$key] = ['credits' => '0', 'debits' => '0'];
             }
             if ((int) $row->transaction_type === FundTransaction::TYPE_CREDITO) {
@@ -66,13 +67,13 @@ class DashboardService
         $result = [];
         $cursor = $start->copy();
         for ($i = 0; $i < 12; $i++) {
-            $key      = sprintf('%04d-%02d', $cursor->year, $cursor->month);
-            $data     = $byMonth[$key] ?? ['credits' => '0', 'debits' => '0'];
+            $key = sprintf('%04d-%02d', $cursor->year, $cursor->month);
+            $data = $byMonth[$key] ?? ['credits' => '0', 'debits' => '0'];
             $result[] = [
-                'year'        => $cursor->year,
-                'month'       => $cursor->month,
-                'credits'     => Money::fromDecimalString($data['credits']),
-                'debits'      => Money::fromDecimalString($data['debits']),
+                'year' => $cursor->year,
+                'month' => $cursor->month,
+                'credits' => Money::fromDecimalString($data['credits']),
+                'debits' => Money::fromDecimalString($data['debits']),
                 'net_balance' => Money::fromDecimalString($data['credits'])->subtract(Money::fromDecimalString($data['debits'])),
             ];
             $cursor->addMonth();
@@ -94,10 +95,10 @@ class DashboardService
             $totalAmount = $r->total();
 
             return [
-                'id'                     => $r->id,
-                'description'            => $r->title,
-                'requester'              => $r->requester_name ?: ($r->user->name ?? null),
-                'amount'                 => $totalAmount,
+                'id' => $r->id,
+                'description' => $r->title,
+                'requester' => $r->requester_name ?: ($r->user->name ?? null),
+                'amount' => $totalAmount,
                 'scheduled_payment_date' => $r->scheduled_payment_date?->toIso8601String(),
             ];
         })->all();
@@ -114,12 +115,12 @@ class DashboardService
                 $totalAmount = $c->total();
 
                 return [
-                    'type'        => 'expense_report',
-                    'id'          => $c->id,
+                    'type' => 'expense_report',
+                    'id' => $c->id,
                     'description' => $c->description,
-                    'requester'   => $c->requester_description ?: ($c->requesterUser->name ?? null),
-                    'amount'      => $totalAmount,
-                    'created_at'  => $c->created_at?->toIso8601String(),
+                    'requester' => $c->requester_description ?: ($c->requesterUser->name ?? null),
+                    'amount' => $totalAmount,
+                    'created_at' => $c->created_at?->toIso8601String(),
                 ];
             });
 
@@ -132,12 +133,12 @@ class DashboardService
                 $totalAmount = $r->total();
 
                 return [
-                    'type'        => 'reimbursement',
-                    'id'          => $r->id,
+                    'type' => 'reimbursement',
+                    'id' => $r->id,
                     'description' => $r->title,
-                    'requester'   => $r->requester_name ?: ($r->user->name ?? null),
-                    'amount'      => $totalAmount,
-                    'created_at'  => $r->created_at?->toIso8601String(),
+                    'requester' => $r->requester_name ?: ($r->user->name ?? null),
+                    'amount' => $totalAmount,
+                    'created_at' => $r->created_at?->toIso8601String(),
                 ];
             });
 
@@ -164,8 +165,8 @@ class DashboardService
             ]);
 
         return $rows->map(fn ($r) => [
-            'id'           => (int) $r->id,
-            'description'  => $r->description,
+            'id' => (int) $r->id,
+            'description' => $r->description,
             'amount_spent' => (string) $r->amount_spent,
         ])->all();
     }

@@ -17,9 +17,9 @@ class GenerateExportBatchRequest extends FormRequest
     {
         return [
             'batch_type' => ['required', 'string', 'in:EXPENSE_REPORT,REIMBURSEMENT'],
-            'template'  => ['required', 'string'],
-            'ids'       => ['required', 'array', 'min:1'],
-            'ids.*'     => ['integer'],
+            'template' => ['required', 'string'],
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer'],
         ];
     }
 }

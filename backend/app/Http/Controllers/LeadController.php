@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreLeadRequest;
+use App\Http\Resources\LeadResource;
 use App\Services\LeadService;
 use Illuminate\Http\JsonResponse;
 
@@ -16,13 +17,11 @@ class LeadController extends Controller
 
     public function store(StoreLeadRequest $request): JsonResponse
     {
-        $data = $request->validated();
+        $lead = $this->service->register($request->validated());
 
-        $lead = $this->service->register($data);
-
-        return response()->json([
-            'message' => 'Demo requested successfully.',
-            'lead'     => $lead,
-        ], 201);
+        return LeadResource::make($lead)
+            ->additional(['message' => 'Demo requested successfully.'])
+            ->response()
+            ->setStatusCode(201);
     }
 }

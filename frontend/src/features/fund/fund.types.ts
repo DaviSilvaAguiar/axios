@@ -79,12 +79,22 @@ export const transacaoExtratoSchema = z.object({
   accumulated_balance:  z.string(),
 });
 
-export const extratoResponseSchema = z.object({
+export const extratoPayloadSchema = z.object({
   fund: caixaContaSchema,
   transactions:  z.array(transacaoExtratoSchema),
 });
 
-export const listFundsResponseSchema = z.array(caixaContaSchema);
+export const extratoResponseSchema = z.object({
+  data: extratoPayloadSchema,
+});
+
+export const listFundsResponseSchema = z.object({
+  data: z.array(caixaContaSchema),
+});
+
+export const fundResponseSchema = z.object({
+  data: caixaContaSchema,
+});
 
 export const storeFundFormSchema = z.object({
   user_id:      z.string().min(1, "Select the person in charge"),
@@ -114,7 +124,7 @@ export type FundStatus       = z.infer<typeof caixaContaStatusSchema>;
 export type FundTipo         = z.infer<typeof caixaContaTipoSchema>;
 export type Fund             = z.infer<typeof caixaContaSchema>;
 export type TransacaoExtrato       = z.infer<typeof transacaoExtratoSchema>;
-export type ExtratoResponse        = z.infer<typeof extratoResponseSchema>;
+export type ExtratoResponse        = z.infer<typeof extratoPayloadSchema>;
 export type StoreFundFormData = z.infer<typeof storeFundFormSchema>;
 export type LancarCreditoFormData  = z.infer<typeof lancarCreditoFormSchema>;
 export type LancarAjusteFormData   = z.infer<typeof lancarAjusteFormSchema>;

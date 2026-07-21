@@ -48,9 +48,9 @@ class IntegrationController extends Controller
                 ? "{$result['successes']} entry(ies) sent successfully."
                 : 'No entries were sent successfully.',
             'data' => [
-                'batch_id'  => $result['batch']?->id,
+                'batch_id' => $result['batch']?->id,
                 'successes' => $result['successes'],
-                'failures'  => $result['failures'],
+                'failures' => $result['failures'],
             ],
         ], $result['batch'] !== null ? 201 : 422);
     }

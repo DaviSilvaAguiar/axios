@@ -39,19 +39,19 @@ class ExpenseReportItem extends Model
     ];
 
     protected $casts = [
-        'expense_report_id'             => 'integer',
-        'document_type_id'    => 'integer',
-        'cost_center_id'      => 'integer',
+        'expense_report_id' => 'integer',
+        'document_type_id' => 'integer',
+        'cost_center_id' => 'integer',
         'expense_category_id' => 'integer',
-        'supplier_id'        => 'integer',
-        'expense_date'         => 'datetime',
-        'amount'                => MoneyCast::class,
-        'quantity'           => 'decimal:2',
-        'unit_amount'       => MoneyCast::class,
-        'document_number'     => 'integer',
-        'document_series'      => 'integer',
-        'latitude'             => 'decimal:7',
-        'longitude'            => 'decimal:7',
+        'supplier_id' => 'integer',
+        'expense_date' => 'datetime',
+        'amount' => MoneyCast::class,
+        'quantity' => 'decimal:2',
+        'unit_amount' => MoneyCast::class,
+        'document_number' => 'integer',
+        'document_series' => 'integer',
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
     ];
 
     public function attachments(): HasMany

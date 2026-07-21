@@ -16,9 +16,9 @@ class StoreExpenseCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'description'  => ['required', 'string', 'max:255', 'unique:expense_category,description'],
+            'description' => ['required', 'string', 'max:255', 'unique:expense_category,description'],
             'erp_code' => ['nullable', 'string', 'max:100'],
-            'active'      => ['nullable', 'boolean'],
+            'active' => ['nullable', 'boolean'],
         ];
     }
 }

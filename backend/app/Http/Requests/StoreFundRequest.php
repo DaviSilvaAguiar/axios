@@ -16,14 +16,14 @@ class StoreFundRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id'      => ['required', 'integer', 'exists:user,id'],
+            'user_id' => ['required', 'integer', 'exists:user,id'],
             'cost_center_id' => ['required', 'integer', 'exists:cost_center,id'],
-            'description'       => ['required', 'string', 'max:255'],
-            'type'            => ['required', 'integer', 'in:1,2,3'],
-            'bank'           => ['nullable', 'string', 'max:255'],
-            'branch'         => ['nullable', 'string', 'max:255'],
-            'account_number'    => ['nullable', 'string', 'max:255'],
-            'pix_key'       => ['nullable', 'string', 'max:255'],
+            'description' => ['required', 'string', 'max:255'],
+            'type' => ['required', 'integer', 'in:1,2,3'],
+            'bank' => ['nullable', 'string', 'max:255'],
+            'branch' => ['nullable', 'string', 'max:255'],
+            'account_number' => ['nullable', 'string', 'max:255'],
+            'pix_key' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

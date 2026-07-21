@@ -25,8 +25,7 @@ export const supplierSchema = z.object({
 export const listSupplieresResponseSchema = paginatedSchema(supplierSchema);
 
 export const supplierResponseSchema = z.object({
-  message:  z.string(),
-  supplier: supplierSchema,
+  data: supplierSchema,
 });
 
 const onlyDigits = (v: string) => v.replace(/\D/g, "");

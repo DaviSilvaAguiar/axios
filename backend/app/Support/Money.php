@@ -12,9 +12,7 @@ final class Money implements JsonSerializable, Stringable
 {
     private const SCALE = 2;
 
-    private function __construct(private readonly string $amount)
-    {
-    }
+    private function __construct(private readonly string $amount) {}
 
     public static function zero(): self
     {
@@ -43,7 +41,7 @@ final class Money implements JsonSerializable, Stringable
             $cleaned = str_replace(',', '.', $cleaned);
         }
 
-        if (!is_numeric($cleaned)) {
+        if (! is_numeric($cleaned)) {
             throw new InvalidArgumentException('Invalid monetary amount.');
         }
 
@@ -94,7 +92,7 @@ final class Money implements JsonSerializable, Stringable
 
     public function format(): string
     {
-        return 'R$ ' . number_format((float) $this->amount, self::SCALE, ',', '.');
+        return 'R$ '.number_format((float) $this->amount, self::SCALE, ',', '.');
     }
 
     public function jsonSerialize(): string

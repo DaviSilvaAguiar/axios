@@ -11,8 +11,7 @@ export const costCenterSchema = z.object({
 export const listCentrosDeCustoResponseSchema = paginatedSchema(costCenterSchema);
 
 export const costCenterResponseSchema = z.object({
-  message:      z.string(),
-  cost_center:  costCenterSchema,
+  data: costCenterSchema,
 });
 
 export function buildCostCenterFormSchema(erpCodeRequired: boolean) {

@@ -15,7 +15,7 @@ class InitializeTenancyByHeader
     {
         $tenantId = $request->header('X-Account');
 
-        if (!$tenantId) {
+        if (! $tenantId) {
             return response()->json([
                 'message' => 'Company not found',
             ], 400);
@@ -23,7 +23,7 @@ class InitializeTenancyByHeader
 
         $tenant = Tenant::where('slug', $tenantId)->first();
 
-        if (!$tenant) {
+        if (! $tenant) {
             return response()->json([
                 'message' => 'Company not found.',
             ], 404);

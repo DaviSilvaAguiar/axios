@@ -15,13 +15,19 @@ class Reimbursement extends Model
 
     protected $table = 'reimbursement';
 
-    public const STATUS_REQUESTED         = 1;
-    public const STATUS_PENDING           = 2;
-    public const STATUS_UNDER_REVIEW         = 3;
-    public const STATUS_APPROVED           = 4;
+    public const STATUS_REQUESTED = 1;
+
+    public const STATUS_PENDING = 2;
+
+    public const STATUS_UNDER_REVIEW = 3;
+
+    public const STATUS_APPROVED = 4;
+
     public const STATUS_PAYMENT_SCHEDULED = 5;
-    public const STATUS_PAID               = 6;
-    public const STATUS_REJECTED          = 7;
+
+    public const STATUS_PAID = 6;
+
+    public const STATUS_REJECTED = 7;
 
     protected $fillable = [
         'user_id',
@@ -46,14 +52,14 @@ class Reimbursement extends Model
     ];
 
     protected $casts = [
-        'user_id'                => 'integer',
-        'cost_center_id'           => 'integer',
-        'requester_user_id'   => 'integer',
-        'status'                    => 'integer',
-        'period_start_date'       => 'datetime',
-        'period_end_date'          => 'datetime',
+        'user_id' => 'integer',
+        'cost_center_id' => 'integer',
+        'requester_user_id' => 'integer',
+        'status' => 'integer',
+        'period_start_date' => 'datetime',
+        'period_end_date' => 'datetime',
         'scheduled_payment_date' => 'datetime',
-        'data_export'           => 'datetime',
+        'data_export' => 'datetime',
     ];
 
     public function user(): BelongsTo

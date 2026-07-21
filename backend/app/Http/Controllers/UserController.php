@@ -8,6 +8,7 @@ use App\Http\Controllers\Concerns\Paginates;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserModulesRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Http\Resources\UserResource;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 
@@ -21,54 +22,47 @@ class UserController extends Controller
 
     public function index(): JsonResponse
     {
+        $paginator = $this->service->list($this->perPage());
+
         return response()->json(
-            $this->paginated($this->service->list($this->perPage()))
+            $this->paginated($paginator, UserResource::collection($paginator->items())->resolve())
         );
     }
 
     public function store(StoreUserRequest $request): JsonResponse
     {
-        $data = $request->validated();
+        $user = $this->service->create($request->validated());
 
-        $user = $this->service->create($data);
-
-        return response()->json([
-            'message' => 'User created successfully.',
-            'user'    => $user,
-        ], 201);
+        return UserResource::make($user)
+            ->additional(['message' => 'User created successfully.'])
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function show(int $id): JsonResponse
     {
-        return response()->json([
-            'user' => $this->service->find($id),
-        ]);
+        return UserResource::make($this->service->find($id))->response();
     }
 
     public function update(UpdateUserRequest $request, int $id): JsonResponse
     {
-        $data = $request->validated();
+        $user = $this->service->update($id, $request->validated());
 
-        $user = $this->service->update($id, $data);
-
-        return response()->json([
-            'message' => 'User updated successfully.',
-            'user'    => $user,
-        ]);
+        return UserResource::make($user)
+            ->additional(['message' => 'User updated successfully.'])
+            ->response();
     }
 
     public function destroy(int $id): JsonResponse
     {
         $this->service->delete($id);
 
-        return response()->json([
-            'message' => 'User deleted successfully.',
-        ]);
+        return response()->json(null, 204);
     }
 
     public function modules(int $id): JsonResponse
     {
-        return response()->json($this->service->listModules($id));
+        return response()->json(['data' => $this->service->listModules($id)]);
     }
 
     public function updateModules(UpdateUserModulesRequest $request, int $id): JsonResponse

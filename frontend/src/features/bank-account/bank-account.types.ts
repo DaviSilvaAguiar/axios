@@ -11,8 +11,7 @@ export const bankAccountSchema = z.object({
 export const listContasBancariasResponseSchema = paginatedSchema(bankAccountSchema);
 
 export const bankAccountResponseSchema = z.object({
-  message:        z.string(),
-  bank_account:  bankAccountSchema,
+  data: bankAccountSchema,
 });
 
 export function buildBankAccountFormSchema(erpCodeRequired: boolean) {

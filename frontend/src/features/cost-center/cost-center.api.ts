@@ -7,7 +7,6 @@ import {
 import type {
   CostCenter,
   CostCenterFormData,
-  CostCenterResponse,
 } from "./cost-center.types";
 
 export async function listCentrosDeCustoApi(
@@ -21,12 +20,12 @@ export async function listCentrosDeCustoApi(
 
 export async function getCostCenterApi(id: number): Promise<CostCenter> {
   const raw = await api.get<unknown>(`/v1/cost-center/${id}`);
-  return mapCostCenterResponse(raw).cost_center;
+  return mapCostCenterResponse(raw);
 }
 
 export async function createCostCenterApi(
   data: CostCenterFormData
-): Promise<CostCenterResponse> {
+): Promise<CostCenter> {
   const raw = await api.post<unknown>("/v1/cost-center", data);
   return mapCostCenterResponse(raw);
 }
@@ -34,7 +33,7 @@ export async function createCostCenterApi(
 export async function updateCostCenterApi(
   id: number,
   data: Partial<CostCenterFormData>
-): Promise<CostCenterResponse> {
+): Promise<CostCenter> {
   const raw = await api.put<unknown>(`/v1/cost-center/${id}`, data);
   return mapCostCenterResponse(raw);
 }

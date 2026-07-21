@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'controlle' => [
+        'url' => env('CONTROLLE_API_URL'),
+    ],
+
+    'receitaws' => [
+        'url' => env('RECEITAWS_URL'),
+    ],
+
 ];

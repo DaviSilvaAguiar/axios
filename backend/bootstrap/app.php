@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Middleware\EnsureModule;
+use App\Http\Middleware\InitializeTenancyByHeader;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Middleware\HandleCors;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -11,12 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->prepend(\Illuminate\Http\Middleware\HandleCors::class);
+        $middleware->prepend(HandleCors::class);
 
         $middleware->alias([
-            'tenant.header' => \App\Http\Middleware\InitializeTenancyByHeader::class,
-            'module'        => \App\Http\Middleware\EnsureModule::class,
+            'tenant.header' => InitializeTenancyByHeader::class,
+            'module' => EnsureModule::class,
         ]);
     })
-    ->withExceptions(function (Exceptions $exceptions): void {
-    })->create();
+    ->withExceptions(function (Exceptions $exceptions): void {})->create();

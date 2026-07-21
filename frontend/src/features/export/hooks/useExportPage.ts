@@ -94,7 +94,7 @@ export function useExportPage() {
     setSearch("");
   }
 
-  const activeIntegration = integrations.find((i) => i.configurada) ?? integrations[0] ?? null;
+  const activeIntegration = integrations.find((i) => i.configured) ?? integrations[0] ?? null;
 
   const availableAccounts = useMemo(
     () => bankAccounts.filter((c) => c.active && c.erp_code && c.erp_code.trim() !== ""),
@@ -102,7 +102,7 @@ export function useExportPage() {
   );
 
   async function openConfirmation() {
-    if (!activeIntegration?.configurada || selection.size === 0) return;
+    if (!activeIntegration?.configured || selection.size === 0) return;
     setConfirming(true);
     setLoadingAccounts(true);
     try {
@@ -118,7 +118,7 @@ export function useExportPage() {
   }
 
   async function handleSend() {
-    if (!activeIntegration?.configurada || selectedAccountId === null) return;
+    if (!activeIntegration?.configured || selectedAccountId === null) return;
     setSending(true);
     try {
       const ids = Array.from(selection);

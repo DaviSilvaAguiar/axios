@@ -7,6 +7,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreReimbursementAttachmentRequest;
 use App\Http\Requests\StoreReimbursementItemRequest;
 use App\Http\Requests\UpdateReimbursementItemRequest;
+use App\Http\Resources\ReimbursementAttachmentResource;
+use App\Http\Resources\ReimbursementItemResource;
 use App\Services\ReimbursementItemService;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -25,29 +27,26 @@ class ReimbursementItemController extends Controller
             $request->file('attachments') ?? [],
         );
 
-        return response()->json([
-            'message' => 'Expense added successfully.',
-            'item'    => $item,
-        ], 201);
+        return ReimbursementItemResource::make($item)
+            ->additional(['message' => 'Expense added successfully.'])
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function update(UpdateReimbursementItemRequest $request, int $id, int $itemId): JsonResponse
     {
         $item = $this->service->update($id, $itemId, $request->validated());
 
-        return response()->json([
-            'message' => 'Expense updated successfully.',
-            'item'    => $item,
-        ]);
+        return ReimbursementItemResource::make($item)
+            ->additional(['message' => 'Expense updated successfully.'])
+            ->response();
     }
 
     public function destroy(int $id, int $itemId): JsonResponse
     {
         $this->service->delete($id, $itemId);
 
-        return response()->json([
-            'message' => 'Expense deleted successfully.',
-        ]);
+        return response()->json(null, 204);
     }
 
     public function serveAttachment(int $id, int $itemId): StreamedResponse
@@ -59,37 +58,33 @@ class ReimbursementItemController extends Controller
     {
         $this->service->deleteAttachment($id, $itemId);
 
-        return response()->json([
-            'message' => 'Attachment deleted successfully.',
-        ]);
+        return response()->json(null, 204);
     }
 
     public function storeAttachment(StoreReimbursementAttachmentRequest $request, int $id, int $itemId): JsonResponse
     {
-        $this->service->replaceAttachment($id, $itemId, $request->file('attachment'));
+        $attachment = $this->service->replaceAttachment($id, $itemId, $request->file('attachment'));
 
-        return response()->json([
-            'message' => 'Attachment updated successfully.',
-        ]);
+        return ReimbursementAttachmentResource::make($attachment)
+            ->additional(['message' => 'Attachment updated successfully.'])
+            ->response();
     }
 
     public function addAttachment(StoreReimbursementAttachmentRequest $request, int $id, int $itemId): JsonResponse
     {
         $attachment = $this->service->addAttachment($id, $itemId, $request->file('attachment'));
 
-        return response()->json([
-            'message' => 'Attachment added successfully.',
-            'attachment' => $attachment,
-        ], 201);
+        return ReimbursementAttachmentResource::make($attachment)
+            ->additional(['message' => 'Attachment added successfully.'])
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function destroySpecificAttachment(int $id, int $itemId, int $attachmentId): JsonResponse
     {
         $this->service->deleteSpecificAttachment($id, $itemId, $attachmentId);
 
-        return response()->json([
-            'message' => 'Attachment deleted successfully.',
-        ]);
+        return response()->json(null, 204);
     }
 
     public function serveSpecificAttachment(int $id, int $itemId, int $attachmentId): StreamedResponse

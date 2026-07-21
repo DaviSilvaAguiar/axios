@@ -21,7 +21,7 @@ class SiengeExportHandlerTest extends TestCase
             new ExpenseReportItem(['unit_amount' => '10.00', 'quantity' => '3']),
         ]));
 
-        $csv = (new SiengeExportHandler())->buildCsv(new Collection([$report]));
+        $csv = (new SiengeExportHandler)->buildCsv(new Collection([$report]));
 
         $this->assertStringContainsString('ID,Description,Requester,Total,Items,"Created At"', $csv);
         $this->assertStringContainsString('7,"Field trip","John Doe",80.00,2', $csv);
@@ -29,7 +29,7 @@ class SiengeExportHandlerTest extends TestCase
 
     public function test_empty_document_collection_produces_header_only(): void
     {
-        $csv = (new SiengeExportHandler())->buildCsv(new Collection());
+        $csv = (new SiengeExportHandler)->buildCsv(new Collection);
         $lines = array_filter(explode("\n", trim($csv)));
         $this->assertCount(1, $lines);
     }

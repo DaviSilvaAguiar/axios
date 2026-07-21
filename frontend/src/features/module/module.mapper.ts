@@ -1,5 +1,5 @@
-import { modulesUserResponseSchema, type ModulosUserResponse } from "./module.types";
+import { modulesUserDataResponseSchema, type ModulosUserResponse } from "./module.types";
 
 export function mapModulosUser(raw: unknown): ModulosUserResponse {
-  return modulesUserResponseSchema.parse(raw);
+  return modulesUserDataResponseSchema.parse(raw).data;
 }

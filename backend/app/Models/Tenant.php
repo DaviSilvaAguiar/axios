@@ -13,6 +13,7 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     use HasDatabase;
 
     protected $keyType = 'int';
+
     public $incrementing = true;
 
     public static function getCustomColumns(): array

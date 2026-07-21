@@ -151,7 +151,7 @@ export function useReimbursementsPage() {
         await updateReimbursementApi(reimbursementToEdit.id, header);
         reimbursementId = reimbursementToEdit.id;
       } else {
-        const { reimbursement } = await createReimbursementApi(header);
+        const reimbursement = await createReimbursementApi(header);
         reimbursementId = reimbursement.id;
       }
 

@@ -16,9 +16,9 @@ class PostCreditRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'amount'          => ['required', 'numeric', 'min:0.01'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
             'transaction_date' => ['required', 'date'],
-            'notes'     => ['nullable', 'string', 'max:500'],
+            'notes' => ['nullable', 'string', 'max:500'],
         ];
     }
 }

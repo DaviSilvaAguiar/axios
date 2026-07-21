@@ -11,7 +11,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ExportBatch extends Model
 {
-    public const TYPE_EXPENSE_REPORT     = 'EXPENSE_REPORT';
+    public const TYPE_EXPENSE_REPORT = 'EXPENSE_REPORT';
+
     public const TYPE_REIMBURSEMENT = 'REIMBURSEMENT';
 
     protected $table = 'lote_export';
@@ -27,7 +28,7 @@ class ExportBatch extends Model
     ];
 
     protected $casts = [
-        'total_amount'      => MoneyCast::class,
+        'total_amount' => MoneyCast::class,
         'item_count' => 'integer',
     ];
 

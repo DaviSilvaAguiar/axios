@@ -4,20 +4,21 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Exceptions\IntegrationException;
+use App\Models\BankAccount;
 use App\Models\ExpenseReport;
 use App\Models\ExpenseReportItem;
-use App\Models\BankAccount;
-use App\Models\ReimbursementItem;
+use App\Models\ExportBatch;
 use App\Models\Integration;
 use App\Models\IntegrationKey;
-use App\Models\ExportBatch;
 use App\Models\Reimbursement;
+use App\Models\ReimbursementItem;
+use App\Support\Money;
 use Carbon\Carbon;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use RuntimeException;
 use Throwable;
 use UnexpectedValueException;
 
@@ -79,9 +80,9 @@ class IntegrationDispatchService
             throw new UnexpectedValueException('No pending and valid document was found for sending.');
         }
 
-        $key    = $keyRecord->key;
+        $key = $keyRecord->key;
         $successes = [];
-        $failures   = [];
+        $failures = [];
 
         foreach ($documents as $doc) {
             try {
@@ -101,11 +102,11 @@ class IntegrationDispatchService
             $totalAmount = $this->calculateTotalAmount($successes);
 
             $batch = ExportBatch::create([
-                'user_id'         => $idUser,
-                'batch_type'          => $batchType,
+                'user_id' => $idUser,
+                'batch_type' => $batchType,
                 'template_used' => $integration->name,
-                'total_amount'        => $totalAmount,
-                'item_count'   => count($successes),
+                'total_amount' => $totalAmount,
+                'item_count' => count($successes),
             ]);
 
             $model = $this->modelForType($batchType);
@@ -123,7 +124,7 @@ class IntegrationDispatchService
     {
         match ($integration) {
             'Controlle' => $this->controlleApi->createTransaction($key, $payload),
-            default     => throw new RuntimeException("Integration [{$integration}] has no dispatcher implemented."),
+            default => throw new IntegrationException("Integration [{$integration}] has no dispatcher implemented."),
         };
     }
 
@@ -139,29 +140,29 @@ class IntegrationDispatchService
         $items = $expenseReport->items->map(function (ExpenseReportItem $d) use ($expenseReport): array {
             return [
                 'id_plan_accounts_entities' => $this->categoryCode($d),
-                'id_cost_centers'           => $this->costCenterCode($d, $expenseReport->costCenter?->erp_code),
-                'value_in_cent'             => $this->toCents($d->value()),
+                'id_cost_centers' => $this->costCenterCode($d, $expenseReport->costCenter?->erp_code),
+                'value_in_cent' => $this->toCents($d->value()),
             ];
         })->all();
 
-        $total      = $expenseReport->total();
+        $total = $expenseReport->total();
         $competence = $expenseReport->needed_at ?? $expenseReport->created_at;
-        $dueDate    = $expenseReport->paid_at;
+        $dueDate = $expenseReport->paid_at;
 
         return [
-            'ds_transaction'   => $this->cleanText($expenseReport->description) ?: "RDC-{$expenseReport->id}",
-            'type'             => 0,
-            'dt_competence'    => $this->localDate($competence),
-            'repeat_type'      => 1,
-            'activity_type'    => 0,
+            'ds_transaction' => $this->cleanText($expenseReport->description) ?: "RDC-{$expenseReport->id}",
+            'type' => 0,
+            'dt_competence' => $this->localDate($competence),
+            'repeat_type' => 1,
+            'activity_type' => 0,
             'id_accounts_main' => $idAccountsMain,
-            'obs_transaction'  => $this->cleanText($expenseReport->notes),
-            'itens'            => $items,
-            'payments'         => [
+            'obs_transaction' => $this->cleanText($expenseReport->notes),
+            'itens' => $items,
+            'payments' => [
                 [
-                    'situation'     => 0,
+                    'situation' => 0,
                     'value_in_cent' => $this->toCents($total),
-                    'dt_due'        => $this->localDate($dueDate),
+                    'dt_due' => $this->localDate($dueDate),
                 ],
             ],
         ];
@@ -172,29 +173,29 @@ class IntegrationDispatchService
         $items = $reimbursement->items->map(function (ReimbursementItem $d): array {
             return [
                 'id_plan_accounts_entities' => $this->categoryCode($d),
-                'id_cost_centers'           => $this->costCenterCode($d),
-                'value_in_cent'             => $this->toCents($d->value()),
+                'id_cost_centers' => $this->costCenterCode($d),
+                'value_in_cent' => $this->toCents($d->value()),
             ];
         })->all();
 
-        $total      = $reimbursement->total();
+        $total = $reimbursement->total();
         $competence = $reimbursement->period_start_date ?? $reimbursement->created_at;
-        $dueDate    = $reimbursement->scheduled_payment_date ?? Carbon::now(self::TIMEZONE_LOCAL)->addDays(7);
+        $dueDate = $reimbursement->scheduled_payment_date ?? Carbon::now(self::TIMEZONE_LOCAL)->addDays(7);
 
         return [
-            'ds_transaction'   => $this->cleanText($reimbursement->title) ?: "RCM-{$reimbursement->id}",
-            'type'             => 0,
-            'dt_competence'    => $this->localDate($competence),
-            'repeat_type'      => 1,
-            'activity_type'    => 0,
+            'ds_transaction' => $this->cleanText($reimbursement->title) ?: "RCM-{$reimbursement->id}",
+            'type' => 0,
+            'dt_competence' => $this->localDate($competence),
+            'repeat_type' => 1,
+            'activity_type' => 0,
             'id_accounts_main' => $idAccountsMain,
-            'obs_transaction'  => null,
-            'itens'            => $items,
-            'payments'         => [
+            'obs_transaction' => null,
+            'itens' => $items,
+            'payments' => [
                 [
-                    'situation'     => 0,
+                    'situation' => 0,
                     'value_in_cent' => $this->toCents($total),
-                    'dt_due'        => $this->localDate($dueDate),
+                    'dt_due' => $this->localDate($dueDate),
                 ],
             ],
         ];
@@ -234,6 +235,7 @@ class IntegrationDispatchService
     private function cleanText(?string $text): ?string
     {
         $trim = trim((string) $text);
+
         return $trim === '' ? null : $trim;
     }
 
@@ -266,9 +268,9 @@ class IntegrationDispatchService
     private function modelForType(string $batchType): string
     {
         return match ($batchType) {
-            ExportBatch::TYPE_EXPENSE_REPORT     => ExpenseReport::class,
+            ExportBatch::TYPE_EXPENSE_REPORT => ExpenseReport::class,
             ExportBatch::TYPE_REIMBURSEMENT => Reimbursement::class,
-            default                        => throw new UnexpectedValueException("Invalid batch type: {$batchType}"),
+            default => throw new UnexpectedValueException("Invalid batch type: {$batchType}"),
         };
     }
 }

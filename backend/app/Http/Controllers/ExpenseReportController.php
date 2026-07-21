@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ApproveExpenseReportRequest;
 use App\Http\Requests\StoreExpenseReportRequest;
 use App\Http\Requests\UpdateExpenseReportRequest;
+use App\Http\Resources\ExpenseReportResource;
 use App\Services\ExpenseReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
@@ -19,22 +20,33 @@ class ExpenseReportController extends Controller
 
     public function index(): JsonResponse
     {
-        return response()->json($this->service->list());
+        return response()->json([
+            'data' => ExpenseReportResource::collection($this->service->list())->resolve(),
+        ]);
     }
 
     public function show(int $id): JsonResponse
     {
-        return response()->json($this->service->find($id));
+        return ExpenseReportResource::make($this->service->find($id))->response();
     }
 
     public function store(StoreExpenseReportRequest $request): JsonResponse
     {
-        return response()->json($this->service->create($request->validated()), 201);
+        $expenseReport = $this->service->create($request->validated());
+
+        return ExpenseReportResource::make($expenseReport)
+            ->additional(['message' => 'Expense report created successfully.'])
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function update(UpdateExpenseReportRequest $request, int $id): JsonResponse
     {
-        return response()->json($this->service->update($id, $request->validated()));
+        $expenseReport = $this->service->update($id, $request->validated());
+
+        return ExpenseReportResource::make($expenseReport)
+            ->additional(['message' => 'Expense report updated successfully.'])
+            ->response();
     }
 
     public function destroy(int $id): JsonResponse
@@ -48,7 +60,9 @@ class ExpenseReportController extends Controller
     {
         $expenseReport = $this->service->approve($id, (int) $request->validated()['fund_id']);
 
-        return response()->json($expenseReport);
+        return ExpenseReportResource::make($expenseReport)
+            ->additional(['message' => 'Expense report approved successfully.'])
+            ->response();
     }
 
     public function generatePdf(int $id): Response

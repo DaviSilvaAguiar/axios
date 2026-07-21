@@ -16,12 +16,12 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'role'            => ['required', 'integer', 'in:1,2,3'],
-            'name'              => ['required', 'string', 'max:255'],
-            'email'             => ['required', 'email', 'unique:user,email'],
-            'password'             => ['required', 'string', 'min:8'],
+            'role' => ['required', 'integer', 'in:1,2,3'],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'unique:user,email'],
+            'password' => ['required', 'string', 'min:8'],
             'erp_code' => ['nullable', 'string', 'max:100'],
-            'tax_id'          => ['nullable', 'string', 'max:20'],
+            'tax_id' => ['nullable', 'string', 'max:20'],
         ];
     }
 }

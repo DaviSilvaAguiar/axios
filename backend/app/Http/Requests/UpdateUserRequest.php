@@ -18,13 +18,13 @@ class UpdateUserRequest extends FormRequest
         $id = (int) $this->route('id');
 
         return [
-            'role'            => ['sometimes', 'required', 'integer', 'in:1,2,3'],
-            'name'              => ['sometimes', 'required', 'string', 'max:255'],
-            'email'             => ['sometimes', 'required', 'email', "unique:user,email,{$id}"],
-            'password'             => ['sometimes', 'required', 'string', 'min:8'],
-            'active'             => ['sometimes', 'boolean'],
+            'role' => ['sometimes', 'required', 'integer', 'in:1,2,3'],
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'email' => ['sometimes', 'required', 'email', "unique:user,email,{$id}"],
+            'password' => ['sometimes', 'required', 'string', 'min:8'],
+            'active' => ['sometimes', 'boolean'],
             'erp_code' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'tax_id'          => ['sometimes', 'nullable', 'string', 'max:20'],
+            'tax_id' => ['sometimes', 'nullable', 'string', 'max:20'],
         ];
     }
 }

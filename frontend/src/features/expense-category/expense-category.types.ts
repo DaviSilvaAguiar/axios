@@ -11,8 +11,7 @@ export const expenseCategorySchema = z.object({
 export const listCategoriasDespesaResponseSchema = paginatedSchema(expenseCategorySchema);
 
 export const expenseCategoryResponseSchema = z.object({
-  message:           z.string(),
-  expense_category:  expenseCategorySchema,
+  data: expenseCategorySchema,
 });
 
 export function buildExpenseCategoryFormSchema(erpCodeRequired: boolean) {

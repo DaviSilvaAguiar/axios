@@ -27,17 +27,25 @@ export const tenantInfoSchema = z.object({
   max_users: z.number().nullable().optional(),
 });
 
-export const loginResponseSchema = z.object({
+export const loginPayloadSchema = z.object({
   token:      z.string(),
   expires_at: z.string().datetime(),
   user:    userSchema,
   tenant:     tenantInfoSchema,
 });
 
-export const meResponseSchema = z.object({
+export const loginResponseSchema = z.object({
+  data: loginPayloadSchema,
+});
+
+export const mePayloadSchema = z.object({
   user: userSchema,
   tenant: tenantInfoSchema,
   modules: z.array(z.string()).default([]),
+});
+
+export const meResponseSchema = z.object({
+  data: mePayloadSchema,
 });
 
 export const passwordRecoveryFormSchema = z.object({
@@ -48,6 +56,6 @@ export const passwordRecoveryFormSchema = z.object({
 export type LoginFormData = z.infer<typeof loginFormSchema>;
 export type User = z.infer<typeof userSchema>;
 export type TenantInfo = z.infer<typeof tenantInfoSchema>;
-export type LoginResponse = z.infer<typeof loginResponseSchema>;
-export type MeResponse = z.infer<typeof meResponseSchema>;
+export type LoginResponse = z.infer<typeof loginPayloadSchema>;
+export type MeResponse = z.infer<typeof mePayloadSchema>;
 export type PasswordRecoveryFormData = z.infer<typeof passwordRecoveryFormSchema>;

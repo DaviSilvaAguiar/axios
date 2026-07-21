@@ -26,7 +26,7 @@ export default function NewReimbursementPage() {
   ) {
     try {
       const { items, ...header } = data;
-      const { reimbursement } = await createReimbursementApi(header);
+      const reimbursement = await createReimbursementApi(header);
 
       for (const item of items) {
         const fd = new FormData();

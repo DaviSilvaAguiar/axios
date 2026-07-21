@@ -10,9 +10,7 @@ use Illuminate\Http\JsonResponse;
 
 class ProviderController extends Controller
 {
-    public function __construct(private readonly ProviderService $service)
-    {
-    }
+    public function __construct(private readonly ProviderService $service) {}
 
     public function transactions(ListTransactionsRequest $request): JsonResponse
     {

@@ -7,7 +7,6 @@ import {
 import type {
   BankAccount,
   BankAccountFormData,
-  BankAccountResponse,
 } from "./bank-account.types";
 
 export async function listContasBancariasApi(
@@ -21,12 +20,12 @@ export async function listContasBancariasApi(
 
 export async function getBankAccountApi(id: number): Promise<BankAccount> {
   const raw = await api.get<unknown>(`/v1/bank-accounts/${id}`);
-  return mapBankAccountResponse(raw).bank_account;
+  return mapBankAccountResponse(raw);
 }
 
 export async function createBankAccountApi(
   data: BankAccountFormData
-): Promise<BankAccountResponse> {
+): Promise<BankAccount> {
   const raw = await api.post<unknown>("/v1/bank-accounts", data);
   return mapBankAccountResponse(raw);
 }
@@ -34,7 +33,7 @@ export async function createBankAccountApi(
 export async function updateBankAccountApi(
   id: number,
   data: Partial<BankAccountFormData>
-): Promise<BankAccountResponse> {
+): Promise<BankAccount> {
   const raw = await api.put<unknown>(`/v1/bank-accounts/${id}`, data);
   return mapBankAccountResponse(raw);
 }

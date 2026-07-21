@@ -15,13 +15,19 @@ class ExpenseReport extends Model
 
     protected $table = 'expense_report';
 
-    public const STATUS_DRAFT           = 1;
-    public const STATUS_PENDING           = 2;
-    public const STATUS_UNDER_REVIEW         = 3;
-    public const STATUS_APPROVED           = 4;
+    public const STATUS_DRAFT = 1;
+
+    public const STATUS_PENDING = 2;
+
+    public const STATUS_UNDER_REVIEW = 3;
+
+    public const STATUS_APPROVED = 4;
+
     public const STATUS_PAYMENT_SCHEDULED = 5;
-    public const STATUS_PAID               = 6;
-    public const STATUS_REJECTED          = 7;
+
+    public const STATUS_PAID = 6;
+
+    public const STATUS_REJECTED = 7;
 
     protected $fillable = [
         'user_id',
@@ -47,16 +53,16 @@ class ExpenseReport extends Model
     ];
 
     protected $casts = [
-        'user_id'              => 'integer',
-        'cost_center_id'         => 'integer',
+        'user_id' => 'integer',
+        'cost_center_id' => 'integer',
         'requester_user_id' => 'integer',
-        'export_batch_id'      => 'integer',
-        'status'                  => 'integer',
-        'needed_at'        => 'datetime',
-        'period_start_date'     => 'datetime',
-        'period_end_date'        => 'datetime',
-        'data_export'         => 'datetime',
-        'paid_at'          => 'datetime',
+        'export_batch_id' => 'integer',
+        'status' => 'integer',
+        'needed_at' => 'datetime',
+        'period_start_date' => 'datetime',
+        'period_end_date' => 'datetime',
+        'data_export' => 'datetime',
+        'paid_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

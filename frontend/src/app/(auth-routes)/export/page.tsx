@@ -217,7 +217,7 @@ export default function ExportPage() {
             quantity={selection.size}
             totalAmount={selectedAmount}
             integrationName={activeIntegration?.name ?? null}
-            integrationConfigured={activeIntegration?.configurada ?? false}
+            integrationConfigured={activeIntegration?.configured ?? false}
             loading={sending}
             onClear={clearSelection}
             onSend={openConfirmation}

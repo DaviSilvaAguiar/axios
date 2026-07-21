@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Exceptions\DomainException;
 use App\Models\Reimbursement;
 use App\Models\User;
-use Illuminate\Support\Facades\Gate;
 use App\Services\Concerns\ResolvesRequester;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
 
 class ReimbursementService
 {
@@ -24,21 +24,21 @@ class ReimbursementService
             $query->where('user_id', $user->id);
         }
 
-        if (!empty($filters['employee'])) {
+        if (! empty($filters['employee'])) {
             $query->whereHas('user', function ($q) use ($filters) {
-                $q->where('name', 'like', '%' . $filters['employee'] . '%');
+                $q->where('name', 'like', '%'.$filters['employee'].'%');
             });
         }
 
-        if (!empty($filters['status'])) {
+        if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
 
-        if (!empty($filters['startDate'])) {
+        if (! empty($filters['startDate'])) {
             $query->whereDate('created_at', '>=', $filters['startDate']);
         }
 
-        if (!empty($filters['endDate'])) {
+        if (! empty($filters['endDate'])) {
             $query->whereDate('created_at', '<=', $filters['endDate']);
         }
 
@@ -52,7 +52,7 @@ class ReimbursementService
         $reimbursement = Reimbursement::create([
             ...$data,
             'user_id' => $userId,
-            'status'     => Reimbursement::STATUS_REQUESTED,
+            'status' => Reimbursement::STATUS_REQUESTED,
         ]);
 
         return $reimbursement->fresh();
@@ -73,7 +73,7 @@ class ReimbursementService
         Gate::authorize('update', $reimbursement);
 
         if ($reimbursement->status !== Reimbursement::STATUS_REQUESTED) {
-            abort(409, 'Only reimbursements with status "Draft" can be edited.');
+            throw new DomainException('Only reimbursements with status "Draft" can be edited.', 409);
         }
 
         $data = $this->resolveRequester($data, 'requester_name');
@@ -89,17 +89,17 @@ class ReimbursementService
         $status = (int) $data['status'];
 
         if ($status === Reimbursement::STATUS_PAYMENT_SCHEDULED && empty($data['scheduled_payment_date'])) {
-            abort(422, 'The scheduled payment date is required when scheduling the payment.');
+            throw new DomainException('The scheduled payment date is required when scheduling the payment.');
         }
 
         if ($status === Reimbursement::STATUS_REJECTED && empty($data['rejection_reason'])) {
-            abort(422, 'The rejection reason is required when rejecting a reimbursement.');
+            throw new DomainException('The rejection reason is required when rejecting a reimbursement.');
         }
 
         $reimbursement->update([
-            'status'                    => $status,
+            'status' => $status,
             'scheduled_payment_date' => $data['scheduled_payment_date'] ?? $reimbursement->scheduled_payment_date,
-            'rejection_reason'           => $data['rejection_reason'] ?? $reimbursement->rejection_reason,
+            'rejection_reason' => $data['rejection_reason'] ?? $reimbursement->rejection_reason,
         ]);
 
         return $reimbursement->fresh(['user', 'costCenter', 'items.costCenter', 'items.expenseCategory', 'items.attachments', 'exportBatch:id,created_at']);
@@ -111,7 +111,7 @@ class ReimbursementService
         Gate::authorize('delete', $reimbursement);
 
         if ($reimbursement->status !== Reimbursement::STATUS_REQUESTED) {
-            abort(409, 'Only reimbursements with status "Draft" can be deleted.');
+            throw new DomainException('Only reimbursements with status "Draft" can be deleted.', 409);
         }
 
         $reimbursement->delete();
@@ -125,7 +125,7 @@ class ReimbursementService
             $pdfBytes,
             200,
             [
-                'Content-Type'        => 'application/pdf',
+                'Content-Type' => 'application/pdf',
                 'Content-Disposition' => "inline; filename=\"rcm-{$id}.pdf\"",
             ]
         );

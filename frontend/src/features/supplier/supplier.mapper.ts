@@ -3,7 +3,7 @@ import {
   supplierResponseSchema,
   listSupplieresResponseSchema,
   type ConsultaCnpjResponse,
-  type SupplierResponse,
+  type Supplier,
   type ListarSupplieresResponse,
 } from "./supplier.types";
 
@@ -11,8 +11,8 @@ export function mapListarSupplieres(raw: unknown): ListarSupplieresResponse {
   return listSupplieresResponseSchema.parse(raw);
 }
 
-export function mapSupplierResponse(raw: unknown): SupplierResponse {
-  return supplierResponseSchema.parse(raw);
+export function mapSupplierResponse(raw: unknown): Supplier {
+  return supplierResponseSchema.parse(raw).data;
 }
 
 export function mapConsultaCnpj(raw: unknown): ConsultaCnpjResponse {

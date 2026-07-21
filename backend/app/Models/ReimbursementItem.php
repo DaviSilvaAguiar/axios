@@ -32,14 +32,14 @@ class ReimbursementItem extends Model
     ];
 
     protected $casts = [
-        'amount'                => MoneyCast::class,
-        'reimbursement_id'               => 'integer',
-        'cost_center_id'      => 'integer',
+        'amount' => MoneyCast::class,
+        'reimbursement_id' => 'integer',
+        'cost_center_id' => 'integer',
         'expense_category_id' => 'integer',
-        'supplier_id'        => 'integer',
-        'expense_date'         => 'date',
-        'latitude'             => 'decimal:7',
-        'longitude'            => 'decimal:7',
+        'supplier_id' => 'integer',
+        'expense_date' => 'date',
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
     ];
 
     public function reimbursement(): BelongsTo

@@ -22,7 +22,7 @@ class SupplierService
     public function create(array $data): Supplier
     {
         $data['tax_id'] = preg_replace('/\D/', '', (string) ($data['tax_id'] ?? '')) ?? '';
-        $data['active']    = $data['active'] ?? true;
+        $data['active'] = $data['active'] ?? true;
 
         return Supplier::create($data);
     }

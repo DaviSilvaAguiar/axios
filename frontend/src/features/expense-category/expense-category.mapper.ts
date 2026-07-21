@@ -1,7 +1,7 @@
 import {
   expenseCategoryResponseSchema,
   listCategoriasDespesaResponseSchema,
-  type ExpenseCategoryResponse,
+  type ExpenseCategory,
   type ListarCategoriasDespesaResponse,
 } from "./expense-category.types";
 
@@ -9,6 +9,6 @@ export function mapListarCategoriasDespesa(raw: unknown): ListarCategoriasDespes
   return listCategoriasDespesaResponseSchema.parse(raw);
 }
 
-export function mapExpenseCategoryResponse(raw: unknown): ExpenseCategoryResponse {
-  return expenseCategoryResponseSchema.parse(raw);
+export function mapExpenseCategoryResponse(raw: unknown): ExpenseCategory {
+  return expenseCategoryResponseSchema.parse(raw).data;
 }

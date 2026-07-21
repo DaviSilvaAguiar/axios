@@ -1,10 +1,10 @@
-import { rdcSchema, listExpenseReportsResponseSchema } from "./expense-report.types";
+import { expenseReportResponseSchema, listExpenseReportsResponseSchema } from "./expense-report.types";
 import type { ExpenseReport } from "./expense-report.types";
 
 export function mapListarExpenseReportsResponse(raw: unknown): ExpenseReport[] {
-  return listExpenseReportsResponseSchema.parse(raw);
+  return listExpenseReportsResponseSchema.parse(raw).data;
 }
 
 export function mapExpenseReportResponse(raw: unknown): ExpenseReport {
-  return rdcSchema.parse(raw);
+  return expenseReportResponseSchema.parse(raw).data;
 }

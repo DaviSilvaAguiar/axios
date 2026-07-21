@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Requests\LoginRequest;
-use App\Models\User;
 use App\Services\AuthService;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\JsonResponse;
@@ -26,10 +25,12 @@ class AuthController extends Controller
         }
 
         return response()->json([
-            'token'      => $result['token'],
-            'expires_at' => $result['expires_at'],
-            'user'       => $result['user'],
-            'tenant'     => $result['tenant'],
+            'data' => [
+                'token' => $result['token'],
+                'expires_at' => $result['expires_at'],
+                'user' => $result['user'],
+                'tenant' => $result['tenant'],
+            ],
         ]);
     }
 
@@ -47,9 +48,11 @@ class AuthController extends Controller
         $data = $this->service->me($user);
 
         return response()->json([
-            'user'    => $data['user'],
-            'tenant'  => $data['tenant'],
-            'modules' => $data['modules'],
+            'data' => [
+                'user' => $data['user'],
+                'tenant' => $data['tenant'],
+                'modules' => $data['modules'],
+            ],
         ]);
     }
 }

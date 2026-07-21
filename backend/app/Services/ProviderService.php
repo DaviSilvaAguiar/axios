@@ -21,12 +21,12 @@ class ProviderService
                 ->withSum('items as total_amount', 'amount')
                 ->get(['id', 'description', 'status', 'created_at'])
                 ->map(fn (ExpenseReport $c): array => [
-                    'id'          => $c->id,
-                    'type'        => 'expense_report',
-                    'title'      => $c->description ?? 'Expense Report',
+                    'id' => $c->id,
+                    'type' => 'expense_report',
+                    'title' => $c->description ?? 'Expense Report',
                     'total_amount' => (string) ($c->total_amount ?? '0.00'),
-                    'status'      => (int) $c->status,
-                    'created_at'  => $c->created_at?->toIso8601String() ?? '',
+                    'status' => (int) $c->status,
+                    'created_at' => $c->created_at?->toIso8601String() ?? '',
                 ]);
             $items = $items->concat($expenseReports);
         }
@@ -37,12 +37,12 @@ class ProviderService
                 ->withSum('items as total_amount', 'amount')
                 ->get(['id', 'title', 'status', 'created_at'])
                 ->map(fn (Reimbursement $r): array => [
-                    'id'          => $r->id,
-                    'type'        => 'reimbursement',
-                    'title'      => $r->title,
+                    'id' => $r->id,
+                    'type' => 'reimbursement',
+                    'title' => $r->title,
                     'total_amount' => (string) ($r->total_amount ?? '0.00'),
-                    'status'      => (int) $r->status,
-                    'created_at'  => $r->created_at?->toIso8601String() ?? '',
+                    'status' => (int) $r->status,
+                    'created_at' => $r->created_at?->toIso8601String() ?? '',
                 ]);
             $items = $items->concat($reimbursements);
         }
@@ -55,9 +55,9 @@ class ProviderService
             'data' => $paginated,
             'meta' => [
                 'current_page' => $page,
-                'last_page'    => max(1, (int) ceil($total / $perPage)),
-                'per_page'     => $perPage,
-                'total'        => $total,
+                'last_page' => max(1, (int) ceil($total / $perPage)),
+                'per_page' => $perPage,
+                'total' => $total,
             ],
         ];
     }

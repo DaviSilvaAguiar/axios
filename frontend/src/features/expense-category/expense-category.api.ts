@@ -7,7 +7,6 @@ import {
 import type {
   ExpenseCategory,
   ExpenseCategoryFormData,
-  ExpenseCategoryResponse,
 } from "./expense-category.types";
 
 export async function listCategoriasDespesaApi(
@@ -21,12 +20,12 @@ export async function listCategoriasDespesaApi(
 
 export async function getExpenseCategoryApi(id: number): Promise<ExpenseCategory> {
   const raw = await api.get<unknown>(`/v1/expense-categories/${id}`);
-  return mapExpenseCategoryResponse(raw).expense_category;
+  return mapExpenseCategoryResponse(raw);
 }
 
 export async function createExpenseCategoryApi(
   data: ExpenseCategoryFormData
-): Promise<ExpenseCategoryResponse> {
+): Promise<ExpenseCategory> {
   const raw = await api.post<unknown>("/v1/expense-categories", data);
   return mapExpenseCategoryResponse(raw);
 }
@@ -34,7 +33,7 @@ export async function createExpenseCategoryApi(
 export async function updateExpenseCategoryApi(
   id: number,
   data: Partial<ExpenseCategoryFormData>
-): Promise<ExpenseCategoryResponse> {
+): Promise<ExpenseCategory> {
   const raw = await api.put<unknown>(`/v1/expense-categories/${id}`, data);
   return mapExpenseCategoryResponse(raw);
 }

@@ -7,18 +7,19 @@ export const leadFormSchema = z.object({
   monthly_project_volume: z.string().min(1, "Enter the monthly project volume"),
 });
 
+export const leadSchema = z.object({
+  id:                   z.number(),
+  name:                 z.string(),
+  email:                z.string(),
+  company:              z.string(),
+  monthly_project_volume: z.string(),
+  created_at:           z.string(),
+  updated_at:           z.string(),
+});
+
 export const leadResponseSchema = z.object({
-  message: z.string(),
-  lead: z.object({
-    id:                   z.number(),
-    name:                 z.string(),
-    email:                z.string(),
-    company:              z.string(),
-    monthly_project_volume: z.string(),
-    created_at:           z.string(),
-    updated_at:           z.string(),
-  }),
+  data: leadSchema,
 });
 
 export type LeadFormData     = z.infer<typeof leadFormSchema>;
-export type LeadResponse     = z.infer<typeof leadResponseSchema>;
+export type Lead             = z.infer<typeof leadSchema>;

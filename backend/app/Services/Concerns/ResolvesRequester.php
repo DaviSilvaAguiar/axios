@@ -17,7 +17,7 @@ trait ResolvesRequester
 
         $user = User::find($data['requester_user_id']);
 
-        if (!$user) {
+        if (! $user) {
             throw ValidationException::withMessages([
                 'requester_user_id' => ['Employee not found.'],
             ]);

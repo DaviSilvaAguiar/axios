@@ -1,7 +1,7 @@
 import {
   costCenterResponseSchema,
   listCentrosDeCustoResponseSchema,
-  type CostCenterResponse,
+  type CostCenter,
   type ListarCentrosDeCustoResponse,
 } from "./cost-center.types";
 
@@ -9,6 +9,6 @@ export function mapListarCentrosDeCusto(raw: unknown): ListarCentrosDeCustoRespo
   return listCentrosDeCustoResponseSchema.parse(raw);
 }
 
-export function mapCostCenterResponse(raw: unknown): CostCenterResponse {
-  return costCenterResponseSchema.parse(raw);
+export function mapCostCenterResponse(raw: unknown): CostCenter {
+  return costCenterResponseSchema.parse(raw).data;
 }

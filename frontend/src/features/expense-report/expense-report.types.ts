@@ -88,7 +88,17 @@ export const rdcSchema = z.object({
   updated_at: z.string(),
 });
 
-export const listExpenseReportsResponseSchema = z.array(rdcSchema);
+export const listExpenseReportsResponseSchema = z.object({
+  data: z.array(rdcSchema),
+});
+
+export const expenseReportResponseSchema = z.object({
+  data: rdcSchema,
+});
+
+export const expenseReportItemResponseSchema = z.object({
+  data: expenseReportItemSchema,
+});
 
 export const storeExpenseReportFormSchema = z.object({
   cost_center_id: z.string().min(1, "Select the cost center"),

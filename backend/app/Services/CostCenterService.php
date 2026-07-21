@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Exceptions\DomainException;
+use App\Models\CostCenter;
 use App\Models\ExpenseReport;
 use App\Models\Fund;
-use App\Models\CostCenter;
 use App\Models\ReimbursementItem;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -47,7 +48,7 @@ class CostCenterService
             Fund::where('cost_center_id', $id)->exists();
 
         if ($linked) {
-            abort(409, 'This cost center is linked to existing records and cannot be removed.');
+            throw new DomainException('This cost center is linked to existing records and cannot be removed.', 409);
         }
 
         CostCenter::destroy($id);

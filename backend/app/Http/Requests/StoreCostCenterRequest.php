@@ -16,9 +16,9 @@ class StoreCostCenterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'description'     => ['required', 'string', 'max:255', 'unique:cost_center,description'],
+            'description' => ['required', 'string', 'max:255', 'unique:cost_center,description'],
             'erp_code' => ['nullable', 'string', 'max:100'],
-            'active'         => ['nullable', 'boolean'],
+            'active' => ['nullable', 'boolean'],
         ];
     }
 }

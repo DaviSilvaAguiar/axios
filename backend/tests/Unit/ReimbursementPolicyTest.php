@@ -13,7 +13,7 @@ class ReimbursementPolicyTest extends TestCase
 {
     private function user(int $id, int $role): User
     {
-        $user = new User();
+        $user = new User;
         $user->id = $id;
         $user->role = $role;
 
@@ -22,7 +22,7 @@ class ReimbursementPolicyTest extends TestCase
 
     private function reimbursementOwnedBy(int $userId): Reimbursement
     {
-        $reimbursement = new Reimbursement();
+        $reimbursement = new Reimbursement;
         $reimbursement->user_id = $userId;
 
         return $reimbursement;
@@ -30,7 +30,7 @@ class ReimbursementPolicyTest extends TestCase
 
     public function test_owner_provider_can_view_update_and_delete(): void
     {
-        $policy = new ReimbursementPolicy();
+        $policy = new ReimbursementPolicy;
         $owner = $this->user(10, User::ROLE_PROVIDER);
         $reimbursement = $this->reimbursementOwnedBy(10);
 
@@ -41,7 +41,7 @@ class ReimbursementPolicyTest extends TestCase
 
     public function test_other_provider_cannot_view_update_or_delete(): void
     {
-        $policy = new ReimbursementPolicy();
+        $policy = new ReimbursementPolicy;
         $intruder = $this->user(99, User::ROLE_PROVIDER);
         $reimbursement = $this->reimbursementOwnedBy(10);
 
@@ -52,7 +52,7 @@ class ReimbursementPolicyTest extends TestCase
 
     public function test_auditor_can_view_and_update_status_but_not_edit_others_content(): void
     {
-        $policy = new ReimbursementPolicy();
+        $policy = new ReimbursementPolicy;
         $auditor = $this->user(2, User::ROLE_AUDITOR);
         $reimbursement = $this->reimbursementOwnedBy(10);
 
@@ -64,7 +64,7 @@ class ReimbursementPolicyTest extends TestCase
 
     public function test_provider_cannot_change_status(): void
     {
-        $policy = new ReimbursementPolicy();
+        $policy = new ReimbursementPolicy;
         $owner = $this->user(10, User::ROLE_PROVIDER);
         $reimbursement = $this->reimbursementOwnedBy(10);
 
@@ -73,7 +73,7 @@ class ReimbursementPolicyTest extends TestCase
 
     public function test_admin_is_allowed_by_before_hook(): void
     {
-        $policy = new ReimbursementPolicy();
+        $policy = new ReimbursementPolicy;
         $admin = $this->user(1, User::ROLE_ADMIN);
 
         $this->assertTrue($policy->before($admin));

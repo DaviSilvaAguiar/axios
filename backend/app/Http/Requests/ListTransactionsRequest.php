@@ -16,8 +16,8 @@ class ListTransactionsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type'     => 'nullable|in:expense_report,reimbursement',
-            'page'     => 'nullable|integer|min:1',
+            'type' => 'nullable|in:expense_report,reimbursement',
+            'page' => 'nullable|integer|min:1',
             'per_page' => 'nullable|integer|min:1|max:50',
         ];
     }

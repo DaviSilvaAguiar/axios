@@ -15,7 +15,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         DatabaseConfig::generateDatabaseNamesUsing(function (Tenant $tenant): string {
-            return config('tenancy.database.prefix') . $tenant->slug . config('tenancy.database.suffix');
+            return config('tenancy.database.prefix').$tenant->slug.config('tenancy.database.suffix');
         });
     }
 }

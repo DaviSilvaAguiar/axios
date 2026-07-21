@@ -18,9 +18,9 @@ class UpdateExpenseCategoryRequest extends FormRequest
         $id = (int) $this->route('id');
 
         return [
-            'description'  => ['sometimes', 'required', 'string', 'max:255', "unique:expense_category,description,{$id}"],
+            'description' => ['sometimes', 'required', 'string', 'max:255', "unique:expense_category,description,{$id}"],
             'erp_code' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'active'      => ['sometimes', 'boolean'],
+            'active' => ['sometimes', 'boolean'],
         ];
     }
 }

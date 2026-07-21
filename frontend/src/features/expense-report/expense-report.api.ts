@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 import { mapListarExpenseReportsResponse, mapExpenseReportResponse } from "./expense-report.mapper";
-import { expenseReportItemSchema } from "./expense-report.types";
+import { expenseReportItemResponseSchema } from "./expense-report.types";
 import type { ExpenseReportItem, ExpenseReportItemFormItem, ExpenseReport, StoreExpenseReportFormData } from "./expense-report.types";
 
 export async function listExpenseReportsApi(signal?: AbortSignal): Promise<ExpenseReport[]> {
@@ -70,7 +70,7 @@ export async function createExpenseReportItemApi(
   dados: FormData
 ): Promise<ExpenseReportItem> {
   const raw = await api.upload<unknown>(`/v1/expense-reports/${idExpenseReport}/items`, dados);
-  return expenseReportItemSchema.parse((raw as { item?: unknown })?.item ?? raw);
+  return expenseReportItemResponseSchema.parse(raw).data;
 }
 
 export async function updateExpenseReportItemApi(
@@ -92,7 +92,7 @@ export async function updateExpenseReportItemApi(
     supplier_id:        dados.supplier_id ? Number(dados.supplier_id) : null,
   };
   const raw = await api.put<unknown>(`/v1/expense-reports/${idExpenseReport}/items/${idDespesa}`, payload);
-  return expenseReportItemSchema.parse((raw as { item?: unknown })?.item ?? raw);
+  return expenseReportItemResponseSchema.parse(raw).data;
 }
 
 export async function deleteExpenseReportItemApi(

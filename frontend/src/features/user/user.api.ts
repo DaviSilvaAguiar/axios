@@ -5,7 +5,6 @@ import type {
   CriarUserFormData,
   EditarUserFormData,
   User,
-  UserResponse,
 } from "./user.types";
 
 export async function listUsersApi(
@@ -19,10 +18,10 @@ export async function listUsersApi(
 
 export async function getUserApi(id: number): Promise<User> {
   const raw = await api.get<unknown>(`/v1/users/${id}`);
-  return mapUserResponse(raw).user;
+  return mapUserResponse(raw);
 }
 
-export async function createUserApi(data: CriarUserFormData): Promise<UserResponse> {
+export async function createUserApi(data: CriarUserFormData): Promise<User> {
   const raw = await api.post<unknown>("/v1/users", data);
   return mapUserResponse(raw);
 }
@@ -30,7 +29,7 @@ export async function createUserApi(data: CriarUserFormData): Promise<UserRespon
 export async function updateUserApi(
   id: number,
   data: EditarUserFormData
-): Promise<UserResponse> {
+): Promise<User> {
   const payload: Partial<EditarUserFormData> = { ...data };
   if (!payload.password) delete payload.password;
 

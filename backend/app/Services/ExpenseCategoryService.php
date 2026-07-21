@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Exceptions\DomainException;
 use App\Models\ExpenseCategory;
 use App\Models\ReimbursementItem;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -40,7 +41,7 @@ class ExpenseCategoryService
         ExpenseCategory::findOrFail($id);
 
         if (ReimbursementItem::where('expense_category_id', $id)->exists()) {
-            abort(409, 'This category is linked to existing records and cannot be removed.');
+            throw new DomainException('This category is linked to existing records and cannot be removed.', 409);
         }
 
         ExpenseCategory::destroy($id);

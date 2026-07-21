@@ -8,8 +8,7 @@ export type { User } from "@/features/auth/auth.types";
 export const listUsersResponseSchema = paginatedSchema(userSchema);
 
 export const userResponseSchema = z.object({
-  message: z.string(),
-  user: userSchema,
+  data: userSchema,
 });
 
 const roleField = z.union([z.literal(1), z.literal(2), z.literal(3)]);
@@ -38,6 +37,5 @@ export const editarUserFormSchema = z.object({
 });
 
 export type ListarUsersResponse = z.infer<typeof listUsersResponseSchema>;
-export type UserResponse = z.infer<typeof userResponseSchema>;
 export type CriarUserFormData = z.infer<typeof createUserFormSchema>;
 export type EditarUserFormData = z.infer<typeof editarUserFormSchema>;

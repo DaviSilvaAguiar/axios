@@ -14,7 +14,7 @@ class EnsureRoleAuditor
     {
         $role = $request->user()?->role;
 
-        if (!in_array($role, [1, 2], true)) {
+        if (! in_array($role, [1, 2], true)) {
             return response()->json([
                 'message' => 'Access restricted to auditors and administrators.',
             ], 403);

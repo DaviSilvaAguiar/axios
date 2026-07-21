@@ -24,13 +24,13 @@ class FundTransactionService
             $amount = Money::fromDecimalString($data['amount']);
 
             $transaction = FundTransaction::create([
-                'user_id'     => Auth::id(),
+                'user_id' => Auth::id(),
                 'fund_id' => $fund->id,
-                'expense_report_id'       => null,
+                'expense_report_id' => null,
                 'transaction_type' => FundTransaction::TYPE_CREDITO,
-                'subtype'        => FundTransaction::SUBTYPE_ADIANTAMENTO,
-                'amount'          => $amount,
-                'notes'     => $data['notes'] ?? null,
+                'subtype' => FundTransaction::SUBTYPE_ADIANTAMENTO,
+                'amount' => $amount,
+                'notes' => $data['notes'] ?? null,
                 'transaction_date' => $data['transaction_date'],
             ]);
 
@@ -49,7 +49,7 @@ class FundTransactionService
                 ->findOrFail($fundId);
 
             $subtype = (int) $data['subtype'];
-            $amount   = Money::fromDecimalString($data['amount']);
+            $amount = Money::fromDecimalString($data['amount']);
 
             $isDebit = in_array($subtype, [
                 FundTransaction::SUBTYPE_DEVOLUCAO,
@@ -69,13 +69,13 @@ class FundTransactionService
             }
 
             $transaction = FundTransaction::create([
-                'user_id'     => Auth::id(),
+                'user_id' => Auth::id(),
                 'fund_id' => $fund->id,
-                'expense_report_id'       => null,
+                'expense_report_id' => null,
                 'transaction_type' => $type,
-                'subtype'        => $subtype,
-                'amount'          => $amount,
-                'reason'         => $data['reason'],
+                'subtype' => $subtype,
+                'amount' => $amount,
+                'reason' => $data['reason'],
                 'transaction_date' => $data['transaction_date'],
             ]);
 
@@ -102,12 +102,12 @@ class FundTransactionService
             }
 
             $transaction = FundTransaction::create([
-                'user_id'     => Auth::id(),
+                'user_id' => Auth::id(),
                 'fund_id' => $fund->id,
-                'expense_report_id'       => $expenseReportId,
+                'expense_report_id' => $expenseReportId,
                 'transaction_type' => FundTransaction::TYPE_DEBITO,
-                'subtype'        => FundTransaction::SUBTYPE_ABATIMENTO_RDC,
-                'amount'          => $amount,
+                'subtype' => FundTransaction::SUBTYPE_ABATIMENTO_RDC,
+                'amount' => $amount,
                 'transaction_date' => now(),
             ]);
 
@@ -118,6 +118,9 @@ class FundTransactionService
         });
     }
 
+    /**
+     * @return Collection<int, array<string, mixed>>
+     */
     public function statement(int $fundId): Collection
     {
         $transactions = FundTransaction::with('expenseReport:id,description')
@@ -134,15 +137,15 @@ class FundTransactionService
                 : $accumulatedBalance->subtract($t->amount);
 
             return [
-                'id'              => $t->id,
-                'transaction_date'  => $t->transaction_date,
-                'transaction_type'  => $t->transaction_type,
-                'subtype'         => $t->subtype,
-                'amount'           => $t->amount,
-                'notes'      => $t->notes,
-                'reason'          => $t->reason,
-                'expense_report_id'        => $t->expense_report_id,
-                'expense_report'           => $t->expenseReport,
+                'id' => $t->id,
+                'transaction_date' => $t->transaction_date,
+                'transaction_type' => $t->transaction_type,
+                'subtype' => $t->subtype,
+                'amount' => $t->amount,
+                'notes' => $t->notes,
+                'reason' => $t->reason,
+                'expense_report_id' => $t->expense_report_id,
+                'caixa' => $t->expenseReport,
                 'accumulated_balance' => $accumulatedBalance,
             ];
         });

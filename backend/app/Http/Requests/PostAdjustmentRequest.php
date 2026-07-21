@@ -16,10 +16,10 @@ class PostAdjustmentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'subtype'        => ['required', 'integer', 'in:3,4,5'],
-            'amount'          => ['required', 'numeric', 'min:0.01'],
+            'subtype' => ['required', 'integer', 'in:3,4,5'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
             'transaction_date' => ['required', 'date'],
-            'reason'         => ['required', 'string', 'max:500'],
+            'reason' => ['required', 'string', 'max:500'],
         ];
     }
 }

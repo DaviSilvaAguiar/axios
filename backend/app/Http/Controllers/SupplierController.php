@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\Paginates;
 use App\Http\Requests\SupplierRequest;
+use App\Http\Resources\SupplierResource;
 use App\Services\SupplierService;
 use Illuminate\Http\JsonResponse;
 
@@ -19,8 +20,10 @@ class SupplierController extends Controller
 
     public function index(): JsonResponse
     {
+        $paginator = $this->service->list($this->perPage());
+
         return response()->json(
-            $this->paginated($this->service->list($this->perPage()))
+            $this->paginated($paginator, SupplierResource::collection($paginator->items())->resolve())
         );
     }
 
@@ -28,35 +31,30 @@ class SupplierController extends Controller
     {
         $supplier = $this->service->create($request->validated());
 
-        return response()->json([
-            'message'   => 'Supplier created successfully.',
-            'supplier' => $supplier,
-        ], 201);
+        return SupplierResource::make($supplier)
+            ->additional(['message' => 'Supplier created successfully.'])
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function show(int $id): JsonResponse
     {
-        return response()->json([
-            'supplier' => $this->service->find($id),
-        ]);
+        return SupplierResource::make($this->service->find($id))->response();
     }
 
     public function update(SupplierRequest $request, int $id): JsonResponse
     {
         $supplier = $this->service->update($id, $request->validated());
 
-        return response()->json([
-            'message'   => 'Supplier updated successfully.',
-            'supplier' => $supplier,
-        ]);
+        return SupplierResource::make($supplier)
+            ->additional(['message' => 'Supplier updated successfully.'])
+            ->response();
     }
 
     public function destroy(int $id): JsonResponse
     {
         $this->service->delete($id);
 
-        return response()->json([
-            'message' => 'Supplier deleted successfully.',
-        ]);
+        return response()->json(null, 204);
     }
 }

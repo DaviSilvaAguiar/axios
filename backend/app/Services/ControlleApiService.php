@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Exceptions\IntegrationException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use RuntimeException;
 
 class ControlleApiService
 {
@@ -15,22 +15,22 @@ class ControlleApiService
 
     public function __construct()
     {
-        $this->transactionUrl = env('CONTROLLE_API_URL');
+        $this->transactionUrl = (string) config('services.controlle.url');
     }
 
     public function createTransaction(string $key, array $payload): array
     {
         Log::info('[Controlle] REQUEST', [
-            'url'           => $this->transactionUrl,
-            'key_prefix'  => substr($key, 0, 8) . '...',
-            'key_length'  => strlen($key),
-            'payload'       => $payload,
+            'url' => $this->transactionUrl,
+            'key_prefix' => substr($key, 0, 8).'...',
+            'key_length' => strlen($key),
+            'payload' => $payload,
         ]);
 
         $response = Http::withHeaders([
-                'Authorization' => "Bearer {$key}",
-                'Accept'        => 'application/json',
-            ])
+            'Authorization' => "Bearer {$key}",
+            'Accept' => 'application/json',
+        ])
             ->acceptJson()
             ->asJson()
             ->timeout(20)
@@ -38,20 +38,17 @@ class ControlleApiService
             ->post($this->transactionUrl, $payload);
 
         Log::info('[Controlle] RESPONSE', [
-            'status'   => $response->status(),
-            'headers'  => $response->headers(),
+            'status' => $response->status(),
+            'headers' => $response->headers(),
             'body_raw' => $response->body(),
         ]);
 
         if ($response->status() >= 300 && $response->status() < 400) {
-            $target = $response->header('Location') ?: '(no Location header)';
-            throw new RuntimeException(
-                "Controlle redirected ({$response->status()}) to [{$target}]. POSTs were being turned into GET — that was the reason for '200 OK' creating nothing."
-            );
+            throw new IntegrationException("Controlle returned an unexpected redirect (HTTP {$response->status()}).");
         }
 
         if ($response->failed()) {
-            throw new RuntimeException($this->errorMessage($response));
+            throw new IntegrationException($this->errorMessage($response));
         }
 
         return $response->json() ?? [];

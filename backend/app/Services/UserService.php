@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Exceptions\DomainException;
 use App\Models\ExpenseReport;
 use App\Models\Fund;
 use App\Models\FundTransaction;
@@ -25,13 +26,18 @@ class UserService
         return User::findOrFail($id);
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     *
+     * @throws DomainException
+     */
     public function create(array $data): User
     {
-        $tenant       = tenancy()->tenant;
+        $tenant = tenancy()->tenant;
         $currentTotal = User::count();
 
         if ($currentTotal >= $tenant->max_users) {
-            abort(422, "Limit of {$tenant->max_users} users reached for this company.");
+            throw new DomainException("Limit of {$tenant->max_users} users reached for this company.", 422);
         }
 
         $user = User::create($data)->fresh();
@@ -44,6 +50,9 @@ class UserService
         return $user;
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function update(int $id, array $data): User
     {
         $user = User::findOrFail($id);
@@ -52,6 +61,9 @@ class UserService
         return $user->fresh();
     }
 
+    /**
+     * @throws DomainException
+     */
     public function delete(int $id): void
     {
         User::findOrFail($id);
@@ -62,30 +74,38 @@ class UserService
             || FundTransaction::where('user_id', $id)->exists();
 
         if ($linked) {
-            abort(409, 'This user is linked to existing records and cannot be removed.');
+            throw new DomainException('This user is linked to existing records and cannot be removed.', 409);
         }
 
         UserModule::where('user_id', $id)->delete();
         User::destroy($id);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function listModules(int $id): array
     {
-        $all     = Module::where('active', true)->get();
+        $all = Module::where('active', true)->get();
         $enabled = UserModule::where('user_id', $id)->pluck('module_id')->all();
 
         return [
             'modules' => $all,
-            'enabled' => $enabled,
+            'habilitados' => $enabled,
         ];
     }
 
+    /**
+     * @param  array<int, int>  $moduleIds
+     *
+     * @throws DomainException
+     */
     public function syncModules(int $id, array $moduleIds): void
     {
         $user = User::findOrFail($id);
 
         if ($user->isAdmin()) {
-            abort(422, 'Administrator users automatically have access to all modules.');
+            throw new DomainException('Administrator users automatically have access to all modules.', 422);
         }
 
         UserModule::where('user_id', $id)->delete();
@@ -94,6 +114,9 @@ class UserService
         }
     }
 
+    /**
+     * @return array<int, string>
+     */
     public function moduleSlugs(int $id): array
     {
         $moduleIds = UserModule::where('user_id', $id)->pluck('module_id');

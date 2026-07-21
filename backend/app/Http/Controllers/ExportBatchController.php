@@ -6,7 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\Paginates;
 use App\Http\Requests\GenerateExportBatchRequest;
-use App\Models\ExportBatch;
+use App\Http\Resources\BatchHistoryResource;
 use App\Services\ExportBatchService;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -30,9 +30,9 @@ class ExportBatchController extends Controller
 
         return response()->json([
             'message' => 'Export file generated successfully!',
-            'data'    => [
-                'batch_id'      => $batch->id,
-                'total_amount'  => $batch->total_amount,
+            'data' => [
+                'batch_id' => $batch->id,
+                'total_amount' => $batch->total_amount,
                 'file_name' => $batch->file_name,
                 'download_url' => "/v1/export/lotes/{$batch->id}/download",
             ],
@@ -68,17 +68,9 @@ class ExportBatchController extends Controller
     {
         $paginator = $this->exportService->getHistory($this->perPage());
 
-        $items = collect($paginator->items())
-            ->map(function (ExportBatch $batch) {
-                $batch->download_url = $batch->file_path
-                    ? "/v1/export/lotes/{$batch->id}/download"
-                    : null;
-                return $batch;
-            })
-            ->values()
-            ->all();
-
-        return response()->json($this->paginated($paginator, $items));
+        return response()->json(
+            $this->paginated($paginator, BatchHistoryResource::collection($paginator->items())->resolve())
+        );
     }
 
     public function templates(): JsonResponse

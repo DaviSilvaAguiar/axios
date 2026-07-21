@@ -32,7 +32,7 @@ class FundService
     {
         $fund = Fund::create([
             ...$data,
-            'balance'  => 0,
+            'balance' => 0,
             'status' => Fund::STATUS_ACTIVE,
         ]);
 
@@ -53,7 +53,7 @@ class FundService
         $fund = Fund::findOrFail($id);
         Gate::authorize('manage', $fund);
 
-        if (!$fund->balance->isZero()) {
+        if (! $fund->balance->isZero()) {
             throw ValidationException::withMessages([
                 'balance' => ['The fund can only be closed with a balance of R$ 0.00.'],
             ]);

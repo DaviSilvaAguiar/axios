@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\Paginates;
 use App\Http\Requests\StoreExpenseCategoryRequest;
 use App\Http\Requests\UpdateExpenseCategoryRequest;
+use App\Http\Resources\ExpenseCategoryResource;
 use App\Services\ExpenseCategoryService;
 use Illuminate\Http\JsonResponse;
 
@@ -20,48 +21,41 @@ class ExpenseCategoryController extends Controller
 
     public function index(): JsonResponse
     {
+        $paginator = $this->service->list($this->perPage());
+
         return response()->json(
-            $this->paginated($this->service->list($this->perPage()))
+            $this->paginated($paginator, ExpenseCategoryResource::collection($paginator->items())->resolve())
         );
     }
 
     public function store(StoreExpenseCategoryRequest $request): JsonResponse
     {
-        $data = $request->validated();
+        $category = $this->service->create($request->validated());
 
-        $category = $this->service->create($data);
-
-        return response()->json([
-            'message'           => 'Expense category created successfully.',
-            'expense_category'  => $category,
-        ], 201);
+        return ExpenseCategoryResource::make($category)
+            ->additional(['message' => 'Expense category created successfully.'])
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function show(int $id): JsonResponse
     {
-        return response()->json([
-            'expense_category' => $this->service->find($id),
-        ]);
+        return ExpenseCategoryResource::make($this->service->find($id))->response();
     }
 
     public function update(UpdateExpenseCategoryRequest $request, int $id): JsonResponse
     {
-        $data = $request->validated();
+        $category = $this->service->update($id, $request->validated());
 
-        $category = $this->service->update($id, $data);
-
-        return response()->json([
-            'message'           => 'Expense category updated successfully.',
-            'expense_category'  => $category,
-        ]);
+        return ExpenseCategoryResource::make($category)
+            ->additional(['message' => 'Expense category updated successfully.'])
+            ->response();
     }
 
     public function destroy(int $id): JsonResponse
     {
         $this->service->delete($id);
 
-        return response()->json([
-            'message' => 'Expense category deleted successfully.',
-        ]);
+        return response()->json(null, 204);
     }
 }

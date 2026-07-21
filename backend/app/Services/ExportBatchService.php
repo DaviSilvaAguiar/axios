@@ -8,6 +8,7 @@ use App\Factories\ExportHandlerFactory;
 use App\Models\ExpenseReport;
 use App\Models\ExportBatch;
 use App\Models\Reimbursement;
+use App\Support\Money;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
@@ -21,23 +22,23 @@ use UnexpectedValueException;
 class ExportBatchService
 {
     private const STATUS_EXPENSE_REPORT_LABEL = [
-        ExpenseReport::STATUS_DRAFT           => 'Draft',
-        ExpenseReport::STATUS_PENDING           => 'Pending',
-        ExpenseReport::STATUS_UNDER_REVIEW         => 'Under Review',
-        ExpenseReport::STATUS_APPROVED           => 'Approved',
+        ExpenseReport::STATUS_DRAFT => 'Draft',
+        ExpenseReport::STATUS_PENDING => 'Pending',
+        ExpenseReport::STATUS_UNDER_REVIEW => 'Under Review',
+        ExpenseReport::STATUS_APPROVED => 'Approved',
         ExpenseReport::STATUS_PAYMENT_SCHEDULED => 'Payment Scheduled',
-        ExpenseReport::STATUS_PAID               => 'Paid',
-        ExpenseReport::STATUS_REJECTED          => 'Rejected',
+        ExpenseReport::STATUS_PAID => 'Paid',
+        ExpenseReport::STATUS_REJECTED => 'Rejected',
     ];
 
     private const STATUS_REIMBURSEMENT_LABEL = [
-        Reimbursement::STATUS_REQUESTED         => 'Draft',
-        Reimbursement::STATUS_PENDING           => 'Pending',
-        Reimbursement::STATUS_UNDER_REVIEW         => 'Under Review',
-        Reimbursement::STATUS_APPROVED           => 'Approved',
+        Reimbursement::STATUS_REQUESTED => 'Draft',
+        Reimbursement::STATUS_PENDING => 'Pending',
+        Reimbursement::STATUS_UNDER_REVIEW => 'Under Review',
+        Reimbursement::STATUS_APPROVED => 'Approved',
         Reimbursement::STATUS_PAYMENT_SCHEDULED => 'Payment Scheduled',
-        Reimbursement::STATUS_PAID               => 'Paid',
-        Reimbursement::STATUS_REJECTED          => 'Rejected',
+        Reimbursement::STATUS_PAID => 'Paid',
+        Reimbursement::STATUS_REJECTED => 'Rejected',
     ];
 
     public function generateBatch(
@@ -54,11 +55,11 @@ class ExportBatchService
             }
 
             $batch = ExportBatch::create([
-                'user_id'         => $idUser,
-                'batch_type'          => $batchType,
+                'user_id' => $idUser,
+                'batch_type' => $batchType,
                 'template_used' => $templateUsed,
-                'total_amount'        => $this->calculateTotalAmount($batchType, $documents),
-                'item_count'   => $documents->count(),
+                'total_amount' => $this->calculateTotalAmount($batchType, $documents),
+                'item_count' => $documents->count(),
             ]);
 
             $this->modelForType($batchType)::query()
@@ -73,7 +74,7 @@ class ExportBatchService
             $filePath = $handler->generate($documents, $batch->id);
 
             $batch->update([
-                'file_name'    => basename($filePath),
+                'file_name' => basename($filePath),
                 'file_path' => $filePath,
             ]);
         } catch (Throwable $e) {
@@ -99,15 +100,15 @@ class ExportBatchService
 
         $items = collect($paginator->items())
             ->map(fn (ExpenseReport $expenseReport) => [
-                'id'            => $expenseReport->id,
-                'identifier' => 'RDC-' . str_pad((string) $expenseReport->id, 4, '0', STR_PAD_LEFT),
-                'description'     => $expenseReport->description,
-                'provider'     => $expenseReport->user?->name ?? '—',
-                'cost_center'  => $expenseReport->costCenter?->description,
-                'amount'         => $expenseReport->total(),
-                'date'          => optional($expenseReport->created_at)->toIso8601String(),
-                'status'        => self::STATUS_EXPENSE_REPORT_LABEL[$expenseReport->status] ?? 'Unknown',
-                'type'          => ExportBatch::TYPE_EXPENSE_REPORT,
+                'id' => $expenseReport->id,
+                'identifier' => 'RDC-'.str_pad((string) $expenseReport->id, 4, '0', STR_PAD_LEFT),
+                'description' => $expenseReport->description,
+                'provider' => $expenseReport->user?->name ?? '—',
+                'cost_center' => $expenseReport->costCenter?->description,
+                'amount' => $expenseReport->total(),
+                'date' => optional($expenseReport->created_at)->toIso8601String(),
+                'status' => self::STATUS_EXPENSE_REPORT_LABEL[$expenseReport->status] ?? 'Unknown',
+                'type' => ExportBatch::TYPE_EXPENSE_REPORT,
             ])
             ->values()
             ->all();
@@ -125,15 +126,15 @@ class ExportBatchService
 
         $items = collect($paginator->items())
             ->map(fn (Reimbursement $reimbursement) => [
-                'id'            => $reimbursement->id,
-                'identifier' => 'RCM-' . str_pad((string) $reimbursement->id, 4, '0', STR_PAD_LEFT),
-                'description'     => $reimbursement->title,
-                'provider'     => $reimbursement->user?->name ?? '—',
-                'cost_center'  => null,
-                'amount'         => $reimbursement->total(),
-                'date'          => optional($reimbursement->created_at)->toIso8601String(),
-                'status'        => self::STATUS_REIMBURSEMENT_LABEL[$reimbursement->status] ?? 'Unknown',
-                'type'          => ExportBatch::TYPE_REIMBURSEMENT,
+                'id' => $reimbursement->id,
+                'identifier' => 'RCM-'.str_pad((string) $reimbursement->id, 4, '0', STR_PAD_LEFT),
+                'description' => $reimbursement->title,
+                'provider' => $reimbursement->user?->name ?? '—',
+                'cost_center' => null,
+                'amount' => $reimbursement->total(),
+                'date' => optional($reimbursement->created_at)->toIso8601String(),
+                'status' => self::STATUS_REIMBURSEMENT_LABEL[$reimbursement->status] ?? 'Unknown',
+                'type' => ExportBatch::TYPE_REIMBURSEMENT,
             ])
             ->values()
             ->all();
@@ -146,7 +147,7 @@ class ExportBatchService
         $expenseReportQuery = ExpenseReport::where('status', ExpenseReport::STATUS_APPROVED)
             ->whereNull('export_batch_id');
 
-        $expenseReportCount  = (int) (clone $expenseReportQuery)->count();
+        $expenseReportCount = (int) (clone $expenseReportQuery)->count();
         $expenseReportAmount = Money::fromDecimalString((string) (clone $expenseReportQuery)
             ->join('expense_report_item', 'expense_report.id', '=', 'expense_report_item.expense_report_id')
             ->sum(DB::raw('COALESCE(expense_report_item.amount, COALESCE(expense_report_item.unit_amount, 0) * COALESCE(expense_report_item.quantity, 1))')));
@@ -154,14 +155,14 @@ class ExportBatchService
         $reimbursementQuery = Reimbursement::whereIn('status', [Reimbursement::STATUS_APPROVED, Reimbursement::STATUS_PAYMENT_SCHEDULED])
             ->whereNull('export_batch_id');
 
-        $reimbursementCount  = (int) (clone $reimbursementQuery)->count();
+        $reimbursementCount = (int) (clone $reimbursementQuery)->count();
         $reimbursementAmount = Money::fromDecimalString((string) (clone $reimbursementQuery)
             ->join('reimbursement_item', 'reimbursement.id', '=', 'reimbursement_item.reimbursement_id')
             ->sum(DB::raw('COALESCE(reimbursement_item.amount, 0)')));
 
         return [
             'expense_report' => ['quantity' => $expenseReportCount, 'amount' => $expenseReportAmount],
-            'reimbursement'  => ['quantity' => $reimbursementCount, 'amount' => $reimbursementAmount],
+            'reimbursement' => ['quantity' => $reimbursementCount, 'amount' => $reimbursementAmount],
         ];
     }
 
@@ -176,7 +177,7 @@ class ExportBatchService
     {
         $batch = ExportBatch::findOrFail($batchId);
 
-        if (!$batch->file_path || !Storage::disk('public')->exists($batch->file_path)) {
+        if (! $batch->file_path || ! Storage::disk('public')->exists($batch->file_path)) {
             throw new UnexpectedValueException('Export file not found.');
         }
 
@@ -191,10 +192,10 @@ class ExportBatchService
         $templates = Config::get('export.templates', []);
 
         return array_map(static fn (array $t): array => [
-            'code'    => $t['code'],
-            'name'      => $t['name'],
+            'code' => $t['code'],
+            'name' => $t['name'],
             'description' => $t['description'],
-            'type'      => $t['type'],
+            'type' => $t['type'],
         ], $templates);
     }
 
@@ -228,9 +229,9 @@ class ExportBatchService
     private function modelForType(string $batchType): string
     {
         return match ($batchType) {
-            ExportBatch::TYPE_EXPENSE_REPORT     => ExpenseReport::class,
+            ExportBatch::TYPE_EXPENSE_REPORT => ExpenseReport::class,
             ExportBatch::TYPE_REIMBURSEMENT => Reimbursement::class,
-            default                        => throw new UnexpectedValueException("Invalid batch type: {$batchType}"),
+            default => throw new UnexpectedValueException("Invalid batch type: {$batchType}"),
         };
     }
 }

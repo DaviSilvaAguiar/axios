@@ -14,7 +14,7 @@ interface Props {
 export default function IntegrationSelector({ integrations, onSelect, loading }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const configured = integrations.find((i) => i.configurada);
+  const configured = integrations.find((i) => i.configured);
 
   useEffect(() => {
     if (!open) return;
@@ -82,7 +82,7 @@ export default function IntegrationSelector({ integrations, onSelect, loading }:
                       }}
                       className={[
                         "w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-app-hover transition-colors cursor-pointer",
-                        i.configurada ? "bg-brand/[0.04]" : "",
+                        i.configured ? "bg-brand/[0.04]" : "",
                       ].join(" ")}
                     >
                       <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#eef0f3] shrink-0">
@@ -91,12 +91,12 @@ export default function IntegrationSelector({ integrations, onSelect, loading }:
                       <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                         <span className="text-body-sm text-app-text font-semibold">{i.name}</span>
                         <span className="text-small text-app-text-muted font-normal leading-snug">
-                          {i.configurada
+                          {i.configured
                             ? "Token configured — click to update"
                             : "Awaiting token — click to configure"}
                         </span>
                       </div>
-                      {i.configurada && (
+                      {i.configured && (
                         <CheckCircle size={16} weight="fill" className="text-brand shrink-0 mt-0.5" />
                       )}
                     </button>

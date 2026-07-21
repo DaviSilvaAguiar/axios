@@ -6,14 +6,13 @@ namespace App\Services;
 
 use App\Models\ExpenseReport;
 use App\Models\ExpenseReportItem;
-use App\Models\User;
-use Illuminate\Support\Facades\Gate;
 use App\Services\Concerns\ResolvesRequester;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 class ExpenseReportService
@@ -60,7 +59,7 @@ class ExpenseReportService
         $expenseReport = ExpenseReport::create([
             ...$data,
             'user_id' => Auth::id(),
-            'status'     => ExpenseReport::STATUS_DRAFT,
+            'status' => ExpenseReport::STATUS_DRAFT,
         ]);
 
         return $expenseReport->load(['costCenter', 'requesterUser']);
@@ -77,7 +76,7 @@ class ExpenseReportService
         $expenseReport = ExpenseReport::findOrFail($id);
         Gate::authorize('update', $expenseReport);
 
-        $editingContent = !empty(array_intersect(array_keys($data), self::CONTENT_FIELDS));
+        $editingContent = ! empty(array_intersect(array_keys($data), self::CONTENT_FIELDS));
         if ($editingContent && $expenseReport->status !== ExpenseReport::STATUS_DRAFT) {
             throw ValidationException::withMessages([
                 'status' => ['Only an expense report in "Draft" can be edited.'],
@@ -129,7 +128,7 @@ class ExpenseReportService
             Gate::authorize('approve', $expenseReport);
 
             $approvableStatuses = [ExpenseReport::STATUS_PENDING, ExpenseReport::STATUS_UNDER_REVIEW];
-            if (!in_array($expenseReport->status, $approvableStatuses, true)) {
+            if (! in_array($expenseReport->status, $approvableStatuses, true)) {
                 throw ValidationException::withMessages([
                     'status' => ['Only an expense report in "Pending" or "Under Review" can be approved.'],
                 ]);
@@ -165,7 +164,7 @@ class ExpenseReportService
             $pdfBytes,
             200,
             [
-                'Content-Type'        => 'application/pdf',
+                'Content-Type' => 'application/pdf',
                 'Content-Disposition' => "inline; filename=\"rdc-{$id}.pdf\"",
             ]
         );

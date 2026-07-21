@@ -1,5 +1,5 @@
-import { leadResponseSchema, type LeadResponse } from "./landing.types";
+import { leadResponseSchema, type Lead } from "./landing.types";
 
-export function mapLeadResponse(raw: unknown): LeadResponse {
-  return leadResponseSchema.parse(raw);
+export function mapLeadResponse(raw: unknown): Lead {
+  return leadResponseSchema.parse(raw).data;
 }

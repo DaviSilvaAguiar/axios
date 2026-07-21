@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreDocumentTypeRequest;
 use App\Http\Requests\UpdateDocumentTypeRequest;
+use App\Http\Resources\DocumentTypeResource;
 use App\Services\DocumentTypeService;
 use Illuminate\Http\JsonResponse;
 
@@ -17,22 +18,33 @@ class DocumentTypeController extends Controller
 
     public function index(): JsonResponse
     {
-        return response()->json($this->service->list());
+        return response()->json([
+            'data' => DocumentTypeResource::collection($this->service->list())->resolve(),
+        ]);
     }
 
     public function show(int $id): JsonResponse
     {
-        return response()->json($this->service->find($id));
+        return DocumentTypeResource::make($this->service->find($id))->response();
     }
 
     public function store(StoreDocumentTypeRequest $request): JsonResponse
     {
-        return response()->json($this->service->create($request->validated()), 201);
+        $documentType = $this->service->create($request->validated());
+
+        return DocumentTypeResource::make($documentType)
+            ->additional(['message' => 'Document type created successfully.'])
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function update(UpdateDocumentTypeRequest $request, int $id): JsonResponse
     {
-        return response()->json($this->service->update($id, $request->validated()));
+        $documentType = $this->service->update($id, $request->validated());
+
+        return DocumentTypeResource::make($documentType)
+            ->additional(['message' => 'Document type updated successfully.'])
+            ->response();
     }
 
     public function destroy(int $id): JsonResponse

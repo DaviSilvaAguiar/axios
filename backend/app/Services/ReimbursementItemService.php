@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Exceptions\DomainException;
+use App\Models\Reimbursement;
 use App\Models\ReimbursementAttachment;
 use App\Models\ReimbursementItem;
-use App\Models\Reimbursement;
-use Illuminate\Support\Carbon;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -19,7 +20,7 @@ class ReimbursementItemService
         $reimbursement = Reimbursement::findOrFail($idReimbursement);
 
         if ($reimbursement->status !== Reimbursement::STATUS_REQUESTED) {
-            abort(409, 'Only reimbursements with status "Draft" can have their items changed.');
+            throw new DomainException('Only reimbursements with status "Draft" can have their items changed.', 409);
         }
 
         return $reimbursement;
@@ -32,11 +33,11 @@ class ReimbursementItemService
         }
 
         $itemDate = Carbon::parse($date)->startOfDay();
-        $start    = $reimbursement->period_start_date->copy()->startOfDay();
-        $end      = $reimbursement->period_end_date->copy()->startOfDay();
+        $start = $reimbursement->period_start_date->copy()->startOfDay();
+        $end = $reimbursement->period_end_date->copy()->startOfDay();
 
         if ($itemDate->lt($start) || $itemDate->gt($end)) {
-            abort(422, 'The expense date must be within the reimbursement period.');
+            throw new DomainException('The expense date must be within the reimbursement period.');
         }
     }
 
@@ -46,25 +47,25 @@ class ReimbursementItemService
         $this->ensureDateWithinPeriod($reimbursement, $data['expense_date']);
 
         $item = ReimbursementItem::create([
-            'reimbursement_id'               => $idReimbursement,
-            'cost_center_id'      => $data['cost_center_id'],
-            'description'            => $data['description'],
-            'amount'                => $data['amount'],
-            'expense_date'         => $data['expense_date'],
+            'reimbursement_id' => $idReimbursement,
+            'cost_center_id' => $data['cost_center_id'],
+            'description' => $data['description'],
+            'amount' => $data['amount'],
+            'expense_date' => $data['expense_date'],
             'expense_category_id' => $data['expense_category_id'] ?? null,
-            'latitude'             => $data['latitude']  ?? null,
-            'longitude'            => $data['longitude'] ?? null,
-            'address'             => $data['address']  ?? null,
+            'latitude' => $data['latitude'] ?? null,
+            'longitude' => $data['longitude'] ?? null,
+            'address' => $data['address'] ?? null,
             'supplier_description' => $data['supplier_description'] ?? null,
-            'supplier_tax_id'  => $data['supplier_tax_id']  ?? null,
-            'supplier_id'        => $data['supplier_id']        ?? null,
+            'supplier_tax_id' => $data['supplier_tax_id'] ?? null,
+            'supplier_id' => $data['supplier_id'] ?? null,
         ]);
 
         foreach ($attachments as $file) {
             $path = $file->store("reimbursement-attachments/{$idReimbursement}", 'public');
             ReimbursementAttachment::create([
                 'reimbursement_item_id' => $item->id,
-                'path'        => $path,
+                'path' => $path,
             ]);
         }
 
@@ -88,7 +89,7 @@ class ReimbursementItemService
 
         return ReimbursementAttachment::create([
             'reimbursement_item_id' => $item->id,
-            'path'        => $path,
+            'path' => $path,
         ]);
     }
 
@@ -129,17 +130,17 @@ class ReimbursementItemService
         $item = ReimbursementItem::where('reimbursement_id', $idReimbursement)->findOrFail($itemId);
 
         $item->update([
-            'expense_date'         => $data['expense_date'],
-            'amount'                => $data['amount'],
-            'cost_center_id'      => $data['cost_center_id'],
-            'description'            => $data['description'],
+            'expense_date' => $data['expense_date'],
+            'amount' => $data['amount'],
+            'cost_center_id' => $data['cost_center_id'],
+            'description' => $data['description'],
             'expense_category_id' => $data['expense_category_id'] ?? null,
-            'latitude'             => $data['latitude']  ?? null,
-            'longitude'            => $data['longitude'] ?? null,
-            'address'             => $data['address']  ?? null,
+            'latitude' => $data['latitude'] ?? null,
+            'longitude' => $data['longitude'] ?? null,
+            'address' => $data['address'] ?? null,
             'supplier_description' => $data['supplier_description'] ?? null,
-            'supplier_tax_id'  => $data['supplier_tax_id']  ?? null,
-            'supplier_id'        => $data['supplier_id']        ?? null,
+            'supplier_tax_id' => $data['supplier_tax_id'] ?? null,
+            'supplier_id' => $data['supplier_id'] ?? null,
         ]);
 
         return $item->load(['costCenter', 'expenseCategory', 'attachments']);
@@ -170,7 +171,7 @@ class ReimbursementItemService
 
         return ReimbursementAttachment::create([
             'reimbursement_item_id' => $item->id,
-            'path'        => $path,
+            'path' => $path,
         ]);
     }
 }

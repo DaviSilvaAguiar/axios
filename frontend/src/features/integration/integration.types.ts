@@ -3,7 +3,7 @@ import { z } from "zod";
 export const integrationSchema = z.object({
   id:          z.number(),
   name:        z.string(),
-  configurada: z.boolean(),
+  configured:  z.boolean(),
 });
 export type Integration = z.infer<typeof integrationSchema>;
 
@@ -30,7 +30,7 @@ export const sendIntegrationFalhaSchema = z.object({
 export const sendIntegrationResponseSchema = z.object({
   message: z.string(),
   data: z.object({
-    lote_id:  z.number().nullable(),
+    batch_id:  z.number().nullable(),
     successes: z.number(),
     failures:   z.array(sendIntegrationFalhaSchema),
   }),

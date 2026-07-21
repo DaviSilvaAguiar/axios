@@ -12,8 +12,10 @@ class User extends Authenticatable
 {
     use HasApiTokens, Notifiable;
 
-    public const ROLE_ADMIN    = 1;
-    public const ROLE_AUDITOR  = 2;
+    public const ROLE_ADMIN = 1;
+
+    public const ROLE_AUDITOR = 2;
+
     public const ROLE_PROVIDER = 3;
 
     protected $fillable = [
@@ -32,8 +34,8 @@ class User extends Authenticatable
 
     protected $casts = [
         'role' => 'integer',
-        'password'  => 'hashed',
-        'active'  => 'boolean',
+        'password' => 'hashed',
+        'active' => 'boolean',
     ];
 
     public function getAuthPasswordName(): string

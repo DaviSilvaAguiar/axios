@@ -9,7 +9,6 @@ import type {
   ConsultaCnpjData,
   Supplier,
   SupplierFormData,
-  SupplierResponse,
 } from "./supplier.types";
 
 export async function listSupplieresApi(
@@ -28,10 +27,10 @@ export async function listSupplieresAtivosApi(signal?: AbortSignal): Promise<Sup
 
 export async function getSupplierApi(id: number): Promise<Supplier> {
   const raw = await api.get<unknown>(`/v1/suppliers/${id}`);
-  return mapSupplierResponse(raw).supplier;
+  return mapSupplierResponse(raw);
 }
 
-export async function createSupplierApi(data: SupplierFormData): Promise<SupplierResponse> {
+export async function createSupplierApi(data: SupplierFormData): Promise<Supplier> {
   const raw = await api.post<unknown>("/v1/suppliers", data);
   return mapSupplierResponse(raw);
 }
@@ -39,7 +38,7 @@ export async function createSupplierApi(data: SupplierFormData): Promise<Supplie
 export async function updateSupplierApi(
   id: number,
   data: Partial<SupplierFormData>
-): Promise<SupplierResponse> {
+): Promise<Supplier> {
   const raw = await api.put<unknown>(`/v1/suppliers/${id}`, data);
   return mapSupplierResponse(raw);
 }

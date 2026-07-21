@@ -13,13 +13,18 @@ class FundTransaction extends Model
     protected $table = 'fund_transaction';
 
     public const TYPE_CREDITO = 1;
-    public const TYPE_DEBITO  = 2;
 
-    public const SUBTYPE_ADIANTAMENTO     = 1;
-    public const SUBTYPE_ABATIMENTO_RDC   = 2;
-    public const SUBTYPE_DEVOLUCAO        = 3;
-    public const SUBTYPE_AJUSTE_POSITIVO  = 4;
-    public const SUBTYPE_AJUSTE_NEGATIVO  = 5;
+    public const TYPE_DEBITO = 2;
+
+    public const SUBTYPE_ADIANTAMENTO = 1;
+
+    public const SUBTYPE_ABATIMENTO_RDC = 2;
+
+    public const SUBTYPE_DEVOLUCAO = 3;
+
+    public const SUBTYPE_AJUSTE_POSITIVO = 4;
+
+    public const SUBTYPE_AJUSTE_NEGATIVO = 5;
 
     protected $fillable = [
         'user_id',
@@ -34,10 +39,10 @@ class FundTransaction extends Model
     ];
 
     protected $casts = [
-        'transaction_type'  => 'integer',
-        'subtype'         => 'integer',
-        'amount'           => MoneyCast::class,
-        'transaction_date'  => 'datetime',
+        'transaction_type' => 'integer',
+        'subtype' => 'integer',
+        'amount' => MoneyCast::class,
+        'transaction_date' => 'datetime',
     ];
 
     public function user(): BelongsTo

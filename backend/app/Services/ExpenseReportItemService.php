@@ -35,8 +35,8 @@ class ExpenseReportItemService
         }
 
         $itemDate = Carbon::parse($date)->startOfDay();
-        $start    = $expenseReport->period_start_date->copy()->startOfDay();
-        $end      = $expenseReport->period_end_date->copy()->startOfDay();
+        $start = $expenseReport->period_start_date->copy()->startOfDay();
+        $end = $expenseReport->period_end_date->copy()->startOfDay();
 
         if ($itemDate->lt($start) || $itemDate->gt($end)) {
             throw ValidationException::withMessages([
@@ -51,18 +51,18 @@ class ExpenseReportItemService
         $this->ensureDateWithinPeriod($expenseReport, $data['expense_date']);
 
         $item = ExpenseReportItem::create([
-            'expense_report_id'             => $idExpenseReport,
-            'cost_center_id'      => $data['cost_center_id'],
-            'description'            => $data['description'],
-            'amount'                => $data['amount'],
-            'expense_date'         => $data['expense_date'],
+            'expense_report_id' => $idExpenseReport,
+            'cost_center_id' => $data['cost_center_id'],
+            'description' => $data['description'],
+            'amount' => $data['amount'],
+            'expense_date' => $data['expense_date'],
             'expense_category_id' => $data['expense_category_id'] ?? null,
-            'latitude'             => $data['latitude']  ?? null,
-            'longitude'            => $data['longitude'] ?? null,
-            'address'             => $data['address']  ?? null,
+            'latitude' => $data['latitude'] ?? null,
+            'longitude' => $data['longitude'] ?? null,
+            'address' => $data['address'] ?? null,
             'supplier_description' => $data['supplier_description'] ?? null,
-            'supplier_tax_id'  => $data['supplier_tax_id']  ?? null,
-            'supplier_id'        => $data['supplier_id']        ?? null,
+            'supplier_tax_id' => $data['supplier_tax_id'] ?? null,
+            'supplier_id' => $data['supplier_id'] ?? null,
         ]);
 
         foreach ($files as $file) {
@@ -70,7 +70,7 @@ class ExpenseReportItemService
                 $path = $file->store("expense-report-attachments/{$idExpenseReport}", 'public');
                 ExpenseReportItemAttachment::create([
                     'expense_report_item_id' => $item->id,
-                    'path'          => $path,
+                    'path' => $path,
                 ]);
             }
         }
@@ -85,17 +85,17 @@ class ExpenseReportItemService
         $item = ExpenseReportItem::where('expense_report_id', $idExpenseReport)->findOrFail($itemId);
 
         $item->update([
-            'cost_center_id'      => $data['cost_center_id'],
-            'description'            => $data['description'],
-            'amount'                => $data['amount'],
-            'expense_date'         => $data['expense_date'],
+            'cost_center_id' => $data['cost_center_id'],
+            'description' => $data['description'],
+            'amount' => $data['amount'],
+            'expense_date' => $data['expense_date'],
             'expense_category_id' => $data['expense_category_id'] ?? null,
-            'latitude'             => $data['latitude']  ?? null,
-            'longitude'            => $data['longitude'] ?? null,
-            'address'             => $data['address']  ?? null,
+            'latitude' => $data['latitude'] ?? null,
+            'longitude' => $data['longitude'] ?? null,
+            'address' => $data['address'] ?? null,
             'supplier_description' => $data['supplier_description'] ?? null,
-            'supplier_tax_id'  => $data['supplier_tax_id']  ?? null,
-            'supplier_id'        => $data['supplier_id']        ?? null,
+            'supplier_tax_id' => $data['supplier_tax_id'] ?? null,
+            'supplier_id' => $data['supplier_id'] ?? null,
         ]);
 
         return $item->load(['costCenter', 'expenseCategory', 'attachments']);
@@ -110,7 +110,7 @@ class ExpenseReportItemService
 
         return ExpenseReportItemAttachment::create([
             'expense_report_item_id' => $item->id,
-            'path'          => $path,
+            'path' => $path,
         ]);
     }
 

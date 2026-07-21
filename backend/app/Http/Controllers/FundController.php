@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreFundRequest;
 use App\Http\Requests\UpdateFundRequest;
+use App\Http\Resources\FundResource;
 use App\Models\Fund;
 use App\Services\FundService;
 use App\Services\FundTransactionService;
@@ -25,27 +26,42 @@ class FundController extends Controller
             ? Fund::STATUS_CLOSED
             : Fund::STATUS_ACTIVE;
 
-        return response()->json($this->service->list($status));
+        return response()->json([
+            'data' => FundResource::collection($this->service->list($status))->resolve(),
+        ]);
     }
 
     public function show(int $id): JsonResponse
     {
-        return response()->json($this->service->find($id));
+        return FundResource::make($this->service->find($id))->response();
     }
 
     public function store(StoreFundRequest $request): JsonResponse
     {
-        return response()->json($this->service->create($request->validated()), 201);
+        $fund = $this->service->create($request->validated());
+
+        return FundResource::make($fund)
+            ->additional(['message' => 'Fund created successfully.'])
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function update(UpdateFundRequest $request, int $id): JsonResponse
     {
-        return response()->json($this->service->update($id, $request->validated()));
+        $fund = $this->service->update($id, $request->validated());
+
+        return FundResource::make($fund)
+            ->additional(['message' => 'Fund updated successfully.'])
+            ->response();
     }
 
     public function close(int $id): JsonResponse
     {
-        return response()->json($this->service->close($id));
+        $fund = $this->service->close($id);
+
+        return FundResource::make($fund)
+            ->additional(['message' => 'Fund closed successfully.'])
+            ->response();
     }
 
     public function statement(int $id): JsonResponse
@@ -53,8 +69,10 @@ class FundController extends Controller
         $fund = $this->service->find($id);
 
         return response()->json([
-            'fund' => $fund,
-            'transactions'  => $this->transactionService->statement($id),
+            'data' => [
+                'fund' => FundResource::make($fund)->resolve(),
+                'transactions' => $this->transactionService->statement($id),
+            ],
         ]);
     }
 }
