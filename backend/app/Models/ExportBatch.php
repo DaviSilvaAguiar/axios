@@ -15,7 +15,7 @@ class ExportBatch extends Model
 
     public const TYPE_REIMBURSEMENT = 'REIMBURSEMENT';
 
-    protected $table = 'lote_export';
+    protected $table = 'export_batch';
 
     protected $fillable = [
         'user_id',
