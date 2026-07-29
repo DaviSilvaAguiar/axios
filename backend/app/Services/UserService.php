@@ -58,6 +58,13 @@ class UserService
         $user = User::findOrFail($id);
         $user->update($data);
 
+        $deactivated = array_key_exists('active', $data) && ! $user->active;
+        $passwordChanged = array_key_exists('password', $data);
+
+        if ($deactivated || $passwordChanged) {
+            $user->tokens()->delete();
+        }
+
         return $user->fresh();
     }
 
@@ -106,6 +113,14 @@ class UserService
 
         if ($user->isAdmin()) {
             throw new DomainException('Administrator users automatically have access to all modules.', 422);
+        }
+
+        $moduleIds = array_values(array_unique(array_map('intval', $moduleIds)));
+        $existingIds = Module::whereIn('id', $moduleIds)->pluck('id')->all();
+        $unknownIds = array_diff($moduleIds, $existingIds);
+
+        if ($unknownIds !== []) {
+            throw new DomainException('Unknown module: '.implode(', ', $unknownIds).'.', 422);
         }
 
         UserModule::where('user_id', $id)->delete();

@@ -10,8 +10,8 @@ use Illuminate\Support\Facades\DB;
 class ModuleSeeder extends Seeder
 {
     public const MODULES = [
-        ['id' => 1, 'name' => 'Expense Reports', 'slug' => 'rdc', 'description' => 'Cash expense reports and advances.'],
-        ['id' => 2, 'name' => 'Fund Management', 'slug' => 'expense-reports', 'description' => 'Control of prepaid balances and advances.'],
+        ['id' => 1, 'name' => 'Expense Reports', 'slug' => 'expense-reports', 'description' => 'Cash expense reports and advances.'],
+        ['id' => 2, 'name' => 'Fund Management', 'slug' => 'funds', 'description' => 'Control of prepaid balances and advances.'],
         ['id' => 3, 'name' => 'Reimbursement', 'slug' => 'reimbursement', 'description' => 'Personal expense reimbursement requests.'],
         ['id' => 4, 'name' => 'ERP Export', 'slug' => 'export', 'description' => 'File generation for external ERP integration.'],
         ['id' => 5, 'name' => 'Cost Centers', 'slug' => 'cost-center', 'description' => 'Company cost center registry.'],

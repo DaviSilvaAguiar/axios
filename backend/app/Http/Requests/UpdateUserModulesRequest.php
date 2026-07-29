@@ -16,8 +16,8 @@ class UpdateUserModulesRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'modules' => ['required', 'array'],
-            'modules.*' => ['integer'],
+            'modules' => ['present', 'array'],
+            'modules.*' => ['integer', 'min:1'],
         ];
     }
 }

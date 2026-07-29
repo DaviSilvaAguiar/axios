@@ -19,4 +19,11 @@ class Setting extends Model
     protected $casts = [
         'value' => 'integer',
     ];
+
+    public const REQUIRE_ERP_CODE = 'require_erp_code';
+
+    public static function enabled(string $parameter): bool
+    {
+        return (bool) static::where('parameter', $parameter)->value('value');
+    }
 }

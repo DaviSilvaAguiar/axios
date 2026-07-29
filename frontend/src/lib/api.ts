@@ -27,6 +27,20 @@ function buildAuthHeaders(token?: string | null, tenant?: string | null): Record
   return headers;
 }
 
+function handleUnauthorized(path: string, tokenUsed?: string): void {
+  if (isServer() || path.includes('/auth/login')) return;
+  if (!tokenUsed || cookieClient.getToken() !== tokenUsed) return;
+
+  cookieClient.clear();
+  if (window.location.pathname !== '/login') {
+    window.location.replace('/login');
+  }
+}
+
+function tokenFrom(auth: Record<string, string>): string | undefined {
+  return auth['Authorization']?.replace('Bearer ', '');
+}
+
 async function apiFetch<T>(path: string, options: ApiOptions = {}): Promise<T> {
   const auth = await getAuthHeaders();
   const { next, headers, ...rest } = options;
@@ -43,6 +57,7 @@ async function apiFetch<T>(path: string, options: ApiOptions = {}): Promise<T> {
   });
 
   if (!response.ok) {
+    if (response.status === 401) handleUnauthorized(path, tokenFrom(auth));
     const error = await response.json().catch(() => ({ message: 'Unexpected error.' }));
     const body = error as { message?: string; errors?: Record<string, string[]> };
     const firstError = body.errors ? Object.values(body.errors)[0]?.[0] : undefined;
@@ -67,6 +82,7 @@ async function apiFetchUpload<T>(path: string, body: FormData, signal?: AbortSig
   });
 
   if (!response.ok) {
+    if (response.status === 401) handleUnauthorized(path, tokenFrom(auth));
     const error = await response.json().catch(() => ({ message: 'Unexpected error.' }));
     const body = error as { message?: string; errors?: Record<string, string[]> };
     const firstError = body.errors ? Object.values(body.errors)[0]?.[0] : undefined;
@@ -84,7 +100,10 @@ async function apiFetchBlob(path: string, signal?: AbortSignal): Promise<Blob> {
     signal,
   });
 
-  if (!response.ok) throw new Error('Failed to download file.');
+  if (!response.ok) {
+    if (response.status === 401) handleUnauthorized(path, tokenFrom(auth));
+    throw new Error('Failed to download file.');
+  }
   return response.blob();
 }
 

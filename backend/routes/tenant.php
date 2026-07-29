@@ -35,8 +35,8 @@ Route::middleware(['tenant.header'])->prefix('v1')->group(function (): void {
             Route::get('/', 'index');
             Route::post('/', 'store')->middleware(EnsureRoleAdmin::class);
             Route::get('/{id}', 'show');
-            Route::put('/{id}', 'update');
-            Route::delete('/{id}', 'destroy');
+            Route::put('/{id}', 'update')->middleware(EnsureRoleAdmin::class);
+            Route::delete('/{id}', 'destroy')->middleware(EnsureRoleAdmin::class);
             Route::get('/{id}/modules', 'modules')->middleware(EnsureRoleAdmin::class);
             Route::put('/{id}/modules', 'updateModules')->middleware(EnsureRoleAdmin::class);
         });
@@ -93,7 +93,7 @@ Route::middleware(['tenant.header'])->prefix('v1')->group(function (): void {
         Route::controller(FundController::class)
             ->prefix('funds')
             ->whereNumber('id')
-            ->middleware([EnsureRoleAuditor::class, 'module:expense-reports'])
+            ->middleware([EnsureRoleAuditor::class, 'module:funds'])
             ->group(function (): void {
                 Route::get('/', 'index');
                 Route::post('/', 'store');
@@ -106,7 +106,7 @@ Route::middleware(['tenant.header'])->prefix('v1')->group(function (): void {
         Route::controller(FundTransactionController::class)
             ->prefix('funds/{id}/transacoes')
             ->whereNumber('id')
-            ->middleware([EnsureRoleAuditor::class, 'module:expense-reports'])
+            ->middleware([EnsureRoleAuditor::class, 'module:funds'])
             ->group(function (): void {
                 Route::post('/credit', 'postCredit');
                 Route::post('/adjustment', 'postAdjustment');

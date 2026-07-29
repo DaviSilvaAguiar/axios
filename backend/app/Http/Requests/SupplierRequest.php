@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Models\Setting;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -42,7 +43,7 @@ class SupplierRequest extends FormRequest
             'district' => [...$sometimes, 'nullable', 'string', 'max:100'],
             'city' => [...$sometimes, 'nullable', 'string', 'max:100'],
             'uf' => [...$sometimes, 'nullable', 'string', 'size:2'],
-            'erp_code' => [...$sometimes, 'nullable', 'string', 'max:100'],
+            'erp_code' => [...$sometimes, Setting::enabled(Setting::REQUIRE_ERP_CODE) ? 'required' : 'nullable', 'string', 'max:100'],
             'active' => [...$sometimes, 'boolean'],
         ];
     }
