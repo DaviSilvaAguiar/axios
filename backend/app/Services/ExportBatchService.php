@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Exceptions\DomainException;
 use App\Factories\ExportHandlerFactory;
 use App\Models\ExpenseReport;
 use App\Models\ExportBatch;
@@ -47,11 +48,13 @@ class ExportBatchService
         string $templateUsed,
         array $documentIds
     ): ExportBatch {
+        $this->ensureTemplateMatchesBatchType($templateUsed, $batchType);
+
         [$batch, $documents] = DB::transaction(function () use ($idUser, $batchType, $templateUsed, $documentIds) {
             $documents = $this->loadDocuments($batchType, $documentIds, true);
 
             if ($documents->isEmpty()) {
-                throw new UnexpectedValueException('No pending and valid report was found for export.');
+                throw new DomainException('No approved and unexported document was found for export.', 422);
             }
 
             $batch = ExportBatch::create([
@@ -178,7 +181,7 @@ class ExportBatchService
         $batch = ExportBatch::findOrFail($batchId);
 
         if (! $batch->file_path || ! Storage::disk('public')->exists($batch->file_path)) {
-            throw new UnexpectedValueException('Export file not found.');
+            throw new DomainException('Export file not found.', 404);
         }
 
         return Storage::disk('public')->download(
@@ -199,14 +202,41 @@ class ExportBatchService
         ], $templates);
     }
 
+    private function ensureTemplateMatchesBatchType(string $templateUsed, string $batchType): void
+    {
+        foreach (Config::get('export.templates', []) as $template) {
+            if (($template['code'] ?? null) !== $templateUsed) {
+                continue;
+            }
+
+            if (($template['type'] ?? null) !== $batchType) {
+                throw new DomainException("Template [{$templateUsed}] cannot be used for batch type [{$batchType}].", 422);
+            }
+
+            return;
+        }
+
+        throw new DomainException("Export template [{$templateUsed}] not supported.", 422);
+    }
+
+    private function exportableStatuses(string $batchType): array
+    {
+        return match ($batchType) {
+            ExportBatch::TYPE_EXPENSE_REPORT => [ExpenseReport::STATUS_APPROVED],
+            ExportBatch::TYPE_REIMBURSEMENT => [Reimbursement::STATUS_APPROVED, Reimbursement::STATUS_PAYMENT_SCHEDULED],
+            default => throw new UnexpectedValueException("Invalid batch type: {$batchType}"),
+        };
+    }
+
     private function loadDocuments(string $batchType, array $ids, bool $lock): EloquentCollection
     {
         $query = $this->modelForType($batchType)::query()
             ->whereIn('id', $ids)
+            ->whereIn('status', $this->exportableStatuses($batchType))
             ->whereNull('export_batch_id');
 
         if ($batchType === ExportBatch::TYPE_EXPENSE_REPORT) {
-            $query->with(['user', 'costCenter', 'items']);
+            $query->with(['user', 'requesterUser', 'costCenter', 'items']);
         } else {
             $query->with(['user', 'items.costCenter']);
         }

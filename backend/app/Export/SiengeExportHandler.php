@@ -19,9 +19,20 @@ class SiengeExportHandler implements ExportHandlerInterface
         return $path;
     }
 
+    private function requesterErpCode(object $document): string
+    {
+        foreach (['requesterUser', 'user'] as $relation) {
+            if ($document->relationLoaded($relation) && $document->{$relation}?->erp_code) {
+                return (string) $document->{$relation}->erp_code;
+            }
+        }
+
+        return '';
+    }
+
     public function buildCsv(Collection $documents): string
     {
-        $rows = [['ID', 'Description', 'Requester', 'Total', 'Items', 'Created At']];
+        $rows = [['ID', 'Description', 'Requester', 'Total', 'Items', 'Created At', 'Requester ERP Code']];
 
         foreach ($documents as $document) {
             $rows[] = [
@@ -31,13 +42,14 @@ class SiengeExportHandler implements ExportHandlerInterface
                 $document->total()->toDecimalString(),
                 (string) $document->items->count(),
                 optional($document->created_at)?->toDateString() ?? '',
+                $this->requesterErpCode($document),
             ];
         }
 
         $handle = fopen('php://temp', 'r+');
 
         foreach ($rows as $row) {
-            fputcsv($handle, $row);
+            fputcsv($handle, $row, ',', '"', '\\');
         }
 
         rewind($handle);

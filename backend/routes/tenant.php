@@ -173,7 +173,7 @@ Route::middleware(['tenant.header'])->prefix('v1')->group(function (): void {
             Route::get('/pending-approval', 'pendingApproval');
         });
 
-        Route::controller(ExportBatchController::class)->prefix('export')->whereNumber('id')->middleware('module:export')->group(function (): void {
+        Route::controller(ExportBatchController::class)->prefix('export')->whereNumber('id')->middleware([EnsureRoleAuditor::class, 'module:export'])->group(function (): void {
             Route::get('/pending/expense-reports', 'pendingExpenseReports');
             Route::get('/pending/reimbursements', 'pendingReimbursements');
             Route::get('/pending/stats', 'pendingStats');

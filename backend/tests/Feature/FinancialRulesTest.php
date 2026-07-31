@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Exceptions\DomainException;
 use App\Models\CostCenter;
 use App\Models\ExpenseReport;
 use App\Models\ExpenseReportItem;
@@ -20,7 +21,6 @@ use App\Services\ReimbursementService;
 use App\Support\Money;
 use Illuminate\Validation\ValidationException;
 use Tests\TenantTestCase;
-use UnexpectedValueException;
 
 class FinancialRulesTest extends TenantTestCase
 {
@@ -167,7 +167,7 @@ class FinancialRulesTest extends TenantTestCase
             'export_batch_id' => $batch->id,
         ]);
 
-        $this->expectException(UnexpectedValueException::class);
+        $this->expectException(DomainException::class);
 
         app(ExportBatchService::class)->generateBatch(
             $provider->id,
