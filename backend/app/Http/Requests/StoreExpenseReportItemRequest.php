@@ -17,7 +17,7 @@ class StoreExpenseReportItemRequest extends FormRequest
     {
         return [
             'expense_date' => ['required', 'date'],
-            'amount' => ['required', 'numeric', 'min:0.01'],
+            'amount' => ['required', 'numeric', 'min:0.01', 'max:9999999999999.99'],
             'cost_center_id' => ['required', 'integer', 'exists:cost_center,id'],
             'description' => ['required', 'string', 'max:255'],
             'expense_category_id' => ['nullable', 'integer', 'exists:expense_category,id'],

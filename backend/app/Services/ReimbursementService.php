@@ -11,6 +11,7 @@ use App\Services\Concerns\ResolvesRequester;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 
 class ReimbursementService
 {
@@ -122,6 +123,12 @@ class ReimbursementService
 
         if ($reimbursement->status !== Reimbursement::STATUS_REQUESTED) {
             throw new DomainException('Only reimbursements with status "Draft" can be deleted.', 409);
+        }
+
+        foreach ($reimbursement->items()->with('attachments')->get() as $item) {
+            foreach ($item->attachments as $attachment) {
+                Storage::disk('public')->delete($attachment->path);
+            }
         }
 
         $reimbursement->delete();

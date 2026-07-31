@@ -15,6 +15,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class ExpenseReportService
@@ -170,6 +171,12 @@ class ExpenseReportService
             throw ValidationException::withMessages([
                 'status' => ['Only an expense report in Draft can be deleted.'],
             ]);
+        }
+
+        foreach ($expenseReport->items()->with('attachments')->get() as $item) {
+            foreach ($item->attachments as $attachment) {
+                Storage::disk('public')->delete($attachment->path);
+            }
         }
 
         $expenseReport->delete();

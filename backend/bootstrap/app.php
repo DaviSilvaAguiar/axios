@@ -2,11 +2,12 @@
 
 use App\Http\Middleware\EnsureModule;
 use App\Http\Middleware\InitializeTenancyByHeader;
+use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
-use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\HandleCors;
+use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -16,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(HandleCors::class);
+
+        $middleware->redirectGuestsTo(null);
 
         $middleware->alias([
             'tenant.header' => InitializeTenancyByHeader::class,
@@ -27,4 +30,8 @@ return Application::configure(basePath: dirname(__DIR__))
             prepend: InitializeTenancyByHeader::class,
         );
     })
-    ->withExceptions(function (Exceptions $exceptions): void {})->create();
+    ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->shouldRenderJsonWhen(
+            fn (Request $request): bool => $request->is('api/*') || $request->expectsJson()
+        );
+    })->create();

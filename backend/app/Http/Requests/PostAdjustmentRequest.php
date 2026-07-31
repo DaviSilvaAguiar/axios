@@ -17,7 +17,7 @@ class PostAdjustmentRequest extends FormRequest
     {
         return [
             'subtype' => ['required', 'integer', 'in:3,4,5'],
-            'amount' => ['required', 'numeric', 'min:0.01'],
+            'amount' => ['required', 'numeric', 'min:0.01', 'max:9999999999999.99'],
             'transaction_date' => ['required', 'date'],
             'reason' => ['required', 'string', 'max:500'],
         ];

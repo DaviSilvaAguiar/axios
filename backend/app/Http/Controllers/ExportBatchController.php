@@ -34,7 +34,7 @@ class ExportBatchController extends Controller
                 'batch_id' => $batch->id,
                 'total_amount' => $batch->total_amount,
                 'file_name' => $batch->file_name,
-                'download_url' => "/v1/export/lotes/{$batch->id}/download",
+                'download_url' => "/v1/export/batches/{$batch->id}/download",
             ],
         ], 201);
     }
