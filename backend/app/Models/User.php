@@ -55,6 +55,11 @@ class User extends Authenticatable
         return $this->role === self::ROLE_AUDITOR;
     }
 
+    public function isProvider(): bool
+    {
+        return $this->role === self::ROLE_PROVIDER;
+    }
+
     public function hasModule(string $slug): bool
     {
         if ($this->isAdmin()) {

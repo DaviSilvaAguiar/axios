@@ -10,6 +10,7 @@ use App\Models\ReimbursementAttachment;
 use App\Models\ReimbursementItem;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -74,6 +75,8 @@ class ReimbursementItemService
 
     public function serveAttachment(int $idReimbursement, int $itemId): StreamedResponse
     {
+        Gate::authorize('view', Reimbursement::findOrFail($idReimbursement));
+
         $item = ReimbursementItem::where('reimbursement_id', $idReimbursement)->findOrFail($itemId);
         $attachment = $item->attachments()->firstOrFail();
 
@@ -105,6 +108,8 @@ class ReimbursementItemService
 
     public function serveSpecificAttachment(int $idReimbursement, int $itemId, int $attachmentId): StreamedResponse
     {
+        Gate::authorize('view', Reimbursement::findOrFail($idReimbursement));
+
         $item = ReimbursementItem::where('reimbursement_id', $idReimbursement)->findOrFail($itemId);
         $attachment = $item->attachments()->findOrFail($attachmentId);
 

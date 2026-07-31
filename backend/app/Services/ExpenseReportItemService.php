@@ -9,6 +9,7 @@ use App\Models\ExpenseReportItem;
 use App\Models\ExpenseReportItemAttachment;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -116,6 +117,8 @@ class ExpenseReportItemService
 
     public function serveAttachment(int $idExpenseReport, int $itemId, int $attachmentId): StreamedResponse
     {
+        Gate::authorize('view', ExpenseReport::findOrFail($idExpenseReport));
+
         $item = ExpenseReportItem::where('expense_report_id', $idExpenseReport)->findOrFail($itemId);
         $attachment = $item->attachments()->findOrFail($attachmentId);
 

@@ -284,7 +284,7 @@
     default => 'Unknown',
   };
 
-  $total = $expenseReport->items->sum('amount');
+  $total = (string) $expenseReport->total();
   $hash  = strtoupper(substr(sha1('expense-report-' . $expenseReport->id . '-' . $expenseReport->created_at), 0, 32));
 
   $allAttachments = [];
@@ -399,7 +399,7 @@
             <td>{{ mb_strtoupper($item->description) }}</td>
             <td>{{ mb_strtoupper($item->expenseCategory?->description ?? 'GENERAL') }}</td>
             <td>{{ mb_strtoupper($item->costCenter?->description ?? 'DEFAULT') }}</td>
-            <td class="right">{{ number_format($item->amount, 2, ',', '.') }}</td>
+            <td class="right">{{ number_format((float) (string) $item->value(), 2, ',', '.') }}</td>
           </tr>
         @empty
           <tr>
@@ -413,13 +413,13 @@
           <td colspan="5" class="right" style="padding-right:10px;">
             TOTAL ITEMS: {{ $expenseReport->items->count() }}
           </td>
-          <td class="right">{{ number_format($total, 2, ',', '.') }}</td>
+          <td class="right">{{ number_format((float) $total, 2, ',', '.') }}</td>
         </tr>
         <tr class="total-row">
           <td colspan="5" style="text-align:right; font-size:9px;">
             TOTAL REPORT AMOUNT
           </td>
-          <td class="right">R$ {{ number_format($total, 2, ',', '.') }}</td>
+          <td class="right">R$ {{ number_format((float) $total, 2, ',', '.') }}</td>
         </tr>
       </tfoot>
       @endif
