@@ -20,6 +20,8 @@ class ExpenseReportItemService
     {
         $expenseReport = ExpenseReport::findOrFail($idExpenseReport);
 
+        Gate::authorize('update', $expenseReport);
+
         if ($expenseReport->status !== ExpenseReport::STATUS_DRAFT) {
             throw ValidationException::withMessages([
                 'status' => ['Only an expense report in "Draft" can have its items changed.'],

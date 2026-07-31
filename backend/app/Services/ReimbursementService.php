@@ -25,8 +25,10 @@ class ReimbursementService
         }
 
         if (! empty($filters['employee'])) {
-            $query->whereHas('user', function ($q) use ($filters) {
-                $q->where('name', 'like', '%'.$filters['employee'].'%');
+            $term = addcslashes($filters['employee'], '%_\\');
+
+            $query->whereHas('user', function ($q) use ($term) {
+                $q->where('name', 'like', '%'.$term.'%');
             });
         }
 
@@ -87,6 +89,14 @@ class ReimbursementService
         $reimbursement = Reimbursement::findOrFail($id);
         Gate::authorize('updateStatus', $reimbursement);
         $status = (int) $data['status'];
+
+        if ($reimbursement->export_batch_id !== null) {
+            throw new DomainException('An exported reimbursement cannot change status.', 409);
+        }
+
+        if ($status === Reimbursement::STATUS_REQUESTED && $reimbursement->status !== Reimbursement::STATUS_REQUESTED) {
+            throw new DomainException('A reimbursement cannot be moved back to "Draft".', 422);
+        }
 
         if ($status === Reimbursement::STATUS_PAYMENT_SCHEDULED && empty($data['scheduled_payment_date'])) {
             throw new DomainException('The scheduled payment date is required when scheduling the payment.');

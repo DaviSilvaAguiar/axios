@@ -20,6 +20,8 @@ class ReimbursementItemService
     {
         $reimbursement = Reimbursement::findOrFail($idReimbursement);
 
+        Gate::authorize('update', $reimbursement);
+
         if ($reimbursement->status !== Reimbursement::STATUS_REQUESTED) {
             throw new DomainException('Only reimbursements with status "Draft" can have their items changed.', 409);
         }
