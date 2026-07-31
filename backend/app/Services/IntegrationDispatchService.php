@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Exceptions\DomainException;
 use App\Exceptions\IntegrationException;
 use App\Models\BankAccount;
 use App\Models\ExpenseReport;
@@ -44,15 +45,15 @@ class IntegrationDispatchService
         $account = BankAccount::find($idBankAccount);
 
         if ($account === null) {
-            throw new UnexpectedValueException('Bank account not found.');
+            throw new DomainException('Bank account not found.', 404);
         }
 
         if (! $account->active) {
-            throw new UnexpectedValueException('Selected bank account is inactive.');
+            throw new DomainException('Selected bank account is inactive.', 422);
         }
 
         if ($account->erp_code === null || $account->erp_code === '') {
-            throw new UnexpectedValueException('Selected bank account has no ERP code registered.');
+            throw new DomainException('Selected bank account has no ERP code registered.', 422);
         }
 
         return (int) $account->erp_code;
@@ -65,19 +66,19 @@ class IntegrationDispatchService
         $integration = Integration::on('central')->find($idIntegration);
 
         if ($integration === null) {
-            throw new UnexpectedValueException('Integration not found.');
+            throw new DomainException('Integration not found.', 404);
         }
 
         $keyRecord = IntegrationKey::where('integration_id', $idIntegration)->first();
 
         if ($keyRecord === null) {
-            throw new UnexpectedValueException('Integration token not configured. Configure it in the integration selector before sending.');
+            throw new DomainException('Integration token not configured. Configure it in the integration selector before sending.', 422);
         }
 
         $documents = $this->loadDocuments($batchType, $documentIds);
 
         if ($documents->isEmpty()) {
-            throw new UnexpectedValueException('No pending and valid document was found for sending.');
+            throw new DomainException('No pending and valid document was found for sending.', 422);
         }
 
         $key = $keyRecord->key;
@@ -206,8 +207,9 @@ class IntegrationDispatchService
         $code = $expense->expenseCategory?->erp_code;
 
         if ($code === null || $code === '') {
-            throw new UnexpectedValueException(
-                "Category for expense #{$expense->id} has no ERP code registered."
+            throw new DomainException(
+                "Category for expense #{$expense->id} has no ERP code registered.",
+                422
             );
         }
 
@@ -219,8 +221,9 @@ class IntegrationDispatchService
         $code = $expense->costCenter?->erp_code ?? $fallback;
 
         if ($code === null || $code === '') {
-            throw new UnexpectedValueException(
-                "Cost center for expense #{$expense->id} has no ERP code registered."
+            throw new DomainException(
+                "Cost center for expense #{$expense->id} has no ERP code registered.",
+                422
             );
         }
 

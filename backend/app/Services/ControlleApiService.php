@@ -20,11 +20,13 @@ class ControlleApiService
 
     public function createTransaction(string $key, array $payload): array
     {
-        Log::info('[Controlle] REQUEST', [
+        if ($this->transactionUrl === '') {
+            throw new IntegrationException('Controlle endpoint is not configured. Set CONTROLLE_API_URL before sending.');
+        }
+
+        Log::debug('[Controlle] REQUEST', [
             'url' => $this->transactionUrl,
-            'key_prefix' => substr($key, 0, 8).'...',
-            'key_length' => strlen($key),
-            'payload' => $payload,
+            'item_count' => count($payload['itens'] ?? []),
         ]);
 
         $response = Http::withHeaders([
@@ -37,10 +39,8 @@ class ControlleApiService
             ->withOptions(['allow_redirects' => false])
             ->post($this->transactionUrl, $payload);
 
-        Log::info('[Controlle] RESPONSE', [
+        Log::debug('[Controlle] RESPONSE', [
             'status' => $response->status(),
-            'headers' => $response->headers(),
-            'body_raw' => $response->body(),
         ]);
 
         if ($response->status() >= 300 && $response->status() < 400) {

@@ -106,7 +106,7 @@ class DashboardService
 
     public function pendingApproval(int $limit = 10): array
     {
-        $expenseReports = ExpenseReport::where('status', ExpenseReport::STATUS_PENDING)
+        $expenseReports = ExpenseReport::whereIn('status', [ExpenseReport::STATUS_PENDING, ExpenseReport::STATUS_UNDER_REVIEW])
             ->with(['items:id,expense_report_id,amount,unit_amount,quantity', 'requesterUser:id,name'])
             ->orderBy('created_at')
             ->limit($limit)
@@ -124,7 +124,7 @@ class DashboardService
                 ];
             });
 
-        $reimbursements = Reimbursement::where('status', Reimbursement::STATUS_PENDING)
+        $reimbursements = Reimbursement::whereIn('status', [Reimbursement::STATUS_PENDING, Reimbursement::STATUS_UNDER_REVIEW])
             ->with(['items:id,reimbursement_id,amount', 'user:id,name'])
             ->orderBy('created_at')
             ->limit($limit)

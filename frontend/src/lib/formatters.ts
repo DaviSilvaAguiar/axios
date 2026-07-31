@@ -1,6 +1,6 @@
 export function formatarData(iso: string | null | undefined): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("pt-BR");
+  return new Date(iso).toLocaleDateString("pt-BR", { timeZone: "UTC" });
 }
 
 export function formatarMoeda(amount: number): string {
@@ -20,7 +20,7 @@ export function formatarDataHora(iso: string | null | undefined): string {
 
 export function formatarDataCurta(iso: string | null | undefined): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
 }
 
 export function valorParaApi(amount: string | number): string {

@@ -183,7 +183,7 @@ Route::middleware(['tenant.header'])->prefix('v1')->group(function (): void {
             Route::get('/batches/{id}/download', 'download');
         });
 
-        Route::controller(IntegrationController::class)->prefix('integration')->whereNumber('id')->group(function (): void {
+        Route::controller(IntegrationController::class)->prefix('integration')->whereNumber('id')->middleware(EnsureRoleAuditor::class)->group(function (): void {
             Route::get('/', 'index');
             Route::post('/{id}/key', 'saveKey');
             Route::post('/send', 'send');

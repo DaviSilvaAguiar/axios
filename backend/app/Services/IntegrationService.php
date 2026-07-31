@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Exceptions\DomainException;
 use App\Models\Integration;
 use App\Models\IntegrationKey;
-use UnexpectedValueException;
 
 class IntegrationService
 {
@@ -30,7 +30,7 @@ class IntegrationService
         $integration = Integration::on('central')->find($idIntegration);
 
         if ($integration === null) {
-            throw new UnexpectedValueException('Integration not found.');
+            throw new DomainException('Integration not found.', 404);
         }
 
         return IntegrationKey::updateOrCreate(
