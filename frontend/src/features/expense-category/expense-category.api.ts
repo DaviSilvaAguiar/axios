@@ -2,20 +2,20 @@ import { api } from "@/lib/api";
 import { buildPageQuery, type Paginated, PAGE_SIZE } from "@/lib/pagination";
 import {
   mapExpenseCategoryResponse,
-  mapListarCategoriasDespesa,
+  mapExpenseCategoryList,
 } from "./expense-category.mapper";
 import type {
   ExpenseCategory,
   ExpenseCategoryFormData,
 } from "./expense-category.types";
 
-export async function listCategoriasDespesaApi(
+export async function listExpenseCategoriesApi(
   page: number = 1,
   perPage: number = PAGE_SIZE,
   signal?: AbortSignal
 ): Promise<Paginated<ExpenseCategory>> {
   const raw = await api.get<unknown>(`/v1/expense-categories${buildPageQuery(page, perPage)}`, { signal });
-  return mapListarCategoriasDespesa(raw);
+  return mapExpenseCategoryList(raw);
 }
 
 export async function getExpenseCategoryApi(id: number): Promise<ExpenseCategory> {

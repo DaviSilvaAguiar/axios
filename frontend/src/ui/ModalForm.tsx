@@ -5,7 +5,7 @@ import { X } from "@phosphor-icons/react";
 import Button from "./Button";
 
 interface Props {
-  titulo: string;
+  title: string;
   onCancelar: () => void;
   onSubmit: (e: FormEvent<HTMLFormElement>) => void;
   submitting?: boolean;
@@ -14,7 +14,7 @@ interface Props {
 }
 
 export default function ModalForm({
-  titulo,
+  title,
   onCancelar,
   onSubmit,
   submitting = false,
@@ -26,7 +26,7 @@ export default function ModalForm({
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between px-6 py-5 border-b border-app-border">
-        <h2 className="text-feature-title text-app-text">{titulo}</h2>
+        <h2 className="text-feature-title text-app-text">{title}</h2>
         <button
           type="button"
           onClick={onCancelar}

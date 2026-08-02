@@ -1,12 +1,12 @@
 import { api } from "@/lib/api";
 import { buildPageQuery, type Paginated, PAGE_SIZE } from "@/lib/pagination";
 import {
-  mapConsultaCnpj,
+  mapCnpjLookup,
   mapSupplierResponse,
-  mapListarSupplieres,
+  mapSupplierList,
 } from "./supplier.mapper";
 import type {
-  ConsultaCnpjData,
+  CnpjLookupData,
   Supplier,
   SupplierFormData,
 } from "./supplier.types";
@@ -17,7 +17,7 @@ export async function listSupplieresApi(
   signal?: AbortSignal
 ): Promise<Paginated<Supplier>> {
   const raw = await api.get<unknown>(`/v1/suppliers${buildPageQuery(page, perPage)}`, { signal });
-  return mapListarSupplieres(raw);
+  return mapSupplierList(raw);
 }
 
 export async function listSupplieresAtivosApi(signal?: AbortSignal): Promise<Supplier[]> {
@@ -47,12 +47,12 @@ export async function deleteSupplierApi(id: number): Promise<void> {
   await api.delete(`/v1/suppliers/${id}`);
 }
 
-export async function consultarCnpjApi(cnpj: string): Promise<ConsultaCnpjData | null> {
+export async function lookupCnpjApi(cnpj: string): Promise<CnpjLookupData | null> {
   const digits = cnpj.replace(/\D/g, "");
   if (digits.length !== 14) return null;
   try {
     const raw = await api.get<unknown>(`/v1/cnpj-lookup/${digits}`);
-    return mapConsultaCnpj(raw).data;
+    return mapCnpjLookup(raw).data;
   } catch {
     return null;
   }

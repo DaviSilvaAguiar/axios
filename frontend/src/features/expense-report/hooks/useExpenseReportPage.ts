@@ -6,7 +6,7 @@ import {
   createExpenseReportApi,
   createExpenseReportItemApi,
   updateExpenseReportItemApi,
-  adicionarAnexoExpenseReportItemApi,
+  addExpenseReportAttachmentApi,
   updateExpenseReportApi,
   updateStatusExpenseReportApi,
   deleteExpenseReportApi,
@@ -187,7 +187,7 @@ export function useExpenseReportPage() {
       await Promise.all(
         existingItems.flatMap((originalItem, idx) =>
           (files[idx] ?? []).map((file) =>
-            adicionarAnexoExpenseReportItemApi(selectedExpenseReport.id, originalItem.id, file)
+            addExpenseReportAttachmentApi(selectedExpenseReport.id, originalItem.id, file)
           )
         )
       );

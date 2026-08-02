@@ -51,7 +51,7 @@ export default function CostCenterForm({ costCenter, onSave, onCancel }: Props) 
 
   return (
     <ModalForm
-      titulo={costCenter ? "Edit Cost Center" : "New Cost Center"}
+      title={costCenter ? "Edit Cost Center" : "New Cost Center"}
       onCancelar={onCancel}
       onSubmit={handleSubmit(onSave)}
       submitting={isSubmitting}
@@ -77,7 +77,7 @@ export default function CostCenterForm({ costCenter, onSave, onCancel }: Props) 
           onClick={() => setValue("active", !active)}
           className="w-fit cursor-pointer transition-opacity hover:opacity-80"
         >
-          <ActiveBadge ativo={active} />
+          <ActiveBadge active={active} />
         </button>
       </div>
     </ModalForm>

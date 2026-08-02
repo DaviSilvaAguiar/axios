@@ -1,11 +1,11 @@
 import { api } from "@/lib/api";
-import { mapListarExpenseReportsResponse, mapExpenseReportResponse } from "./expense-report.mapper";
+import { mapExpenseReportList, mapExpenseReportResponse } from "./expense-report.mapper";
 import { expenseReportItemResponseSchema } from "./expense-report.types";
 import type { ExpenseReportItem, ExpenseReportItemFormItem, ExpenseReport, StoreExpenseReportFormData } from "./expense-report.types";
 
 export async function listExpenseReportsApi(signal?: AbortSignal): Promise<ExpenseReport[]> {
   const raw = await api.get<unknown>("/v1/expense-reports", { signal });
-  return mapListarExpenseReportsResponse(raw);
+  return mapExpenseReportList(raw);
 }
 
 export async function getExpenseReportApi(id: number, signal?: AbortSignal): Promise<ExpenseReport> {
@@ -66,16 +66,16 @@ export async function downloadPdfExpenseReportApi(id: number): Promise<Blob> {
 }
 
 export async function createExpenseReportItemApi(
-  idExpenseReport: number,
+  expenseReportId: number,
   dados: FormData
 ): Promise<ExpenseReportItem> {
-  const raw = await api.upload<unknown>(`/v1/expense-reports/${idExpenseReport}/items`, dados);
+  const raw = await api.upload<unknown>(`/v1/expense-reports/${expenseReportId}/items`, dados);
   return expenseReportItemResponseSchema.parse(raw).data;
 }
 
 export async function updateExpenseReportItemApi(
-  idExpenseReport: number,
-  idDespesa: number,
+  expenseReportId: number,
+  itemId: number,
   dados: ExpenseReportItemFormItem
 ): Promise<ExpenseReportItem> {
   const payload = {
@@ -91,35 +91,35 @@ export async function updateExpenseReportItemApi(
     supplier_tax_id:  dados.supplier_tax_id ? dados.supplier_tax_id.replace(/\D/g, "") : null,
     supplier_id:        dados.supplier_id ? Number(dados.supplier_id) : null,
   };
-  const raw = await api.put<unknown>(`/v1/expense-reports/${idExpenseReport}/items/${idDespesa}`, payload);
+  const raw = await api.put<unknown>(`/v1/expense-reports/${expenseReportId}/items/${itemId}`, payload);
   return expenseReportItemResponseSchema.parse(raw).data;
 }
 
 export async function deleteExpenseReportItemApi(
-  idExpenseReport: number,
-  idDespesa: number
+  expenseReportId: number,
+  itemId: number
 ): Promise<void> {
-  await api.delete(`/v1/expense-reports/${idExpenseReport}/items/${idDespesa}`);
+  await api.delete(`/v1/expense-reports/${expenseReportId}/items/${itemId}`);
 }
 
-export async function adicionarAnexoExpenseReportItemApi(
-  idExpenseReport: number,
-  idDespesa: number,
-  arquivo: File
+export async function addExpenseReportAttachmentApi(
+  expenseReportId: number,
+  itemId: number,
+  file: File
 ): Promise<void> {
   const fd = new FormData();
-  fd.append("anexo", arquivo);
-  await api.upload<unknown>(`/v1/expense-reports/${idExpenseReport}/items/${idDespesa}/attachments`, fd);
+  fd.append("attachment", file);
+  await api.upload<unknown>(`/v1/expense-reports/${expenseReportId}/items/${itemId}/attachments`, fd);
 }
 
-export async function getAnexoExpenseReportApi(
-  idExpenseReport: number,
-  idDespesa: number,
-  idAnexo: number,
+export async function getExpenseReportAttachmentApi(
+  expenseReportId: number,
+  itemId: number,
+  attachmentId: number,
   signal?: AbortSignal,
 ): Promise<Blob> {
-  return api.blob(`/v1/expense-reports/${idExpenseReport}/items/${idDespesa}/attachments/${idAnexo}`, signal);
+  return api.blob(`/v1/expense-reports/${expenseReportId}/items/${itemId}/attachments/${attachmentId}`, signal);
 }
 
-export { listCentrosDeCustoApi } from "@/features/cost-center/cost-center.api";
-export { listCategoriasDespesaApi } from "@/features/expense-category/expense-category.api";
+export { listCostCentersApi } from "@/features/cost-center/cost-center.api";
+export { listExpenseCategoriesApi } from "@/features/expense-category/expense-category.api";

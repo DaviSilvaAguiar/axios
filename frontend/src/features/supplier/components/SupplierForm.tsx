@@ -14,9 +14,9 @@ import {
   buildSupplierFormSchema,
   type Supplier,
   type SupplierFormData,
-  type TipoPessoa,
+  type PersonType,
 } from "../supplier.types";
-import { consultarCnpjApi } from "../supplier.api";
+import { lookupCnpjApi } from "../supplier.api";
 
 interface Props {
   supplier?: Supplier;
@@ -96,7 +96,7 @@ export default function SupplierForm({ supplier, onSave, onCancel }: Props) {
     lastLookedUpCnpj.current = digits;
     const toastId = toast.loading("Fetching supplier data…");
 
-    consultarCnpjApi(digits)
+    lookupCnpjApi(digits)
       .then((result) => {
         if (!result) {
           toast.error("Supplier data not found.", { id: toastId });
@@ -122,7 +122,7 @@ export default function SupplierForm({ supplier, onSave, onCancel }: Props) {
       });
   }, [taxId, personType, getValues, setValue]);
 
-  function changeType(next: TipoPessoa) {
+  function changeType(next: PersonType) {
     if (next === personType) return;
     setValue("person_type", next, { shouldValidate: false });
     setValue("tax_id", "", { shouldValidate: false });
@@ -137,7 +137,7 @@ export default function SupplierForm({ supplier, onSave, onCancel }: Props) {
 
   return (
     <ModalForm
-      titulo={supplier ? "Edit Supplier" : "New Supplier"}
+      title={supplier ? "Edit Supplier" : "New Supplier"}
       onCancelar={onCancel}
       onSubmit={handleSubmit(onSave)}
       submitting={isSubmitting}
@@ -261,7 +261,7 @@ export default function SupplierForm({ supplier, onSave, onCancel }: Props) {
             onClick={() => setValue("active", !active)}
             className="w-fit cursor-pointer transition-opacity hover:opacity-80"
           >
-            <ActiveBadge ativo={active} />
+            <ActiveBadge active={active} />
           </button>
         </div>
 

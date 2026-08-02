@@ -55,7 +55,7 @@ export default function ExpenseCategoryForm({ expenseCategory, onSave, onCancel 
 
   return (
     <ModalForm
-      titulo={expenseCategory ? "Edit Category" : "New Category"}
+      title={expenseCategory ? "Edit Category" : "New Category"}
       onCancelar={onCancel}
       onSubmit={handleSubmit(onSave)}
       submitting={isSubmitting}
@@ -81,7 +81,7 @@ export default function ExpenseCategoryForm({ expenseCategory, onSave, onCancel 
           onClick={() => setValue("active", !active)}
           className="w-fit cursor-pointer transition-opacity hover:opacity-80"
         >
-          <ActiveBadge ativo={active} />
+          <ActiveBadge active={active} />
         </button>
       </div>
     </ModalForm>

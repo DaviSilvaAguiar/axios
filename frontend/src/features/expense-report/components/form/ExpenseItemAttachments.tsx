@@ -3,10 +3,10 @@
 import { useRef } from "react";
 import { Plus, X, Paperclip } from "@phosphor-icons/react";
 import { nomeArquivo } from "@/lib/formatters";
-import type { AnexoCaixa } from "../../expense-report.types";
+import type { ExpenseReportAttachment } from "../../expense-report.types";
 
 interface Props {
-  existingAttachments: AnexoCaixa[];
+  existingAttachments: ExpenseReportAttachment[];
   files: File[];
   onAddFile: (file: File) => void;
   onRemoveFile: (fileIdx: number) => void;

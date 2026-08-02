@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X } from "@phosphor-icons/react";
-import { motion } from "framer-motion";
 import Button from "@/ui/Button";
 import Modal from "@/ui/Modal";
 import { toast } from "@/lib/toast";

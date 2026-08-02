@@ -2,8 +2,8 @@ import {
   createReimbursementItemApi,
   updateReimbursementItemApi,
   deleteReimbursementItemApi,
-  adicionarAnexoReimbursementApi,
-  deleteAnexoEspecificoReimbursementApi,
+  addReimbursementAttachmentApi,
+  deleteReimbursementAttachmentApi,
 } from "./reimbursement.api";
 import type { StoreReimbursementWithDespesasFormData } from "./reimbursement.types";
 import type { AttachmentToAdd, AttachmentToDelete } from "./components/FormReimbursement";
@@ -40,11 +40,11 @@ export async function persistReimbursementItems(
   }
 
   for (const { itemId, attachmentId } of deleteAttachments) {
-    await deleteAnexoEspecificoReimbursementApi(reimbursementId, itemId, attachmentId);
+    await deleteReimbursementAttachmentApi(reimbursementId, itemId, attachmentId);
   }
 
   for (const { itemId, file } of addAttachments) {
-    await adicionarAnexoReimbursementApi(reimbursementId, itemId, file);
+    await addReimbursementAttachmentApi(reimbursementId, itemId, file);
   }
 
   for (const item of items) {

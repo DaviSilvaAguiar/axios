@@ -1,12 +1,12 @@
 import {
   bankAccountResponseSchema,
-  listContasBancariasResponseSchema,
+  listBankAccountsResponseSchema,
   type BankAccount,
-  type ListarContasBancariasResponse,
+  type BankAccountListResponse,
 } from "./bank-account.types";
 
-export function mapListarContasBancarias(raw: unknown): ListarContasBancariasResponse {
-  return listContasBancariasResponseSchema.parse(raw);
+export function mapBankAccountList(raw: unknown): BankAccountListResponse {
+  return listBankAccountsResponseSchema.parse(raw);
 }
 
 export function mapBankAccountResponse(raw: unknown): BankAccount {

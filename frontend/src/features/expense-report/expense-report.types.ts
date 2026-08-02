@@ -30,7 +30,7 @@ export const EXPENSE_REPORT_STATUS_LABEL: Record<number, string> = {
   7: "Rejected",
 };
 
-export const anexoCaixaSchema = z.object({
+export const expenseReportAttachmentSchema = z.object({
   id: z.number(),
   expense_report_id_item: z.number(),
   path: z.string(),
@@ -55,7 +55,7 @@ export const expenseReportItemSchema = z.object({
   supplier: supplierSchema.nullish(),
   cost_center: costCenterSchema.nullish(),
   expense_category: expenseCategorySchema.nullish(),
-  attachments: z.array(anexoCaixaSchema).optional(),
+  attachments: z.array(expenseReportAttachmentSchema).optional(),
   created_at: z.string(),
   updated_at: z.string(),
 });
@@ -173,7 +173,7 @@ export const storeExpenseReportWithDespesasFormSchema = storeExpenseReportFormSc
   });
 
 export type ExpenseReportStatus = z.infer<typeof rdcStatusSchema>;
-export type AnexoCaixa = z.infer<typeof anexoCaixaSchema>;
+export type ExpenseReportAttachment = z.infer<typeof expenseReportAttachmentSchema>;
 export type ExpenseReportItem = z.infer<typeof expenseReportItemSchema>;
 export type ExpenseReport = z.infer<typeof rdcSchema>;
 export type StoreExpenseReportFormData = z.infer<typeof storeExpenseReportFormSchema>;

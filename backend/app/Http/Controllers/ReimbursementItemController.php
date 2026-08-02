@@ -49,28 +49,7 @@ class ReimbursementItemController extends Controller
         return response()->json(null, 204);
     }
 
-    public function serveAttachment(int $id, int $itemId): StreamedResponse
-    {
-        return $this->service->serveAttachment($id, $itemId);
-    }
-
-    public function destroyAttachment(int $id, int $itemId): JsonResponse
-    {
-        $this->service->deleteAttachment($id, $itemId);
-
-        return response()->json(null, 204);
-    }
-
     public function storeAttachment(StoreReimbursementAttachmentRequest $request, int $id, int $itemId): JsonResponse
-    {
-        $attachment = $this->service->replaceAttachment($id, $itemId, $request->file('attachment'));
-
-        return ReimbursementAttachmentResource::make($attachment)
-            ->additional(['message' => 'Attachment updated successfully.'])
-            ->response();
-    }
-
-    public function addAttachment(StoreReimbursementAttachmentRequest $request, int $id, int $itemId): JsonResponse
     {
         $attachment = $this->service->addAttachment($id, $itemId, $request->file('attachment'));
 
@@ -80,14 +59,14 @@ class ReimbursementItemController extends Controller
             ->setStatusCode(201);
     }
 
-    public function destroySpecificAttachment(int $id, int $itemId, int $attachmentId): JsonResponse
+    public function destroyAttachment(int $id, int $itemId, int $attachmentId): JsonResponse
     {
         $this->service->deleteSpecificAttachment($id, $itemId, $attachmentId);
 
         return response()->json(null, 204);
     }
 
-    public function serveSpecificAttachment(int $id, int $itemId, int $attachmentId): StreamedResponse
+    public function serveAttachment(int $id, int $itemId, int $attachmentId): StreamedResponse
     {
         return $this->service->serveSpecificAttachment($id, $itemId, $attachmentId);
     }

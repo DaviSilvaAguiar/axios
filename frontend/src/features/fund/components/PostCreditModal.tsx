@@ -10,12 +10,12 @@ import InputMonetario from "@/ui/MoneyInput";
 import DatePicker from "@/ui/DatePicker";
 import { toast } from "@/lib/toast";
 import {
-  lancarCreditoFormSchema,
-  type LancarCreditoFormData,
+  postCreditFormSchema,
+  type PostCreditFormData,
 } from "../fund.types";
 
 interface Props {
-  onSave: (data: LancarCreditoFormData) => Promise<void>;
+  onSave: (data: PostCreditFormData) => Promise<void>;
   onClose: () => void;
 }
 
@@ -26,8 +26,8 @@ export default function PostCreditModal({ onSave, onClose }: Props) {
     setValue,
     watch,
     formState: { errors, isSubmitting, isDirty },
-  } = useForm<LancarCreditoFormData>({
-    resolver: zodResolver(lancarCreditoFormSchema),
+  } = useForm<PostCreditFormData>({
+    resolver: zodResolver(postCreditFormSchema),
     defaultValues: {
       amount: "",
       transaction_date: new Date().toISOString().slice(0, 10),
@@ -38,7 +38,7 @@ export default function PostCreditModal({ onSave, onClose }: Props) {
   const amount = watch("amount");
   const date = watch("transaction_date");
 
-  async function onSubmit(data: LancarCreditoFormData) {
+  async function onSubmit(data: PostCreditFormData) {
     try {
       await onSave(data);
     } catch {

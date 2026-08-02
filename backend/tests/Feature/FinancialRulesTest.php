@@ -53,7 +53,7 @@ class FinancialRulesTest extends TenantTestCase
             'cost_center_id' => $costCenter->id,
             'description' => 'Site fund',
             'balance' => $balance,
-            'type' => Fund::TYPE_DINHEIRO_PIX,
+            'type' => Fund::TYPE_CASH_PIX,
             'status' => Fund::STATUS_ACTIVE,
         ]);
     }
@@ -100,7 +100,7 @@ class FinancialRulesTest extends TenantTestCase
 
         $debit = FundTransaction::where('fund_id', $fund->id)
             ->where('expense_report_id', $report->id)
-            ->where('transaction_type', FundTransaction::TYPE_DEBITO)
+            ->where('transaction_type', FundTransaction::TYPE_DEBIT)
             ->first();
 
         $this->assertNotNull($debit);

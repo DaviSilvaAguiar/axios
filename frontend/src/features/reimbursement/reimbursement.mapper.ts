@@ -1,11 +1,11 @@
 import {
   listReimbursementsResponseSchema,
   rcmResponseSchema,
-  type ListarReimbursementsResponse,
+  type ReimbursementListResponse,
   type Reimbursement,
 } from "./reimbursement.types";
 
-export function mapListarReimbursementsResponse(raw: unknown): ListarReimbursementsResponse {
+export function mapReimbursementList(raw: unknown): ReimbursementListResponse {
   return listReimbursementsResponseSchema.parse(raw);
 }
 

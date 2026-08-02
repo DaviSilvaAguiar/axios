@@ -75,16 +75,6 @@ class ReimbursementItemService
         return $item->load(['costCenter', 'expenseCategory', 'attachments']);
     }
 
-    public function serveAttachment(int $idReimbursement, int $itemId): StreamedResponse
-    {
-        Gate::authorize('view', Reimbursement::findOrFail($idReimbursement));
-
-        $item = ReimbursementItem::where('reimbursement_id', $idReimbursement)->findOrFail($itemId);
-        $attachment = $item->attachments()->firstOrFail();
-
-        return Storage::disk('public')->response($attachment->path);
-    }
-
     public function addAttachment(int $idReimbursement, int $itemId, UploadedFile $file): ReimbursementAttachment
     {
         $this->ensureReimbursementEditable($idReimbursement);
@@ -151,34 +141,5 @@ class ReimbursementItemService
         ]);
 
         return $item->load(['costCenter', 'expenseCategory', 'attachments']);
-    }
-
-    public function deleteAttachment(int $idReimbursement, int $itemId): void
-    {
-        $this->ensureReimbursementEditable($idReimbursement);
-        $item = ReimbursementItem::where('reimbursement_id', $idReimbursement)->findOrFail($itemId);
-
-        foreach ($item->attachments as $attachment) {
-            Storage::disk('public')->delete($attachment->path);
-            $attachment->delete();
-        }
-    }
-
-    public function replaceAttachment(int $idReimbursement, int $itemId, UploadedFile $file): ReimbursementAttachment
-    {
-        $this->ensureReimbursementEditable($idReimbursement);
-        $item = ReimbursementItem::where('reimbursement_id', $idReimbursement)->findOrFail($itemId);
-
-        foreach ($item->attachments as $existingAttachment) {
-            Storage::disk('public')->delete($existingAttachment->path);
-            $existingAttachment->delete();
-        }
-
-        $path = $file->store("reimbursement-attachments/{$idReimbursement}", 'public');
-
-        return ReimbursementAttachment::create([
-            'reimbursement_item_id' => $item->id,
-            'path' => $path,
-        ]);
     }
 }

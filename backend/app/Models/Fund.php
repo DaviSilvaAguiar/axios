@@ -17,11 +17,11 @@ class Fund extends Model
 
     public const STATUS_CLOSED = 2;
 
-    public const TYPE_DINHEIRO_PIX = 1;
+    public const TYPE_CASH_PIX = 1;
 
-    public const TYPE_CARTAO_PRE = 2;
+    public const TYPE_PREPAID_CARD = 2;
 
-    public const TYPE_OUTRO = 3;
+    public const TYPE_OTHER = 3;
 
     protected $fillable = [
         'user_id',

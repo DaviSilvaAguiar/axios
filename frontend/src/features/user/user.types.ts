@@ -36,6 +36,6 @@ export const editarUserFormSchema = z.object({
   tax_id: z.string().optional(),
 });
 
-export type ListarUsersResponse = z.infer<typeof listUsersResponseSchema>;
+export type UserListResponse = z.infer<typeof listUsersResponseSchema>;
 export type CriarUserFormData = z.infer<typeof createUserFormSchema>;
 export type EditarUserFormData = z.infer<typeof editarUserFormSchema>;

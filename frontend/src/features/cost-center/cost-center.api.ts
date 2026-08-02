@@ -2,20 +2,20 @@ import { api } from "@/lib/api";
 import { buildPageQuery, type Paginated, PAGE_SIZE } from "@/lib/pagination";
 import {
   mapCostCenterResponse,
-  mapListarCentrosDeCusto,
+  mapCostCenterList,
 } from "./cost-center.mapper";
 import type {
   CostCenter,
   CostCenterFormData,
 } from "./cost-center.types";
 
-export async function listCentrosDeCustoApi(
+export async function listCostCentersApi(
   page: number = 1,
   perPage: number = PAGE_SIZE,
   signal?: AbortSignal
 ): Promise<Paginated<CostCenter>> {
   const raw = await api.get<unknown>(`/v1/cost-center${buildPageQuery(page, perPage)}`, { signal });
-  return mapListarCentrosDeCusto(raw);
+  return mapCostCenterList(raw);
 }
 
 export async function getCostCenterApi(id: number): Promise<CostCenter> {

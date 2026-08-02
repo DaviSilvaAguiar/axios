@@ -34,14 +34,14 @@ const operationModules = [
     label: "Expense Reports",
     desc: "Record and audit field expense reports",
     href: "/expense-reports",
-    module: "rdc",
+    module: "expense-reports",
   },
   {
     icon: Wallet,
     label: "Fund Management",
     desc: "Control prepaid balances and advances",
     href: "/funds",
-    module: "expense-reports",
+    module: "funds",
   },
   {
     icon: ArrowUUpLeft,

@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useInfiniteList } from "@/lib/useInfiniteList";
 import { queryKeys } from "@/lib/queryKeys";
 import {
-  listCategoriasDespesaApi,
+  listExpenseCategoriesApi,
   createExpenseCategoryApi,
   updateExpenseCategoryApi,
   deleteExpenseCategoryApi,
@@ -14,14 +14,14 @@ import type { ExpenseCategory, ExpenseCategoryFormData } from "./expense-categor
 export function useExpenseCategories() {
   return useInfiniteList<ExpenseCategory>(
     queryKeys.expenseCategories.list,
-    (page, perPage, signal) => listCategoriasDespesaApi(page, perPage, signal),
+    (page, perPage, signal) => listExpenseCategoriesApi(page, perPage, signal),
   );
 }
 
 export function useExpenseCategoriesLookup() {
   return useQuery({
     queryKey: queryKeys.expenseCategories.lookup,
-    queryFn: ({ signal }) => listCategoriasDespesaApi(1, 200, signal),
+    queryFn: ({ signal }) => listExpenseCategoriesApi(1, 200, signal),
     select: (result) => result.data.filter((category) => category.active),
   });
 }

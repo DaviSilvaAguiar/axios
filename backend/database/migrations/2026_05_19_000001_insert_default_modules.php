@@ -10,7 +10,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        (new ModuleSeeder())->run();
+        (new ModuleSeeder)->run();
     }
 
     public function down(): void

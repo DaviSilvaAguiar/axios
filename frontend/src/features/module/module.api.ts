@@ -1,12 +1,12 @@
 import { api } from "@/lib/api";
-import { mapModulosUser } from "./module.mapper";
-import type { ModulosUserResponse } from "./module.types";
+import { mapUserModules } from "./module.mapper";
+import type { UserModulesResponse } from "./module.types";
 
-export async function listModulosUserApi(id: number, signal?: AbortSignal): Promise<ModulosUserResponse> {
+export async function listUserModulesApi(id: number, signal?: AbortSignal): Promise<UserModulesResponse> {
   const raw = await api.get(`/v1/users/${id}/modules`, { signal });
-  return mapModulosUser(raw);
+  return mapUserModules(raw);
 }
 
-export async function updateModulosUserApi(id: number, modules: number[]): Promise<void> {
+export async function updateUserModulesApi(id: number, modules: number[]): Promise<void> {
   await api.put(`/v1/users/${id}/modules`, { modules });
 }

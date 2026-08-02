@@ -41,6 +41,22 @@ function tokenFrom(auth: Record<string, string>): string | undefined {
   return auth['Authorization']?.replace('Bearer ', '');
 }
 
+async function throwIfNotOk(
+  response: Response,
+  path: string,
+  auth: Record<string, string>
+): Promise<void> {
+  if (response.ok) return;
+
+  if (response.status === 401) handleUnauthorized(path, tokenFrom(auth));
+
+  const error = await response.json().catch(() => ({ message: 'Unexpected error.' }));
+  const body = error as { message?: string; errors?: Record<string, string[]> };
+  const firstError = body.errors ? Object.values(body.errors)[0]?.[0] : undefined;
+
+  throw new Error(firstError ?? body.message ?? 'Unexpected error.');
+}
+
 async function apiFetch<T>(path: string, options: ApiOptions = {}): Promise<T> {
   const auth = await getAuthHeaders();
   const { next, headers, ...rest } = options;
@@ -56,13 +72,7 @@ async function apiFetch<T>(path: string, options: ApiOptions = {}): Promise<T> {
     ...(next ? { next } : {}),
   });
 
-  if (!response.ok) {
-    if (response.status === 401) handleUnauthorized(path, tokenFrom(auth));
-    const error = await response.json().catch(() => ({ message: 'Unexpected error.' }));
-    const body = error as { message?: string; errors?: Record<string, string[]> };
-    const firstError = body.errors ? Object.values(body.errors)[0]?.[0] : undefined;
-    throw new Error(firstError ?? body.message ?? 'Unexpected error.');
-  }
+  await throwIfNotOk(response, path, auth);
 
   if (response.status === 204 || response.headers.get('content-length') === '0') {
     return undefined as T;
@@ -81,13 +91,7 @@ async function apiFetchUpload<T>(path: string, body: FormData, signal?: AbortSig
     signal,
   });
 
-  if (!response.ok) {
-    if (response.status === 401) handleUnauthorized(path, tokenFrom(auth));
-    const error = await response.json().catch(() => ({ message: 'Unexpected error.' }));
-    const body = error as { message?: string; errors?: Record<string, string[]> };
-    const firstError = body.errors ? Object.values(body.errors)[0]?.[0] : undefined;
-    throw new Error(firstError ?? body.message ?? 'Unexpected error.');
-  }
+  await throwIfNotOk(response, path, auth);
 
   return response.json() as Promise<T>;
 }

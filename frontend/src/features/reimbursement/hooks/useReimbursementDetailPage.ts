@@ -7,7 +7,7 @@ import {
   deleteReimbursementApi,
   updateReimbursementApi,
   deleteReimbursementItemApi,
-  getAnexoEspecificoReimbursementApi,
+  getReimbursementAttachmentApi,
 } from "../reimbursement.api";
 import { useReimbursement } from "../reimbursement.hooks";
 import { persistReimbursementItems } from "../reimbursement.persist";
@@ -88,7 +88,7 @@ export function useReimbursementDetailPage(id: string) {
 
   async function openAttachment(reimbursementId: number, itemId: number, attachmentId: number) {
     try {
-      const blob = await getAnexoEspecificoReimbursementApi(reimbursementId, itemId, attachmentId);
+      const blob = await getReimbursementAttachmentApi(reimbursementId, itemId, attachmentId);
       const url = URL.createObjectURL(blob);
       window.open(url, "_blank");
     } catch {

@@ -18,7 +18,7 @@ import LocationField from "@/features/geolocation/components/LocationField";
 import SupplierSection from "@/features/supplier/components/SupplierSection";
 import ExpenseItemAttachments from "./ExpenseItemAttachments";
 import type {
-  AnexoCaixa,
+  ExpenseReportAttachment,
   StoreExpenseReportWithDespesasFormData,
 } from "../../expense-report.types";
 
@@ -35,7 +35,7 @@ interface Props {
   categoryOptions: Option[];
   geolocationEnabled: boolean;
   files: File[];
-  existingAttachments: AnexoCaixa[];
+  existingAttachments: ExpenseReportAttachment[];
   onRemove: () => void;
   onAddFile: (file: File) => void;
   onRemoveFile: (fileIdx: number) => void;
@@ -188,7 +188,7 @@ export default function ExpenseItemRow({
             return (
               <LocationField
                 label="Item location"
-                valor={value}
+                value={value}
                 onChange={(loc) => {
                   setValue(`items.${idx}.latitude`,  loc?.latitude  ?? null, { shouldDirty: true });
                   setValue(`items.${idx}.longitude`, loc?.longitude ?? null, { shouldDirty: true });

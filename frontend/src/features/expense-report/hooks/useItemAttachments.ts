@@ -1,11 +1,11 @@
 import { useCallback, useState } from "react";
-import type { AnexoCaixa } from "../expense-report.types";
+import type { ExpenseReportAttachment } from "../expense-report.types";
 
-export function useItemAttachments(initialCount: number, initialAttachments: AnexoCaixa[][]) {
+export function useItemAttachments(initialCount: number, initialAttachments: ExpenseReportAttachment[][]) {
   const [itemFiles, setItemFiles] = useState<File[][]>(
     () => Array.from({ length: initialCount }, () => [])
   );
-  const [existingAttachments, setExistingAttachments] = useState<AnexoCaixa[][]>(initialAttachments);
+  const [existingAttachments, setExistingAttachments] = useState<ExpenseReportAttachment[][]>(initialAttachments);
 
   function addItem() {
     setItemFiles((prev) => [...prev, []]);

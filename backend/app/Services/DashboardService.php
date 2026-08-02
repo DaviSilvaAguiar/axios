@@ -57,7 +57,7 @@ class DashboardService
             if (! isset($byMonth[$key])) {
                 $byMonth[$key] = ['credits' => '0', 'debits' => '0'];
             }
-            if ((int) $row->transaction_type === FundTransaction::TYPE_CREDITO) {
+            if ((int) $row->transaction_type === FundTransaction::TYPE_CREDIT) {
                 $byMonth[$key]['credits'] = (string) $row->total;
             } else {
                 $byMonth[$key]['debits'] = (string) $row->total;

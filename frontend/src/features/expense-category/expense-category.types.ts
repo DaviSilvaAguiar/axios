@@ -8,7 +8,7 @@ export const expenseCategorySchema = z.object({
   active:       z.boolean(),
 });
 
-export const listCategoriasDespesaResponseSchema = paginatedSchema(expenseCategorySchema);
+export const listExpenseCategoriesResponseSchema = paginatedSchema(expenseCategorySchema);
 
 export const expenseCategoryResponseSchema = z.object({
   data: expenseCategorySchema,
@@ -27,6 +27,6 @@ export function buildExpenseCategoryFormSchema(erpCodeRequired: boolean) {
 export const expenseCategoryFormSchema = buildExpenseCategoryFormSchema(false);
 
 export type ExpenseCategory                    = z.infer<typeof expenseCategorySchema>;
-export type ListarCategoriasDespesaResponse     = z.infer<typeof listCategoriasDespesaResponseSchema>;
+export type ExpenseCategoryListResponse     = z.infer<typeof listExpenseCategoriesResponseSchema>;
 export type ExpenseCategoryResponse            = z.infer<typeof expenseCategoryResponseSchema>;
 export type ExpenseCategoryFormData            = z.infer<typeof expenseCategoryFormSchema>;

@@ -12,7 +12,7 @@ export type { ExpenseCategory } from "@/features/expense-category/expense-catego
 
 import { supplierSchema } from "@/features/supplier/supplier.types";
 
-export const anexoReimbursementSchema = z.object({
+export const reimbursementAttachmentSchema = z.object({
   id: z.number(),
   reimbursement_item_id: z.number(),
   path: z.string(),
@@ -27,7 +27,7 @@ export const userReimbursementSchema = z.object({
   erp_code: z.string().nullable(),
 });
 
-export const itemReimbursementSchema = z.object({
+export const reimbursementItemSchema = z.object({
   id: z.number(),
   reimbursement_id: z.number(),
   cost_center_id: z.number(),
@@ -44,7 +44,7 @@ export const itemReimbursementSchema = z.object({
   supplier: supplierSchema.nullish(),
   expense_category: expenseCategorySchema.nullish(),
   cost_center: costCenterSchema.nullish(),
-  attachments: z.array(anexoReimbursementSchema).optional(),
+  attachments: z.array(reimbursementAttachmentSchema).optional(),
   created_at: z.string(),
   updated_at: z.string(),
 });
@@ -98,7 +98,7 @@ export const reimbursementSchema = z.object({
   account_number: z.string().nullish(),
   pix_key: z.string().nullish(),
   user: userReimbursementSchema.nullish(),
-  items: z.array(itemReimbursementSchema).optional(),
+  items: z.array(reimbursementItemSchema).optional(),
   lote_exportacao: loteExportacaoRefSchema.nullish(),
   created_at: z.string(),
   updated_at: z.string(),
@@ -240,12 +240,12 @@ export const storeReimbursementWithDespesasFormSchema = storeReimbursementFormSc
     }
   });
 
-export type AnexoReimbursement = z.infer<typeof anexoReimbursementSchema>;
+export type ReimbursementAttachment = z.infer<typeof reimbursementAttachmentSchema>;
 export type UserReimbursement = z.infer<typeof userReimbursementSchema>;
-export type ReimbursementItem = z.infer<typeof itemReimbursementSchema>;
+export type ReimbursementItem = z.infer<typeof reimbursementItemSchema>;
 export type Reimbursement = z.infer<typeof reimbursementSchema>;
 export type ReimbursementStatus = z.infer<typeof rcmStatusSchema>;
-export type ListarReimbursementsResponse = z.infer<typeof listReimbursementsResponseSchema>;
+export type ReimbursementListResponse = z.infer<typeof listReimbursementsResponseSchema>;
 export type ReimbursementResponse = z.infer<typeof rcmResponseSchema>;
 export type StoreReimbursementFormData = z.infer<typeof storeReimbursementFormSchema>;
 export type UpdateReimbursementStatusFormData = z.infer<typeof updateReimbursementStatusFormSchema>;

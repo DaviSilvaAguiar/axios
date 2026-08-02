@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import Button from "@/ui/Button";
 import Switch from "@/ui/Switch";
 import { toast } from "@/lib/toast";
-import { updateModulosUserApi } from "@/features/module/module.api";
+import { updateUserModulesApi } from "@/features/module/module.api";
 import { useUserModules } from "@/features/module/module.hooks";
 import { queryKeys } from "@/lib/queryKeys";
 
@@ -23,7 +23,7 @@ export default function UserModulesTab({ userId }: Props) {
 
   if (data && data !== syncedData) {
     setSyncedData(data);
-    setEnabled(new Set(data.habilitados));
+    setEnabled(new Set(data.enabled));
   }
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function UserModulesTab({ userId }: Props) {
   async function handleSave() {
     setSaving(true);
     try {
-      await updateModulosUserApi(userId, Array.from(enabled));
+      await updateUserModulesApi(userId, Array.from(enabled));
       queryClient.invalidateQueries({ queryKey: queryKeys.users.modules(userId) });
       toast.success("Modules updated.");
     } catch (err) {

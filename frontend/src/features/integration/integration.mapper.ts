@@ -7,7 +7,7 @@ import {
   type SendIntegrationResponse,
 } from "./integration.types";
 
-export function mapListarIntegracoes(raw: unknown): ListarIntegracoesResponse {
+export function mapIntegrationList(raw: unknown): ListarIntegracoesResponse {
   return listIntegracoesResponseSchema.parse(raw);
 }
 

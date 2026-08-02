@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
 import {
   createExpenseReportItemApi,
-  adicionarAnexoExpenseReportItemApi,
+  addExpenseReportAttachmentApi,
   updateExpenseReportApi,
   updateStatusExpenseReportApi,
   deleteExpenseReportApi,
@@ -38,7 +38,7 @@ export function useExpenseReportDetailPage(id: number) {
       await Promise.all(
         existingItems.flatMap((originalItem, idx) =>
           (files[idx] ?? []).map((file) =>
-            adicionarAnexoExpenseReportItemApi(expenseReport.id, originalItem.id, file)
+            addExpenseReportAttachmentApi(expenseReport.id, originalItem.id, file)
           )
         )
       );

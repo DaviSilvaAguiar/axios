@@ -4,17 +4,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
 import {
   listFundsApi,
-  extratoFundApi,
+  fundStatementApi,
   createFundApi,
   fecharFundApi,
-  lancarCreditoApi,
-  lancarAjusteApi,
+  postCreditApi,
+  postAdjustmentApi,
   type FundStatusFiltro,
 } from "./fund.api";
 import type {
   StoreFundFormData,
-  LancarCreditoFormData,
-  LancarAjusteFormData,
+  PostCreditFormData,
+  PostAdjustmentFormData,
 } from "./fund.types";
 
 export function useFunds(status: FundStatusFiltro) {
@@ -27,7 +27,7 @@ export function useFunds(status: FundStatusFiltro) {
 export function useFundStatement(fundId: number) {
   return useQuery({
     queryKey: queryKeys.funds.statement(fundId),
-    queryFn: ({ signal }) => extratoFundApi(fundId, signal),
+    queryFn: ({ signal }) => fundStatementApi(fundId, signal),
   });
 }
 
@@ -47,14 +47,14 @@ export function useFundMutations() {
   });
 
   const postCredit = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: LancarCreditoFormData }) =>
-      lancarCreditoApi(id, data),
+    mutationFn: ({ id, data }: { id: number; data: PostCreditFormData }) =>
+      postCreditApi(id, data),
     onSuccess: invalidate,
   });
 
   const postAdjustment = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: LancarAjusteFormData }) =>
-      lancarAjusteApi(id, data),
+    mutationFn: ({ id, data }: { id: number; data: PostAdjustmentFormData }) =>
+      postAdjustmentApi(id, data),
     onSuccess: invalidate,
   });
 

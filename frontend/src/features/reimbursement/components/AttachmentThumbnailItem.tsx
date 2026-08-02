@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Eye } from "@phosphor-icons/react";
-import { getAnexoEspecificoReimbursementApi } from "../reimbursement.api";
+import { getReimbursementAttachmentApi } from "../reimbursement.api";
 
 interface AttachmentThumbnailProps {
   reimbursementId: number;
@@ -19,7 +19,7 @@ export default function AttachmentThumbnailItem({ reimbursementId, itemId, attac
 
   useEffect(() => {
     let url: string;
-    getAnexoEspecificoReimbursementApi(reimbursementId, itemId, attachmentId)
+    getReimbursementAttachmentApi(reimbursementId, itemId, attachmentId)
       .then((blob) => {
         url = URL.createObjectURL(blob);
         setSrc(url);

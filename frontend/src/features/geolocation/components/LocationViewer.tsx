@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { X, CircleNotch, ArrowSquareOut } from "@phosphor-icons/react";
 import Modal from "@/ui/Modal";
-import type { Localizacao } from "../geolocation.types";
+import type { Location } from "../geolocation.types";
 
 const InteractiveMap = dynamic(() => import("./InteractiveMap"), {
   ssr: false,
@@ -17,11 +17,11 @@ const InteractiveMap = dynamic(() => import("./InteractiveMap"), {
 interface Props {
   open: boolean;
   onClose: () => void;
-  localizacao: Localizacao;
+  location: Location;
 }
 
-export default function LocationViewer({ open, onClose, localizacao }: Props) {
-  const mapsLink = `https://www.google.com/maps?q=${localizacao.latitude},${localizacao.longitude}`;
+export default function LocationViewer({ open, onClose, location }: Props) {
+  const mapsLink = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
 
   return (
     <Modal open={open} onClose={onClose} className="!max-w-4xl">
@@ -40,8 +40,8 @@ export default function LocationViewer({ open, onClose, localizacao }: Props) {
 
         <div className="h-[440px] w-full pointer-events-auto">
           <InteractiveMap
-            latitude={localizacao.latitude}
-            longitude={localizacao.longitude}
+            latitude={location.latitude}
+            longitude={location.longitude}
             onSelect={() => {}}
           />
         </div>
@@ -49,7 +49,7 @@ export default function LocationViewer({ open, onClose, localizacao }: Props) {
         <div className="px-6 py-4 border-t border-app-border flex flex-col gap-1.5">
           <p className="text-caption text-app-text-muted">Address</p>
           <p className="text-body-sm text-app-text">
-            {localizacao.address ?? `${localizacao.latitude.toFixed(6)}, ${localizacao.longitude.toFixed(6)}`}
+            {location.address ?? `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`}
           </p>
           <a
             href={mapsLink}

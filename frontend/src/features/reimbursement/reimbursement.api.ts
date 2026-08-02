@@ -1,10 +1,10 @@
 import { api } from "@/lib/api";
-import { buildPageQuery, PAGE_SIZE } from "@/lib/pagination";
-import { mapListarReimbursementsResponse, mapReimbursementResponse } from "./reimbursement.mapper";
-import { itemReimbursementSchema } from "./reimbursement.types";
+import { PAGE_SIZE } from "@/lib/pagination";
+import { mapReimbursementList, mapReimbursementResponse } from "./reimbursement.mapper";
+import { reimbursementItemSchema } from "./reimbursement.types";
 import type {
   ReimbursementItem,
-  ListarReimbursementsResponse,
+  ReimbursementListResponse,
   Reimbursement,
   StoreReimbursementFormData,
   UpdateReimbursementStatusFormData,
@@ -15,7 +15,7 @@ export async function listReimbursementsApi(
   perPage: number = PAGE_SIZE,
   filters?: { employee?: string; status?: string; startDate?: string; endDate?: string },
   signal?: AbortSignal
-): Promise<ListarReimbursementsResponse> {
+): Promise<ReimbursementListResponse> {
   const params = new URLSearchParams({ page: String(page), per_page: String(perPage) });
   if (filters?.employee) params.append("employee", filters.employee);
   if (filters?.status) params.append("status", filters.status);
@@ -23,7 +23,7 @@ export async function listReimbursementsApi(
   if (filters?.endDate) params.append("endDate", filters.endDate);
 
   const raw = await api.get<unknown>(`/v1/reimbursements?${params.toString()}`, { signal });
-  return mapListarReimbursementsResponse(raw);
+  return mapReimbursementList(raw);
 }
 
 export async function getReimbursementApi(id: number, signal?: AbortSignal): Promise<Reimbursement> {
@@ -66,15 +66,15 @@ export async function deleteReimbursementApi(id: number): Promise<void> {
   await api.delete(`/v1/reimbursements/${id}`);
 }
 
-export { listCentrosDeCustoApi as listCentrosCustoApi } from "@/features/cost-center/cost-center.api";
-export { listCategoriasDespesaApi } from "@/features/expense-category/expense-category.api";
+export { listCostCentersApi } from "@/features/cost-center/cost-center.api";
+export { listExpenseCategoriesApi } from "@/features/expense-category/expense-category.api";
 
 export async function createReimbursementItemApi(
   reimbursementId: number,
   data: FormData
 ): Promise<ReimbursementItem> {
   const raw = await api.upload<unknown>(`/v1/reimbursements/${reimbursementId}/items`, data);
-  return itemReimbursementSchema.parse((raw as { data: unknown }).data);
+  return reimbursementItemSchema.parse((raw as { data: unknown }).data);
 }
 
 export async function updateReimbursementItemApi(
@@ -107,7 +107,7 @@ export async function updateReimbursementItemApi(
     supplier_tax_id: data.supplier_tax_id ? data.supplier_tax_id.replace(/\D/g, "") : null,
     supplier_id: data.supplier_id ? Number(data.supplier_id) : null,
   });
-  return itemReimbursementSchema.parse((raw as { data: unknown }).data);
+  return reimbursementItemSchema.parse((raw as { data: unknown }).data);
 }
 
 export async function deleteReimbursementItemApi(
@@ -117,42 +117,21 @@ export async function deleteReimbursementItemApi(
   await api.delete(`/v1/reimbursements/${reimbursementId}/items/${itemId}`);
 }
 
-export async function deleteAnexoReimbursementApi(
-  reimbursementId: number,
-  itemId: number
-): Promise<void> {
-  await api.delete(`/v1/reimbursements/${reimbursementId}/items/${itemId}/attachment`);
-}
-
-export async function substituirAnexoReimbursementApi(
-  reimbursementId: number,
-  itemId: number,
-  file: File
-): Promise<void> {
-  const fd = new FormData();
-  fd.append("anexo", file);
-  await api.upload(`/v1/reimbursements/${reimbursementId}/items/${itemId}/attachment`, fd);
-}
-
 export async function downloadPdfReimbursementApi(id: number): Promise<Blob> {
   return api.blob(`/v1/reimbursements/${id}/pdf`);
 }
 
-export async function getAnexoReimbursementApi(reimbursementId: number, itemId: number, signal?: AbortSignal): Promise<Blob> {
-  return api.blob(`/v1/reimbursements/${reimbursementId}/items/${itemId}/attachment`, signal);
-}
-
-export async function adicionarAnexoReimbursementApi(
+export async function addReimbursementAttachmentApi(
   reimbursementId: number,
   itemId: number,
   file: File
 ): Promise<void> {
   const fd = new FormData();
-  fd.append("anexo", file);
+  fd.append("attachment", file);
   await api.upload(`/v1/reimbursements/${reimbursementId}/items/${itemId}/attachments`, fd);
 }
 
-export async function deleteAnexoEspecificoReimbursementApi(
+export async function deleteReimbursementAttachmentApi(
   reimbursementId: number,
   itemId: number,
   attachmentId: number
@@ -160,10 +139,11 @@ export async function deleteAnexoEspecificoReimbursementApi(
   await api.delete(`/v1/reimbursements/${reimbursementId}/items/${itemId}/attachments/${attachmentId}`);
 }
 
-export async function getAnexoEspecificoReimbursementApi(
+export async function getReimbursementAttachmentApi(
   reimbursementId: number,
   itemId: number,
-  attachmentId: number
+  attachmentId: number,
+  signal?: AbortSignal
 ): Promise<Blob> {
-  return api.blob(`/v1/reimbursements/${reimbursementId}/items/${itemId}/attachments/${attachmentId}`);
+  return api.blob(`/v1/reimbursements/${reimbursementId}/items/${itemId}/attachments/${attachmentId}`, signal);
 }

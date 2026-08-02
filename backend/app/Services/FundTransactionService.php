@@ -27,8 +27,8 @@ class FundTransactionService
                 'user_id' => Auth::id(),
                 'fund_id' => $fund->id,
                 'expense_report_id' => null,
-                'transaction_type' => FundTransaction::TYPE_CREDITO,
-                'subtype' => FundTransaction::SUBTYPE_ADIANTAMENTO,
+                'transaction_type' => FundTransaction::TYPE_CREDIT,
+                'subtype' => FundTransaction::SUBTYPE_ADVANCE,
                 'amount' => $amount,
                 'notes' => $data['notes'] ?? null,
                 'transaction_date' => $data['transaction_date'],
@@ -52,11 +52,11 @@ class FundTransactionService
             $amount = Money::fromDecimalString($data['amount']);
 
             $isDebit = in_array($subtype, [
-                FundTransaction::SUBTYPE_DEVOLUCAO,
-                FundTransaction::SUBTYPE_AJUSTE_NEGATIVO,
+                FundTransaction::SUBTYPE_REFUND,
+                FundTransaction::SUBTYPE_NEGATIVE_ADJUSTMENT,
             ], true);
 
-            $type = $isDebit ? FundTransaction::TYPE_DEBITO : FundTransaction::TYPE_CREDITO;
+            $type = $isDebit ? FundTransaction::TYPE_DEBIT : FundTransaction::TYPE_CREDIT;
 
             $newBalance = $isDebit
                 ? $fund->balance->subtract($amount)
@@ -105,8 +105,8 @@ class FundTransactionService
                 'user_id' => Auth::id(),
                 'fund_id' => $fund->id,
                 'expense_report_id' => $expenseReportId,
-                'transaction_type' => FundTransaction::TYPE_DEBITO,
-                'subtype' => FundTransaction::SUBTYPE_ABATIMENTO_RDC,
+                'transaction_type' => FundTransaction::TYPE_DEBIT,
+                'subtype' => FundTransaction::SUBTYPE_EXPENSE_REPORT_CHARGE,
                 'amount' => $amount,
                 'transaction_date' => now(),
             ]);
@@ -132,7 +132,7 @@ class FundTransactionService
         $accumulatedBalance = Money::zero();
 
         return $transactions->map(function (FundTransaction $t) use (&$accumulatedBalance) {
-            $accumulatedBalance = $t->transaction_type === FundTransaction::TYPE_CREDITO
+            $accumulatedBalance = $t->transaction_type === FundTransaction::TYPE_CREDIT
                 ? $accumulatedBalance->add($t->amount)
                 : $accumulatedBalance->subtract($t->amount);
 
@@ -145,7 +145,7 @@ class FundTransactionService
                 'notes' => $t->notes,
                 'reason' => $t->reason,
                 'expense_report_id' => $t->expense_report_id,
-                'caixa' => $t->expenseReport,
+                'expense_report' => $t->expenseReport,
                 'accumulated_balance' => $accumulatedBalance,
             ];
         });

@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-import { mapListarIntegracoes, mapSaveKey, mapSendIntegration } from "./integration.mapper";
+import { mapIntegrationList, mapSaveKey, mapSendIntegration } from "./integration.mapper";
 import type {
   ListarIntegracoesResponse,
   SaveKeyResponse,
@@ -9,7 +9,7 @@ import type { BatchType } from "@/features/export/export.types";
 
 export async function listIntegracoesApi(signal?: AbortSignal): Promise<ListarIntegracoesResponse> {
   const raw = await api.get<unknown>("/v1/integration", { signal });
-  return mapListarIntegracoes(raw);
+  return mapIntegrationList(raw);
 }
 
 export async function saveKeyIntegrationApi(

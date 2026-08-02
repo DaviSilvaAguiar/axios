@@ -14,12 +14,12 @@ import { toast } from "@/lib/toast";
 import { formatarData, formatarMoeda } from "@/lib/formatters";
 import {
   FUND_STATUS_CLOSED,
-  FUND_TIPO_LABEL,
+  FUND_TYPE_LABEL,
   SUBTYPE_LABEL,
-  TIPO_TRANSACAO_CREDIT,
-  type LancarAjusteFormData,
-  type LancarCreditoFormData,
-  type TransacaoExtrato,
+  TRANSACTION_TYPE_CREDIT,
+  type PostAdjustmentFormData,
+  type PostCreditFormData,
+  type StatementTransaction,
 } from "../fund.types";
 import { useFundStatement, useFundMutations } from "../fund.hooks";
 import PostCreditModal from "./PostCreditModal";
@@ -37,13 +37,13 @@ export default function FundStatement({ fundId }: Props) {
   const [showAdjustment, setShowAdjustment] = useState(false);
   const [showClose, setShowClose] = useState(false);
 
-  async function handleCredit(values: LancarCreditoFormData) {
+  async function handleCredit(values: PostCreditFormData) {
     await postCredit.mutateAsync({ id: fundId, data: values });
     setShowCredit(false);
     toast.success("Advance posted!");
   }
 
-  async function handleAdjustment(values: LancarAjusteFormData) {
+  async function handleAdjustment(values: PostAdjustmentFormData) {
     await postAdjustment.mutateAsync({ id: fundId, data: values });
     setShowAdjustment(false);
     toast.success("Adjustment posted!");
@@ -75,7 +75,7 @@ export default function FundStatement({ fundId }: Props) {
   const balance = Number(fund.balance);
   const closed = fund.status === FUND_STATUS_CLOSED;
 
-  const columns: DataTableColumn<TransacaoExtrato>[] = [
+  const columns: DataTableColumn<StatementTransaction>[] = [
     {
       key: "date",
       header: "Date",
@@ -96,13 +96,13 @@ export default function FundStatement({ fundId }: Props) {
       key: "reference",
       header: "Reference",
       render: (t) => {
-        if (t.expense_report_id && t.caixa) {
+        if (t.expense_report_id && t.expense_report) {
           return (
             <Link
               href={`/expense-reports?id=${t.expense_report_id}`}
               className="text-small font-semibold text-brand hover:underline"
             >
-              Report #{t.expense_report_id} — {t.caixa.description}
+              Report #{t.expense_report_id} — {t.expense_report.description}
             </Link>
           );
         }
@@ -119,7 +119,7 @@ export default function FundStatement({ fundId }: Props) {
       align: "right",
       render: (t) => (
         <span className="text-small text-emerald-600 whitespace-nowrap">
-          {t.transaction_type === TIPO_TRANSACAO_CREDIT ? formatarMoeda(Number(t.amount)) : "—"}
+          {t.transaction_type === TRANSACTION_TYPE_CREDIT ? formatarMoeda(Number(t.amount)) : "—"}
         </span>
       ),
     },
@@ -129,7 +129,7 @@ export default function FundStatement({ fundId }: Props) {
       align: "right",
       render: (t) => (
         <span className="text-small text-red-600 whitespace-nowrap">
-          {t.transaction_type !== TIPO_TRANSACAO_CREDIT ? formatarMoeda(Number(t.amount)) : "—"}
+          {t.transaction_type !== TRANSACTION_TYPE_CREDIT ? formatarMoeda(Number(t.amount)) : "—"}
         </span>
       ),
     },
@@ -161,7 +161,7 @@ export default function FundStatement({ fundId }: Props) {
           <div className="flex flex-col gap-4 px-5 py-4 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-col gap-1">
               <span className="text-caption text-app-text-muted">
-                #{fund.id} · {FUND_TIPO_LABEL[fund.type]}
+                #{fund.id} · {FUND_TYPE_LABEL[fund.type]}
                 {closed && " · Closed"}
               </span>
               <h1 className="text-feature-title text-app-text">{fund.description}</h1>

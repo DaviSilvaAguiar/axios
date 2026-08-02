@@ -3,16 +3,16 @@
 import { useState } from "react";
 import { MapPin, X } from "@phosphor-icons/react";
 import LocationSelector from "./LocationSelector";
-import type { Localizacao } from "../geolocation.types";
+import type { Location } from "../geolocation.types";
 
 interface Props {
-  valor: Localizacao | null;
-  onChange: (loc: Localizacao | null) => void;
+  value: Location | null;
+  onChange: (loc: Location | null) => void;
   label?: string;
   disabled?: boolean;
 }
 
-export default function LocationField({ valor, onChange, label = "Location", disabled }: Props) {
+export default function LocationField({ value, onChange, label = "Location", disabled }: Props) {
   const [open, setOpen] = useState(false);
 
   function handleOpen() {
@@ -36,14 +36,14 @@ export default function LocationField({ valor, onChange, label = "Location", dis
           className="flex items-center gap-2.5 w-full text-left rounded-xl border border-app-border bg-app-surface px-3 py-2.5 hover:bg-app-hover transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <MapPin size={18} className="text-app-text-muted shrink-0" />
-          {valor ? (
+          {value ? (
             <span className="flex-1 min-w-0">
               <span className="block text-body-sm text-app-text truncate">
-                {valor.address ?? `${valor.latitude.toFixed(6)}, ${valor.longitude.toFixed(6)}`}
+                {value.address ?? `${value.latitude.toFixed(6)}, ${value.longitude.toFixed(6)}`}
               </span>
-              {valor.address && (
+              {value.address && (
                 <span className="block text-caption text-app-text-subtle">
-                  {valor.latitude.toFixed(6)}, {valor.longitude.toFixed(6)}
+                  {value.latitude.toFixed(6)}, {value.longitude.toFixed(6)}
                 </span>
               )}
             </span>
@@ -52,7 +52,7 @@ export default function LocationField({ valor, onChange, label = "Location", dis
               Select location
             </span>
           )}
-          {valor && !disabled && (
+          {value && !disabled && (
             <span
               onClick={handleRemove}
               role="button"
@@ -68,7 +68,7 @@ export default function LocationField({ valor, onChange, label = "Location", dis
       <LocationSelector
         open={open}
         onClose={() => setOpen(false)}
-        initialValue={valor}
+        initialValue={value}
         onConfirm={onChange}
       />
     </>

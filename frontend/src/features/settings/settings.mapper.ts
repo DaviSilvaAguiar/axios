@@ -5,7 +5,7 @@ import {
   type ListSettingsResponse,
 } from "./settings.types";
 
-export function mapListarSettings(raw: unknown): ListSettingsResponse {
+export function mapSettingList(raw: unknown): ListSettingsResponse {
   return listSettingsResponseSchema.parse(raw).data;
 }
 

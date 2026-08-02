@@ -27,14 +27,14 @@ import { useSidebar } from '@/contexts/SidebarContext';
 const navItemsAdmin = [
   { href: '/dashboard', label: 'Home', icon: HouseLine },
   { href: '/overview', label: 'Dashboard', icon: ChartBar },
-  { href: '/expense-reports', label: 'Expense Reports', icon: Receipt, modulo: 'rdc' },
-  { href: '/funds', label: 'Fund Management', icon: Wallet, modulo: 'expense-reports' },
-  { href: '/reimbursements', label: 'Reimbursement', icon: ArrowUUpLeft, modulo: 'reimbursement' },
-  { href: '/export', label: 'ERP Export', icon: DownloadSimple, modulo: 'export' },
-  { href: '/cost-centers', label: 'Cost Centers', icon: Buildings, modulo: 'cost-center' },
-  { href: '/expense-categories', label: 'Categories', icon: Tag, modulo: 'expense-category' },
-  { href: '/bank-accounts', label: 'Bank Accounts', icon: Bank, modulo: 'bank-account' },
-  { href: '/suppliers', label: 'Suppliers', icon: Storefront, modulo: 'supplier' },
+  { href: '/expense-reports', label: 'Expense Reports', icon: Receipt, module: 'expense-reports' },
+  { href: '/funds', label: 'Fund Management', icon: Wallet, module: 'funds' },
+  { href: '/reimbursements', label: 'Reimbursement', icon: ArrowUUpLeft, module: 'reimbursement' },
+  { href: '/export', label: 'ERP Export', icon: DownloadSimple, module: 'export' },
+  { href: '/cost-centers', label: 'Cost Centers', icon: Buildings, module: 'cost-center' },
+  { href: '/expense-categories', label: 'Categories', icon: Tag, module: 'expense-category' },
+  { href: '/bank-accounts', label: 'Bank Accounts', icon: Bank, module: 'bank-account' },
+  { href: '/suppliers', label: 'Suppliers', icon: Storefront, module: 'supplier' },
 ];
 
 const navItemsProvider = [
@@ -49,7 +49,7 @@ export default function Sidebar({ userCount = 0 }: { userCount?: number }) {
 
   const baseNavItems = user?.role === 3 ? navItemsProvider : navItemsAdmin;
   const navItems = baseNavItems.filter(
-    (item) => !('modulo' in item) || enabledModules.includes(item.modulo as string)
+    (item) => !('module' in item) || enabledModules.includes(item.module as string)
   );
   const isProvider = user?.role === 3;
 

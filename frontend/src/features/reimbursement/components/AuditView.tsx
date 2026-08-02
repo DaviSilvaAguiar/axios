@@ -93,7 +93,7 @@ export default function AuditView({ reimbursement, onClose, onApprove, onReject,
         <LocationViewer
           open={showLocation}
           onClose={() => setShowLocation(false)}
-          localizacao={{
+          location={{
             latitude: Number(selectedItem.latitude),
             longitude: Number(selectedItem.longitude),
             address: selectedItem.address ?? null,

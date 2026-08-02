@@ -2,14 +2,14 @@ import { api } from "@/lib/api";
 import { valorParaApi } from "@/lib/formatters";
 import {
   mapFundResponse,
-  mapExtratoResponse,
-  mapListarFundsResponse,
+  mapStatementResponse,
+  mapFundList,
 } from "./fund.mapper";
 import type {
   Fund,
-  ExtratoResponse,
-  LancarAjusteFormData,
-  LancarCreditoFormData,
+  StatementResponse,
+  PostAdjustmentFormData,
+  PostCreditFormData,
   StoreFundFormData,
 } from "./fund.types";
 
@@ -20,7 +20,7 @@ export async function listFundsApi(
   signal?: AbortSignal,
 ): Promise<Fund[]> {
   const raw = await api.get<unknown>(`/v1/funds?status=${status}`, { signal });
-  return mapListarFundsResponse(raw);
+  return mapFundList(raw);
 }
 
 export async function getFundApi(id: number): Promise<Fund> {
@@ -56,14 +56,14 @@ export async function fecharFundApi(id: number): Promise<Fund> {
   return mapFundResponse(raw);
 }
 
-export async function extratoFundApi(id: number, signal?: AbortSignal): Promise<ExtratoResponse> {
+export async function fundStatementApi(id: number, signal?: AbortSignal): Promise<StatementResponse> {
   const raw = await api.get<unknown>(`/v1/funds/${id}/statement`, { signal });
-  return mapExtratoResponse(raw);
+  return mapStatementResponse(raw);
 }
 
-export async function lancarCreditoApi(
+export async function postCreditApi(
   id: number,
-  dados: LancarCreditoFormData,
+  dados: PostCreditFormData,
 ): Promise<void> {
   await api.post(`/v1/funds/${id}/transactions/credit`, {
     ...dados,
@@ -71,9 +71,9 @@ export async function lancarCreditoApi(
   });
 }
 
-export async function lancarAjusteApi(
+export async function postAdjustmentApi(
   id: number,
-  dados: LancarAjusteFormData,
+  dados: PostAdjustmentFormData,
 ): Promise<void> {
   await api.post(`/v1/funds/${id}/transactions/adjustment`, {
     ...dados,

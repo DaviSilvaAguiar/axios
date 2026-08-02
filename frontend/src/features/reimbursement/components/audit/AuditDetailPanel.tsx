@@ -14,7 +14,7 @@ import {
   MapPin,
 } from "@phosphor-icons/react";
 import { type ReimbursementItem, type Reimbursement } from "../../reimbursement.types";
-import { getAnexoReimbursementApi } from "../../reimbursement.api";
+import { getReimbursementAttachmentApi } from "../../reimbursement.api";
 import { formatarData, formatarMoeda } from "@/lib/formatters";
 
 function AttachmentPlaceholder({ icon: PhosphorIcon, label }: { icon: Icon; label: string }) {
@@ -41,16 +41,18 @@ interface Props {
 }
 
 export default function AuditDetailPanel({ reimbursement, selectedItem, mobilePanel, onBack, onShowLocation }: Props) {
-  const path = selectedItem?.attachments?.[0]?.path ?? null;
+  const attachment = selectedItem?.attachments?.[0] ?? null;
+  const path = attachment?.path ?? null;
   const isPdf = path?.toLowerCase().endsWith(".pdf") ?? false;
   const isImage = path ? /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(path) : false;
 
   const [erroredItemId, setErroredItemId] = useState<number | null>(null);
 
   const attachmentQuery = useQuery({
-    queryKey: ["reimbursement-attachment", reimbursement.id, selectedItem?.id],
-    queryFn: ({ signal }) => getAnexoReimbursementApi(reimbursement.id, selectedItem!.id, signal),
-    enabled: Boolean(path && selectedItem),
+    queryKey: ["reimbursement-attachment", reimbursement.id, selectedItem?.id, attachment?.id],
+    queryFn: ({ signal }) =>
+      getReimbursementAttachmentApi(reimbursement.id, selectedItem!.id, attachment!.id, signal),
+    enabled: Boolean(attachment && selectedItem),
   });
 
   const blob = attachmentQuery.data;

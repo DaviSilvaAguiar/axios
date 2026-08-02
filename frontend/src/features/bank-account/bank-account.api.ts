@@ -2,7 +2,7 @@ import { api } from "@/lib/api";
 import { buildPageQuery, type Paginated, PAGE_SIZE } from "@/lib/pagination";
 import {
   mapBankAccountResponse,
-  mapListarContasBancarias,
+  mapBankAccountList,
 } from "./bank-account.mapper";
 import type {
   BankAccount,
@@ -15,7 +15,7 @@ export async function listContasBancariasApi(
   signal?: AbortSignal
 ): Promise<Paginated<BankAccount>> {
   const raw = await api.get<unknown>(`/v1/bank-accounts${buildPageQuery(page, perPage)}`, { signal });
-  return mapListarContasBancarias(raw);
+  return mapBankAccountList(raw);
 }
 
 export async function getBankAccountApi(id: number): Promise<BankAccount> {

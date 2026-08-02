@@ -11,7 +11,7 @@ import AuditAttachmentViewer from "./audit/AuditAttachmentViewer";
 import AuditItemDetails from "./audit/AuditItemDetails";
 import AuditActionFooter from "./audit/AuditActionFooter";
 import LocationViewer from "@/features/geolocation/components/LocationViewer";
-import { getAnexoExpenseReportApi } from "../expense-report.api";
+import { getExpenseReportAttachmentApi } from "../expense-report.api";
 import { EXPENSE_REPORT_STATUS_DRAFT, type ExpenseReport } from "../expense-report.types";
 import { formatarData } from "@/lib/formatters";
 
@@ -72,7 +72,7 @@ export default function AuditView({ expenseReport, onClose, onEdit, onSubmit, on
 
   const attachmentQuery = useQuery({
     queryKey: ["expense-report-attachment", expenseReport.id, selectedItem?.id],
-    queryFn: ({ signal }) => getAnexoExpenseReportApi(expenseReport.id, selectedItem!.id, attachment!.id, signal),
+    queryFn: ({ signal }) => getExpenseReportAttachmentApi(expenseReport.id, selectedItem!.id, attachment!.id, signal),
     enabled: Boolean(path && selectedItem && attachment),
   });
 
@@ -278,7 +278,7 @@ export default function AuditView({ expenseReport, onClose, onEdit, onSubmit, on
         <LocationViewer
           open={viewLocation}
           onClose={() => setViewLocation(false)}
-          localizacao={currentLocation}
+          location={currentLocation}
         />
       )}
 

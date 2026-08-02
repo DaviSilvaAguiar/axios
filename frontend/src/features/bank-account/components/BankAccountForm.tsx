@@ -55,7 +55,7 @@ export default function BankAccountForm({ bankAccount, onSave, onCancel }: Props
 
   return (
     <ModalForm
-      titulo={bankAccount ? "Edit Bank Account" : "New Bank Account"}
+      title={bankAccount ? "Edit Bank Account" : "New Bank Account"}
       onCancelar={onCancel}
       onSubmit={handleSubmit(onSave)}
       submitting={isSubmitting}
@@ -81,7 +81,7 @@ export default function BankAccountForm({ bankAccount, onSave, onCancel }: Props
           onClick={() => setValue("active", !active)}
           className="w-fit cursor-pointer transition-opacity hover:opacity-80"
         >
-          <ActiveBadge ativo={active} />
+          <ActiveBadge active={active} />
         </button>
       </div>
     </ModalForm>

@@ -8,7 +8,7 @@ export const bankAccountSchema = z.object({
   active:       z.boolean(),
 });
 
-export const listContasBancariasResponseSchema = paginatedSchema(bankAccountSchema);
+export const listBankAccountsResponseSchema = paginatedSchema(bankAccountSchema);
 
 export const bankAccountResponseSchema = z.object({
   data: bankAccountSchema,
@@ -27,6 +27,6 @@ export function buildBankAccountFormSchema(erpCodeRequired: boolean) {
 export const bankAccountFormSchema = buildBankAccountFormSchema(false);
 
 export type BankAccount                 = z.infer<typeof bankAccountSchema>;
-export type ListarContasBancariasResponse = z.infer<typeof listContasBancariasResponseSchema>;
+export type BankAccountListResponse = z.infer<typeof listBankAccountsResponseSchema>;
 export type BankAccountResponse         = z.infer<typeof bankAccountResponseSchema>;
 export type BankAccountFormData         = z.infer<typeof bankAccountFormSchema>;

@@ -11,11 +11,11 @@ import DatePicker from "@/ui/DatePicker";
 import Combobox from "@/ui/Combobox";
 import { toast } from "@/lib/toast";
 import {
-  lancarAjusteFormSchema,
+  postAdjustmentFormSchema,
   SUBTYPE_NEGATIVE_ADJUSTMENT,
   SUBTYPE_POSITIVE_ADJUSTMENT,
   SUBTYPE_REFUND,
-  type LancarAjusteFormData,
+  type PostAdjustmentFormData,
 } from "../fund.types";
 
 const SUBTYPE_OPTIONS = [
@@ -25,7 +25,7 @@ const SUBTYPE_OPTIONS = [
 ];
 
 interface Props {
-  onSave: (data: LancarAjusteFormData) => Promise<void>;
+  onSave: (data: PostAdjustmentFormData) => Promise<void>;
   onClose: () => void;
 }
 
@@ -36,8 +36,8 @@ export default function PostAdjustmentModal({ onSave, onClose }: Props) {
     setValue,
     watch,
     formState: { errors, isSubmitting, isDirty },
-  } = useForm<LancarAjusteFormData>({
-    resolver: zodResolver(lancarAjusteFormSchema),
+  } = useForm<PostAdjustmentFormData>({
+    resolver: zodResolver(postAdjustmentFormSchema),
     defaultValues: {
       subtype: String(SUBTYPE_REFUND),
       amount: "",
@@ -50,7 +50,7 @@ export default function PostAdjustmentModal({ onSave, onClose }: Props) {
   const amount = watch("amount");
   const date = watch("transaction_date");
 
-  async function onSubmit(data: LancarAjusteFormData) {
+  async function onSubmit(data: PostAdjustmentFormData) {
     try {
       await onSave(data);
     } catch {

@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 import { buildPageQuery, type Paginated, PAGE_SIZE } from "@/lib/pagination";
-import { mapListarUsers, mapUserResponse } from "./user.mapper";
+import { mapUserList, mapUserResponse } from "./user.mapper";
 import type {
   CriarUserFormData,
   EditarUserFormData,
@@ -13,7 +13,7 @@ export async function listUsersApi(
   signal?: AbortSignal
 ): Promise<Paginated<User>> {
   const raw = await api.get<unknown>(`/v1/users${buildPageQuery(page, perPage)}`, { signal });
-  return mapListarUsers(raw);
+  return mapUserList(raw);
 }
 
 export async function getUserApi(id: number): Promise<User> {

@@ -8,7 +8,7 @@ export const costCenterSchema = z.object({
   active:         z.boolean(),
 });
 
-export const listCentrosDeCustoResponseSchema = paginatedSchema(costCenterSchema);
+export const listCostCentersResponseSchema = paginatedSchema(costCenterSchema);
 
 export const costCenterResponseSchema = z.object({
   data: costCenterSchema,
@@ -27,6 +27,6 @@ export function buildCostCenterFormSchema(erpCodeRequired: boolean) {
 export const costCenterFormSchema = buildCostCenterFormSchema(false);
 
 export type CostCenter                    = z.infer<typeof costCenterSchema>;
-export type ListarCentrosDeCustoResponse     = z.infer<typeof listCentrosDeCustoResponseSchema>;
+export type CostCenterListResponse     = z.infer<typeof listCostCentersResponseSchema>;
 export type CostCenterResponse            = z.infer<typeof costCenterResponseSchema>;
 export type CostCenterFormData            = z.infer<typeof costCenterFormSchema>;

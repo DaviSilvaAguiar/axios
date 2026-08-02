@@ -214,7 +214,7 @@ export default function ExpenseItemCard({
             return (
               <LocationField
                 label="Item location"
-                valor={locationValue}
+                value={locationValue}
                 onChange={(loc) => {
                   setValue(`items.${idx}.latitude`,  loc?.latitude  ?? null, { shouldDirty: true });
                   setValue(`items.${idx}.longitude`, loc?.longitude ?? null, { shouldDirty: true });

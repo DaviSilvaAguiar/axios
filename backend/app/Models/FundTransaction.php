@@ -12,19 +12,19 @@ class FundTransaction extends Model
 {
     protected $table = 'fund_transaction';
 
-    public const TYPE_CREDITO = 1;
+    public const TYPE_CREDIT = 1;
 
-    public const TYPE_DEBITO = 2;
+    public const TYPE_DEBIT = 2;
 
-    public const SUBTYPE_ADIANTAMENTO = 1;
+    public const SUBTYPE_ADVANCE = 1;
 
-    public const SUBTYPE_ABATIMENTO_RDC = 2;
+    public const SUBTYPE_EXPENSE_REPORT_CHARGE = 2;
 
-    public const SUBTYPE_DEVOLUCAO = 3;
+    public const SUBTYPE_REFUND = 3;
 
-    public const SUBTYPE_AJUSTE_POSITIVO = 4;
+    public const SUBTYPE_POSITIVE_ADJUSTMENT = 4;
 
-    public const SUBTYPE_AJUSTE_NEGATIVO = 5;
+    public const SUBTYPE_NEGATIVE_ADJUSTMENT = 5;
 
     protected $fillable = [
         'user_id',

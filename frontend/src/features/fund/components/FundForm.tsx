@@ -20,7 +20,7 @@ import {
 } from "@/lib/pix";
 import {
   storeFundFormSchema,
-  FUND_TIPO_LABEL,
+  FUND_TYPE_LABEL,
   type StoreFundFormData,
 } from "../fund.types";
 import { useUsersLookup } from "@/features/user/user.hooks";
@@ -134,7 +134,7 @@ export default function FundForm({ onSave, onClose }: Props) {
           <div className="flex flex-col gap-1.5">
             <label className="text-caption font-semibold text-app-text-muted">Type</label>
             <Combobox
-              options={Object.entries(FUND_TIPO_LABEL).map(([value, label]) => ({
+              options={Object.entries(FUND_TYPE_LABEL).map(([value, label]) => ({
                 value,
                 label,
               }))}

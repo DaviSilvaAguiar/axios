@@ -7,8 +7,8 @@ import Modal from "@/ui/Modal";
 import Button from "@/ui/Button";
 import Input from "@/ui/Input";
 import { toast } from "@/lib/toast";
-import { getEnderecosApi, reverseGeocodeApi } from "../geolocation.api";
-import type { Localizacao, NominatimResult } from "../geolocation.types";
+import { searchAddressesApi, reverseGeocodeApi } from "../geolocation.api";
+import type { Location, NominatimResult } from "../geolocation.types";
 
 const InteractiveMap = dynamic(() => import("./InteractiveMap"), {
   ssr: false,
@@ -22,8 +22,8 @@ const InteractiveMap = dynamic(() => import("./InteractiveMap"), {
 interface Props {
   open: boolean;
   onClose: () => void;
-  onConfirm: (loc: Localizacao) => void;
-  initialValue?: Localizacao | null;
+  onConfirm: (loc: Location) => void;
+  initialValue?: Location | null;
 }
 
 export default function LocationSelector({ open, onClose, onConfirm, initialValue }: Props) {
@@ -34,7 +34,7 @@ export default function LocationSelector({ open, onClose, onConfirm, initialValu
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<NominatimResult[]>([]);
   const [capturing, setCapturing] = useState(false);
-  const [lastSync, setLastSync] = useState<{ open: boolean; initialValue: Localizacao | null | undefined }>({
+  const [lastSync, setLastSync] = useState<{ open: boolean; initialValue: Location | null | undefined }>({
     open: false,
     initialValue: undefined,
   });
@@ -52,7 +52,7 @@ export default function LocationSelector({ open, onClose, onConfirm, initialValu
     if (!search.trim()) return;
     setSearching(true);
     try {
-      const res = await getEnderecosApi(search);
+      const res = await searchAddressesApi(search);
       setResults(res);
       if (res.length === 0) toast.info("No address found.");
     } catch (err) {

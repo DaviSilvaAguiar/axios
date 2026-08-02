@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useInfiniteList } from "@/lib/useInfiniteList";
 import { queryKeys } from "@/lib/queryKeys";
 import {
-  listCentrosDeCustoApi,
+  listCostCentersApi,
   createCostCenterApi,
   updateCostCenterApi,
   deleteCostCenterApi,
@@ -14,14 +14,14 @@ import type { CostCenter, CostCenterFormData } from "./cost-center.types";
 export function useCostCenters() {
   return useInfiniteList<CostCenter>(
     queryKeys.costCenters.list,
-    (page, perPage, signal) => listCentrosDeCustoApi(page, perPage, signal),
+    (page, perPage, signal) => listCostCentersApi(page, perPage, signal),
   );
 }
 
 export function useCostCentersLookup() {
   return useQuery({
     queryKey: queryKeys.costCenters.lookup,
-    queryFn: ({ signal }) => listCentrosDeCustoApi(1, 1000, signal),
+    queryFn: ({ signal }) => listCostCentersApi(1, 1000, signal),
     select: (result) => result.data,
   });
 }

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const moduloSchema = z.object({
+export const moduleSchema = z.object({
   id: z.number(),
   name: z.string(),
   slug: z.string(),
@@ -9,13 +9,13 @@ export const moduloSchema = z.object({
 });
 
 export const modulesUserResponseSchema = z.object({
-  modules: z.array(moduloSchema),
-  habilitados: z.array(z.number()),
+  modules: z.array(moduleSchema),
+  enabled: z.array(z.number()),
 });
 
 export const modulesUserDataResponseSchema = z.object({
   data: modulesUserResponseSchema,
 });
 
-export type Modulo = z.infer<typeof moduloSchema>;
-export type ModulosUserResponse = z.infer<typeof modulesUserResponseSchema>;
+export type Module = z.infer<typeof moduleSchema>;
+export type UserModulesResponse = z.infer<typeof modulesUserResponseSchema>;

@@ -1,11 +1,11 @@
 import {
   listUsersResponseSchema,
   userResponseSchema,
-  type ListarUsersResponse,
+  type UserListResponse,
 } from "./user.types";
 import type { User } from "@/features/auth/auth.types";
 
-export function mapListarUsers(raw: unknown): ListarUsersResponse {
+export function mapUserList(raw: unknown): UserListResponse {
   return listUsersResponseSchema.parse(raw);
 }
 

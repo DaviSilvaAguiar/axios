@@ -98,7 +98,7 @@ class UserService
 
         return [
             'modules' => $all,
-            'habilitados' => $enabled,
+            'enabled' => $enabled,
         ];
     }
 

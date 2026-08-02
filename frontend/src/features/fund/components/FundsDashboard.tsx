@@ -5,7 +5,7 @@ import { Vault } from "@phosphor-icons/react";
 import EmptyState from "@/ui/EmptyState";
 import DataTable, { type DataTableColumn } from "@/ui/DataTable";
 import {
-  FUND_TIPO_LABEL,
+  FUND_TYPE_LABEL,
   type Fund,
 } from "../fund.types";
 import { formatarMoeda } from "@/lib/formatters";
@@ -50,7 +50,7 @@ export default function FundsDashboard({ funds, onSelectFund, closed }: Props) {
       key: "type",
       header: "Type",
       render: (c) => (
-        <span className="text-small text-app-text-muted">{FUND_TIPO_LABEL[c.type]}</span>
+        <span className="text-small text-app-text-muted">{FUND_TYPE_LABEL[c.type]}</span>
       ),
     },
     {

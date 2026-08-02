@@ -63,4 +63,11 @@ class ExpenseReportItemController extends Controller
     {
         return $this->service->serveAttachment($id, $itemId, $attachmentId);
     }
+
+    public function destroyAttachment(int $id, int $itemId, int $attachmentId): JsonResponse
+    {
+        $this->service->deleteAttachment($id, $itemId, $attachmentId);
+
+        return response()->json(null, 204);
+    }
 }

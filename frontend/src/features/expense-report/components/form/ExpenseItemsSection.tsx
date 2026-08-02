@@ -14,7 +14,7 @@ import Button from "@/ui/Button";
 import EmptyState from "@/ui/EmptyState";
 import ExpenseItemRow from "./ExpenseItemRow";
 import type {
-  AnexoCaixa,
+  ExpenseReportAttachment,
   StoreExpenseReportWithDespesasFormData,
 } from "../../expense-report.types";
 
@@ -31,7 +31,7 @@ interface Props {
   categoryOptions: Option[];
   geolocationEnabled: boolean;
   itemFiles: File[][];
-  existingAttachments: AnexoCaixa[][];
+  existingAttachments: ExpenseReportAttachment[][];
   onAddExpenseItem: () => void;
   onRemoveExpenseItem: (idx: number) => void;
   onAddFile: (idx: number, file: File) => void;

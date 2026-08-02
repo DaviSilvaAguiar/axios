@@ -127,6 +127,17 @@ class ExpenseReportItemService
         return Storage::disk('public')->response($attachment->path);
     }
 
+    public function deleteAttachment(int $idExpenseReport, int $itemId, int $attachmentId): void
+    {
+        $this->ensureExpenseReportEditable($idExpenseReport);
+
+        $item = ExpenseReportItem::where('expense_report_id', $idExpenseReport)->findOrFail($itemId);
+        $attachment = $item->attachments()->findOrFail($attachmentId);
+
+        Storage::disk('public')->delete($attachment->path);
+        $attachment->delete();
+    }
+
     public function delete(int $idExpenseReport, int $itemId): void
     {
         $this->ensureExpenseReportEditable($idExpenseReport);

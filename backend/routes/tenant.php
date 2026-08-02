@@ -72,12 +72,9 @@ Route::middleware(['tenant.header'])->prefix('v1')->group(function (): void {
                 Route::post('/', 'store');
                 Route::put('/{itemId}', 'update');
                 Route::delete('/{itemId}', 'destroy');
-                Route::get('/{itemId}/attachment', 'serveAttachment');
-                Route::post('/{itemId}/attachment', 'storeAttachment');
-                Route::delete('/{itemId}/attachment', 'destroyAttachment');
-                Route::post('/{itemId}/attachments', 'addAttachment');
-                Route::delete('/{itemId}/attachments/{attachmentId}', 'destroySpecificAttachment');
-                Route::get('/{itemId}/attachments/{attachmentId}', 'serveSpecificAttachment');
+                Route::post('/{itemId}/attachments', 'storeAttachment');
+                Route::delete('/{itemId}/attachments/{attachmentId}', 'destroyAttachment');
+                Route::get('/{itemId}/attachments/{attachmentId}', 'serveAttachment');
             });
 
         Route::controller(ExpenseReportController::class)->prefix('expense-reports')->whereNumber('id')->middleware('module:expense-reports')->group(function (): void {
@@ -104,7 +101,7 @@ Route::middleware(['tenant.header'])->prefix('v1')->group(function (): void {
             });
 
         Route::controller(FundTransactionController::class)
-            ->prefix('funds/{id}/transacoes')
+            ->prefix('funds/{id}/transactions')
             ->whereNumber('id')
             ->middleware([EnsureRoleAuditor::class, 'module:funds'])
             ->group(function (): void {
@@ -122,6 +119,7 @@ Route::middleware(['tenant.header'])->prefix('v1')->group(function (): void {
                 Route::delete('/{itemId}', 'destroy');
                 Route::post('/{itemId}/attachments', 'storeAttachment');
                 Route::get('/{itemId}/attachments/{attachmentId}', 'serveAttachment');
+                Route::delete('/{itemId}/attachments/{attachmentId}', 'destroyAttachment');
             });
 
         Route::controller(ExpenseCategoryController::class)->prefix('expense-categories')->whereNumber('id')->middleware('module:expense-category')->group(function (): void {
